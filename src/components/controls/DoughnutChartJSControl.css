@@ -1,0 +1,20 @@
+/* DoughnutChartJSControl.css */
+
+.doughnut-chartjs-control {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: #fff;
+    border-radius: 8px;
+    padding: 16px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.doughnut-chartjs-control canvas {
+    max-height: 100%;
+}
+
+/* Dark theme support */
+:root[data-theme="dark"] .doughnut-chartjs-control {
+    background-color: #1f2937;
+}

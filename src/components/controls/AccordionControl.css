@@ -1,0 +1,120 @@
+/* AccordionControl.css */
+
+.accordion-control {
+    width: 100%;
+}
+
+.accordion-item {
+    border: 1px solid var(--border-secondary);
+    border-radius: var(--radius-lg);
+    margin-bottom: 10px;
+    overflow: hidden;
+    transition: all 0.2s;
+}
+
+.accordion-item:last-child {
+    margin-bottom: 0;
+}
+
+.accordion-item.open {
+    border-color: var(--accent-primary);
+    box-shadow: var(--shadow-focus);
+}
+
+.accordion-item.disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.accordion-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 20px;
+    background-color: var(--bg-secondary);
+    cursor: pointer;
+    user-select: none;
+    transition: all 0.2s;
+}
+
+.accordion-item:not(.disabled) .accordion-header:hover {
+    background-color: var(--bg-hover);
+}
+
+.accordion-item.open .accordion-header {
+    background-color: var(--accent-primary-light);
+    border-bottom: 1px solid var(--border-secondary);
+}
+
+.accordion-item.disabled .accordion-header {
+    cursor: not-allowed;
+}
+
+.accordion-header-content {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex: 1;
+}
+
+.accordion-icon {
+    font-size: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.accordion-title {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.accordion-chevron {
+    font-size: 12px;
+    color: var(--text-tertiary);
+    transition: transform 0.2s;
+    display: flex;
+    align-items: center;
+}
+
+.accordion-content {
+    padding: 20px;
+    background-color: var(--bg-primary);
+    animation: accordion-slide-down 0.3s ease-out;
+}
+
+@keyframes accordion-slide-down {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.accordion-empty {
+    padding: 40px;
+    text-align: center;
+    color: var(--text-disabled);
+    font-size: 14px;
+    border: 1px dashed var(--border-primary);
+    border-radius: var(--radius-lg);
+}
+
+/* Responsive */
+@media (max-width: 640px) {
+    .accordion-header {
+        padding: 12px 16px;
+    }
+
+    .accordion-title {
+        font-size: 14px;
+    }
+
+    .accordion-content {
+        padding: 16px;
+    }
+}

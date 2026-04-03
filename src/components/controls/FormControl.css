@@ -1,0 +1,69 @@
+/* FormControl (renamed to avoid colliding with global form-control) */
+
+.form-grid {
+    width: 100%;
+}
+
+.form-grid-grid {
+    width: 100%;
+}
+
+.form-grid-item {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.form-grid-label {
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text-secondary);
+    margin-bottom: 2px;
+}
+
+.form-grid-wrapper {
+    width: 100%;
+}
+
+/* Override some control styles for form layout */
+.form-grid-wrapper input[type="text"],
+.form-grid-wrapper input[type="number"],
+.form-grid-wrapper input[type="date"],
+.form-grid-wrapper select,
+.form-grid-wrapper textarea {
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.form-grid-wrapper .textbox-control,
+.form-grid-wrapper .number-control,
+.form-grid-wrapper .date-control,
+.form-grid-wrapper .select-control {
+    width: 100%;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .form-grid-grid.responsive {
+        display: flex !important;
+        flex-direction: column;
+        gap: 12px;
+        padding: 16px;
+    }
+    
+    .form-grid-grid.responsive .form-grid-item {
+        grid-column: auto !important;
+        grid-row: auto !important;
+    }
+    
+    .form-grid-label {
+        font-size: 13px;
+    }
+}
+
+@media (max-width: 480px) {
+    .form-grid-grid.responsive {
+        gap: 10px;
+        padding: 12px;
+    }
+}

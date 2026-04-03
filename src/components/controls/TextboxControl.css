@@ -1,0 +1,112 @@
+/* TextboxControl.css */
+
+.textbox-control {
+    width: 100%;
+    padding: var(--spacing-sm) var(--spacing-md);
+    font-size: 14px;
+    line-height: 1.5;
+    color: var(--text-primary);
+    background-color: var(--bg-primary);
+    border: 1px solid var(--border-primary);
+    border-radius: var(--radius-md);
+    outline: none;
+    transition: all 0.2s ease;
+    box-sizing: border-box;
+    font-family: inherit;
+}
+
+/* Placeholder styling */
+.textbox-control::placeholder {
+    color: var(--text-placeholder);
+    opacity: 1;
+}
+
+/* Focus state */
+.textbox-control:focus {
+    border-color: var(--border-focus);
+    box-shadow: var(--shadow-focus);
+    background-color: var(--bg-primary);
+}
+
+/* Hover state */
+.textbox-control:hover:not(:disabled):not(:focus) {
+    border-color: var(--border-hover);
+}
+
+/* Disabled state */
+.textbox-control:disabled {
+    background-color: var(--bg-disabled);
+    color: var(--text-disabled);
+    cursor: not-allowed;
+    opacity: 0.6;
+}
+
+/* Read-only state */
+.textbox-control:read-only {
+    background-color: var(--bg-secondary);
+    cursor: default;
+}
+
+/* Error state (when has error class) */
+.textbox-control.error {
+    border-color: var(--error);
+}
+
+.textbox-control.error:focus {
+    border-color: var(--error);
+    box-shadow: 0 0 0 3px var(--error-light);
+}
+
+/* Success state */
+.textbox-control.success {
+    border-color: var(--success);
+}
+
+.textbox-control.success:focus {
+    border-color: var(--success);
+    box-shadow: 0 0 0 3px var(--success-light);
+}
+
+/* Size variants */
+.textbox-control.small {
+    padding: 6px 10px;
+    font-size: 13px;
+}
+
+.textbox-control.large {
+    padding: 10px 14px;
+    font-size: 15px;
+}
+
+/* Textarea specific styling */
+textarea.textbox-control {
+    resize: vertical;
+    min-height: 80px;
+    font-family: inherit;
+    overflow: auto;
+}
+
+textarea.textbox-control.large {
+    min-height: 150px;
+}
+
+textarea.textbox-control.small {
+    min-height: 60px;
+}
+
+/* Mobile responsive */
+@media (max-width: 768px) {
+    .textbox-control {
+        font-size: 16px; /* Prevents zoom on iOS */
+        padding: 10px 12px;
+    }
+
+    .textbox-control.small {
+        font-size: 14px;
+        padding: 8px 10px;
+    }
+
+    textarea.textbox-control {
+        min-height: 100px;
+    }
+}

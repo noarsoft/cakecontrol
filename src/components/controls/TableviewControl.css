@@ -1,0 +1,160 @@
+/* TableviewControl.css */
+
+.tableview-container {
+    width: 100%;
+    overflow-x: auto;
+}
+
+.tableview {
+    width: 100%;
+    border-collapse: collapse;
+    background-color: var(--bg-primary);
+    box-shadow: var(--shadow-sm);
+}
+
+.tableview thead {
+    background-color: var(--bg-secondary);
+    border-bottom: 2px solid var(--border-secondary);
+}
+
+.tableview th {
+    padding: 12px 15px;
+    text-align: left;
+    font-weight: 600;
+    color: var(--text-secondary);
+    font-size: 14px;
+}
+
+.tableview tbody tr {
+    border-bottom: 1px solid var(--border-secondary);
+    transition: background-color 0.2s;
+}
+
+.tableview tbody tr:hover {
+    background-color: var(--bg-secondary);
+}
+
+.tableview td {
+    padding: 12px 15px;
+    vertical-align: top;
+}
+
+.tableview td label,
+.tableview td span:not([class]) {
+    display: block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 100%;
+}
+
+.tableview-empty {
+    padding: 40px 20px;
+    text-align: center;
+    color: var(--text-tertiary);
+    background-color: var(--bg-secondary);
+}
+
+.tableview-empty p {
+    margin: 0;
+    font-size: 14px;
+}
+
+/* Responsive Card View (Mobile) */
+@media (max-width: 768px) {
+    /* Hide table on mobile, show cards instead */
+    .tableview-container.responsive .tableview {
+        display: none;
+    }
+
+    .tableview-container.responsive .tableview-cards {
+        display: block;
+    }
+}
+
+@media (min-width: 769px) {
+    /* Hide cards on desktop, show table */
+    .tableview-cards {
+        display: none;
+    }
+}
+
+/* Mobile Card Layout */
+.tableview-cards {
+    display: none; /* Hidden by default, shown on mobile via media query */
+}
+
+.tableview-card {
+    background-color: var(--bg-primary);
+    border: 1px solid var(--border-secondary);
+    border-radius: var(--radius-lg);
+    padding: 16px;
+    margin-bottom: 16px;
+    box-shadow: var(--shadow-sm);
+}
+
+.tableview-card-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--bg-tertiary);
+}
+
+.tableview-card-row:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
+}
+
+.tableview-card-label {
+    font-weight: 600;
+    color: var(--text-secondary);
+    font-size: 13px;
+    margin-right: 12px;
+    min-width: 100px;
+    flex-shrink: 0;
+}
+
+.tableview-card-value {
+    flex: 1;
+    text-align: right;
+}
+
+/* Special handling for action buttons in cards */
+.tableview-card-actions {
+    display: flex;
+    gap: 8px;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+    width: 100%;
+}
+
+.tableview-card-actions button {
+    flex: 1;
+    min-width: 80px;
+}
+
+/* Desktop table styles */
+@media (min-width: 769px) {
+    .tableview th,
+    .tableview td {
+        padding: 12px 15px;
+        font-size: 14px;
+    }
+}
+
+/* Small mobile adjustments */
+@media (max-width: 480px) {
+    .tableview-card {
+        padding: 12px;
+    }
+
+    .tableview-card-label {
+        min-width: 80px;
+        font-size: 12px;
+    }
+
+    .tableview-card-value {
+        font-size: 13px;
+    }
+}

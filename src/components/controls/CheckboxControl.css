@@ -1,0 +1,24 @@
+/* CheckboxControl.css */
+
+.checkbox-control {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: opacity 0.2s, transform 0.1s;
+}
+
+.checkbox-control:hover:not(.disabled) {
+    transform: scale(1.1);
+}
+
+.checkbox-control:active:not(.disabled) {
+    transform: scale(0.95);
+}
+
+.checkbox-control.disabled {
+    opacity: 0.5;
+}
+
+.checkbox-control svg {
+    display: block;
+}

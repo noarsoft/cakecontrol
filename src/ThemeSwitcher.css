@@ -1,0 +1,43 @@
+/* ThemeSwitcher.css */
+
+.theme-switcher {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    padding: var(--spacing-sm) var(--spacing-md);
+    background-color: var(--bg-tertiary);
+    color: var(--text-primary);
+    border: 1px solid var(--border-primary);
+    border-radius: var(--radius-lg);
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    transition: all 0.2s ease;
+    font-family: inherit;
+}
+
+.theme-switcher:hover {
+    background-color: var(--bg-hover);
+    border-color: var(--border-hover);
+    box-shadow: var(--shadow-sm);
+}
+
+.theme-switcher:active {
+    transform: scale(0.98);
+}
+
+.theme-switcher svg {
+    width: 20px;
+    height: 20px;
+    flex-shrink: 0;
+}
+
+.theme-switcher-text {
+    font-size: 14px;
+}
+
+@media (max-width: 640px) {
+    .theme-switcher-text {
+        display: none;
+    }
+}

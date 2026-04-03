@@ -1,0 +1,102 @@
+/* SearchBoxControl.css */
+
+.searchbox-control {
+    position: relative;
+    width: 100%;
+    font-family: inherit;
+}
+
+.searchbox-input {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    min-height: 44px;
+    padding: 6px 8px;
+    border: 1px solid var(--border-primary);
+    border-radius: var(--radius-md);
+    background: var(--bg-primary);
+    box-shadow: var(--shadow-sm);
+    cursor: text;
+}
+
+.searchbox-input.disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.searchbox-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 8px;
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    border-radius: var(--radius-xl);
+    border: 1px solid var(--border-secondary);
+    font-size: 13px;
+}
+
+.searchbox-chip-label {
+    max-width: 160px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.searchbox-chip-remove {
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    color: var(--text-secondary);
+    font-size: 12px;
+}
+
+.searchbox-text {
+    flex: 1 1 auto;
+    min-width: 120px;
+    border: none;
+    outline: none;
+    font-size: 14px;
+    padding: 6px 4px;
+    background: transparent;
+    color: var(--text-primary);
+}
+
+.searchbox-actions {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.searchbox-dropdown {
+    position: absolute;
+    left: 0;
+    right: 0;
+    margin-top: 6px;
+    background: var(--bg-primary);
+    border: 1px solid var(--border-primary);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-lg);
+    z-index: 3000;
+    overflow: hidden;
+}
+
+.searchbox-empty {
+    padding: 12px;
+    color: var(--text-disabled);
+}
+
+.searchbox-table-wrapper {
+    padding: 8px;
+}
+
+.searchbox-single {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+@media (max-width: 640px) {
+    .searchbox-text { min-width: 80px; }
+}

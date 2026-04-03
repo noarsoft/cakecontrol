@@ -1,0 +1,16 @@
+.icon-control {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-primary);
+    line-height: 1;
+}
+
+.icon-control.icon-value {
+    font-size: inherit;
+}
+
+/* Ensure SVGs inside icon have currentColor fill */
+.icon-control svg {
+    fill: currentColor;
+}

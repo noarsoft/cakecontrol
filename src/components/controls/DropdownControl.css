@@ -1,0 +1,195 @@
+/* DropdownControl.css */
+
+.dropdown-control {
+    position: relative;
+    width: 100%;
+}
+
+.dropdown-input-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.dropdown-input {
+    width: 100%;
+    padding: 8px 70px 8px 12px;
+    border: 1px solid var(--border-primary);
+    border-radius: var(--radius-md);
+    font-size: 14px;
+    background-color: var(--bg-primary);
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.dropdown-input:hover {
+    border-color: var(--border-hover);
+}
+
+.dropdown-input:focus {
+    outline: none;
+    border-color: var(--border-focus);
+    box-shadow: var(--shadow-focus);
+    cursor: text;
+}
+
+.dropdown-input::placeholder {
+    color: var(--text-placeholder);
+}
+
+.dropdown-buttons {
+    position: absolute;
+    right: 8px;
+    display: flex;
+    gap: 4px;
+}
+
+.dropdown-clear-btn,
+.dropdown-toggle-btn {
+    background: var(--bg-primary);
+    border: 1px solid var(--border-primary);
+    border-radius: var(--radius-sm);
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 12px;
+    transition: all 0.2s;
+}
+
+.dropdown-clear-btn:hover {
+    background-color: var(--error-light);
+    border-color: var(--error);
+    color: var(--error);
+}
+
+.dropdown-toggle-btn:hover {
+    background-color: var(--bg-hover);
+    border-color: var(--border-hover);
+}
+
+.dropdown-menu {
+    position: absolute;
+    top: calc(100% + 4px);
+    left: 0;
+    right: 0;
+    background: var(--bg-primary);
+    border: 1px solid var(--border-primary);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-lg);
+    z-index: 3000;
+    color: var(--text-primary);
+    animation: dropdownSlideDown 0.2s ease-out;
+}
+
+@keyframes dropdownSlideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.dropdown-table-wrapper {
+    overflow-x: auto;
+    color: var(--text-primary);
+}
+
+/* Ensure dropdown items/table are readable and on top in dark mode */
+.dropdown-menu,
+.dropdown-table-wrapper,
+.dropdown-table-wrapper .tableview,
+.dropdown-table-wrapper .tableview td,
+.dropdown-table-wrapper .tableview th {
+    background: var(--bg-primary);
+    color: var(--text-primary);
+}
+
+/* Simple list fallback styles */
+.dropdown-list-wrapper {
+    padding: 4px;
+}
+
+.dropdown-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.dropdown-list-item {
+    padding: 8px 12px;
+    border-bottom: 1px solid var(--border-secondary);
+    cursor: pointer;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+}
+
+.dropdown-list-item:hover {
+    background: var(--bg-hover);
+}
+
+.dropdown-list-item-label {
+    font-size: 14px;
+}
+
+/* Make table rows clickable */
+.dropdown-table-wrapper tbody tr {
+    cursor: pointer;
+    transition: background-color 0.15s;
+}
+
+.dropdown-table-wrapper tbody tr:hover {
+    background-color: var(--bg-secondary);
+}
+
+.dropdown-table-wrapper tbody tr:active {
+    background-color: var(--bg-hover);
+}
+
+.dropdown-empty {
+    padding: 20px;
+    text-align: center;
+    color: var(--text-disabled);
+    font-size: 14px;
+}
+
+/* Make table rows clickable */
+.dropdown-table-wrapper .tableview tbody tr {
+    cursor: pointer;
+    transition: background-color 0.15s;
+}
+
+.dropdown-table-wrapper .tableview tbody tr:hover {
+    background-color: var(--bg-secondary);
+}
+
+.dropdown-table-wrapper .tableview tbody tr:active {
+    background-color: var(--bg-hover);
+}
+
+/* Remove default table container styles that might interfere */
+.dropdown-table-wrapper .tableview-container {
+    border: none;
+    box-shadow: none;
+}
+
+.dropdown-table-wrapper .tableview {
+    margin: 0;
+}
+
+/* Responsive */
+@media (max-width: 640px) {
+    .dropdown-input {
+        font-size: 13px;
+        padding: 7px 60px 7px 10px;
+    }
+    
+    .dropdown-menu {
+        max-height: 60vh;
+    }
+}

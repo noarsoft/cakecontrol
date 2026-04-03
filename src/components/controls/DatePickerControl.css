@@ -1,0 +1,195 @@
+/* DatePickerControl.css */
+
+.datepicker-control {
+    position: relative;
+    width: 100%;
+}
+
+.datepicker-input-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.datepicker-input {
+    width: 100%;
+    padding: 8px 80px 8px 12px;
+    border: 1px solid var(--border-primary);
+    border-radius: var(--radius-md);
+    font-size: 14px;
+    background-color: var(--bg-secondary);
+    color: var(--text-primary);
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.datepicker-input:hover {
+    border-color: var(--border-hover);
+}
+
+.datepicker-input:focus {
+    outline: none;
+    border-color: var(--border-focus);
+    box-shadow: var(--shadow-focus);
+}
+
+.datepicker-input::placeholder {
+    color: var(--text-placeholder);
+}
+
+.datepicker-buttons {
+    position: absolute;
+    right: 8px;
+    display: flex;
+    gap: 4px;
+}
+
+.datepicker-clear-btn,
+.datepicker-calendar-btn {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-secondary);
+    border-radius: var(--radius-sm);
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 14px;
+    color: var(--text-primary);
+    transition: all 0.2s;
+}
+
+.datepicker-clear-btn:hover {
+    background-color: var(--error-light);
+    border-color: var(--error);
+    color: var(--error);
+}
+
+.datepicker-calendar-btn:hover {
+    background-color: var(--accent-primary-light);
+    border-color: var(--accent-primary);
+}
+
+.datepicker-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+    animation: fadeIn 0.2s ease-in-out;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+.datepicker-modal-content {
+    background: var(--bg-primary);
+    border-radius: var(--radius-xl);
+    box-shadow: var(--shadow-lg);
+    max-width: 90vw;
+    max-height: 90vh;
+    overflow: auto;
+    animation: slideUp 0.3s ease-out;
+}
+
+.datepicker-modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--border-secondary);
+}
+
+.datepicker-modal-title {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.datepicker-modal-close {
+    background: transparent;
+    border: none;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 20px;
+    color: var(--text-tertiary);
+    border-radius: var(--radius-md);
+    transition: all 0.2s;
+}
+
+.datepicker-modal-close:hover {
+    background-color: var(--bg-hover);
+    color: var(--text-primary);
+}
+
+.datepicker-modal-footer {
+    padding: 16px 20px;
+    border-top: 1px solid var(--border-secondary);
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+}
+
+.datepicker-modal-cancel-btn {
+    padding: 8px 20px;
+    background: var(--bg-primary);
+    border: 1px solid var(--border-primary);
+    border-radius: var(--radius-md);
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.datepicker-modal-cancel-btn:hover {
+    background-color: var(--bg-hover);
+    border-color: var(--border-hover);
+}
+
+@keyframes slideUp {
+    from {
+        transform: translateY(20px);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+/* Override calendar grid styles for modal */
+.datepicker-modal-content .calendar-grid-control {
+    border: none;
+    box-shadow: none;
+}
+
+/* Responsive */
+@media (max-width: 640px) {
+    .datepicker-modal-content {
+        max-width: 95vw;
+        margin: 10px;
+    }
+    
+    .datepicker-input {
+        font-size: 13px;
+        padding: 7px 70px 7px 10px;
+    }
+}

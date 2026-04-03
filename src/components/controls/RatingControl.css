@@ -1,0 +1,114 @@
+/* RatingControl.css */
+
+.rating-control {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-family: inherit;
+}
+
+/* Star container and layout */
+.rating-stars {
+    --rating-color: #ffc107;
+    display: flex;
+    gap: 6px;
+    cursor: pointer;
+    user-select: none;
+}
+
+.star {
+    position: relative;
+    font-size: 1.5em;
+    line-height: 1;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    color: #d3d3d3;
+    width: 1em;
+    height: 1em;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.star.filled {
+    color: var(--rating-color);
+}
+
+.star.half-filled {
+    background: linear-gradient(
+        to right,
+        var(--rating-color) 50%,
+        #d3d3d3 50%
+    );
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    color: transparent;
+}
+
+/* Size variants */
+.rating-small .rating-stars {
+    font-size: 16px;
+}
+
+.rating-medium .rating-stars {
+    font-size: 22px;
+}
+
+.rating-large .rating-stars {
+    font-size: 28px;
+}
+
+/* Rating label */
+.rating-label {
+    display: flex;
+    align-items: baseline;
+    gap: 2px;
+    font-weight: 500;
+    color: #333;
+}
+
+.rating-value {
+    font-size: 1.1em;
+    min-width: 24px;
+}
+
+.rating-max {
+    font-size: 0.85em;
+    color: #666;
+}
+
+/* States */
+.rating-control.disabled .rating-stars {
+    cursor: not-allowed;
+    opacity: 0.5;
+}
+
+.rating-control.disabled .star {
+    cursor: not-allowed;
+}
+
+.rating-control.read-only .rating-stars {
+    cursor: default;
+}
+
+.rating-control.read-only .star {
+    cursor: default;
+}
+
+/* Dark theme support */
+:root[data-theme="dark"] .rating-label {
+    color: #e5e7eb;
+}
+
+:root[data-theme="dark"] .rating-max {
+    color: #9ca3af;
+}
+
+:root[data-theme="dark"] .star {
+    color: #4b5563;
+}
+
+:root[data-theme="dark"] .star.filled {
+    color: var(--rating-color);
+}

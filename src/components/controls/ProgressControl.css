@@ -1,0 +1,16 @@
+/* ProgressControl.css */
+.progress {
+    background-color: var(--bg-tertiary);
+    border-radius: var(--radius-sm);
+    overflow: hidden;
+}
+
+.progress-bar {
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--bg-primary);
+    font-size: 12px;
+    transition: width 0.3s ease;
+}

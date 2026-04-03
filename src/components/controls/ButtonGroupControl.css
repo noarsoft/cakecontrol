@@ -1,0 +1,38 @@
+/* ButtonGroupControl.css */
+
+.button-group-control {
+    width: 100%;
+}
+
+.button-group-control.horizontal {
+    align-items: center;
+}
+
+.button-group-control.vertical {
+    align-items: stretch;
+}
+
+.button-group-control .btn-control {
+    transition: all 0.2s;
+    white-space: nowrap;
+}
+
+.button-group-control.horizontal .btn-control {
+    flex: 0 0 auto;
+}
+
+.button-group-control.vertical .btn-control {
+    width: 100%;
+}
+
+/* Responsive */
+@media (max-width: 640px) {
+    .button-group-control.horizontal {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .button-group-control.horizontal .btn-control {
+        width: 100%;
+    }
+}

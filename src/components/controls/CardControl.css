@@ -1,0 +1,32 @@
+/* CardControl.css */
+
+.card-control-container {
+    width: 100%;
+}
+
+.card-control-item {
+    position: relative;
+}
+
+.card-control-item.clickable:hover {
+    box-shadow: var(--shadow-md) !important;
+    transform: translateY(-2px);
+    border-color: var(--accent-primary) !important;
+}
+
+.card-control-item.clickable:active {
+    transform: translateY(0);
+}
+
+/* Responsive */
+@media (max-width: 1024px) {
+    .card-control-container {
+        grid-template-columns: repeat(2, 1fr) !important;
+    }
+}
+
+@media (max-width: 640px) {
+    .card-control-container {
+        grid-template-columns: 1fr !important;
+    }
+}

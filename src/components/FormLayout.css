@@ -1,0 +1,243 @@
+/* ============================================
+   FormLayout.css - Reusable Form/Card Layout
+   ============================================ */
+
+/* Form Container - Full Width Wrapper */
+.form-container {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: var(--bg-secondary);
+}
+
+/* Form Card - Main Card Box */
+.form-card {
+  background: var(--bg-primary);
+  border-radius: var(--radius-xl);
+  padding: 40px;
+  width: 100%;
+  max-width: 450px;
+  box-shadow: var(--shadow-lg);
+}
+
+/* Form Card Header - Title Section */
+.form-card-header {
+  text-align: center;
+  margin-bottom: var(--spacing-xl);
+}
+
+.form-card-header i {
+  font-size: 4rem;
+  margin-bottom: var(--spacing-md);
+  display: block;
+}
+
+.form-card-header h2 {
+  color: var(--text-primary);
+  font-weight: 700;
+  margin-bottom: var(--spacing-sm);
+  margin: 0 0 var(--spacing-sm) 0;
+}
+
+.form-card-header p {
+  color: var(--text-secondary);
+  font-size: 0.95rem;
+  margin: 0;
+}
+
+/* Form Wrapper - Content Area */
+.form-wrapper {
+  width: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+/* Form Grid - FormControl Integration */
+.form-grid {
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  padding: 0;
+  margin: 0;
+  width: 100%;
+}
+
+.form-grid-grid {
+  gap: 16px !important;
+  padding: 0 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  grid-template-columns: auto !important;
+}
+
+.form-grid-item {
+  margin-bottom: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  grid-column: auto !important;
+  grid-row: auto !important;
+}
+
+/* Form Grid Label */
+.form-grid-label {
+  color: var(--text-primary);
+  font-weight: 600;
+  margin-bottom: 0;
+  font-size: 0.95rem;
+  display: block;
+}
+
+/* Form Grid Wrapper - Input Wrapper */
+.form-grid-wrapper {
+  width: 100%;
+}
+
+/* Input Elements - Textbox, Password, Email */
+.form-grid-wrapper input[type="text"],
+.form-grid-wrapper input[type="email"],
+.form-grid-wrapper input[type="password"],
+.form-grid-wrapper .textbox-control input,
+.form-grid-wrapper .password-control input {
+  width: 100%;
+  padding: 12px 15px;
+  border: 2px solid var(--border-primary);
+  border-radius: 10px;
+  font-size: 1rem;
+  box-sizing: border-box;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  transition: border-color 0.3s, box-shadow 0.3s;
+}
+
+.form-grid-wrapper input[type="text"]:focus,
+.form-grid-wrapper input[type="email"]:focus,
+.form-grid-wrapper input[type="password"]:focus,
+.form-grid-wrapper .textbox-control input:focus,
+.form-grid-wrapper .password-control input:focus {
+  outline: none;
+  border-color: var(--accent-primary);
+  box-shadow: 0 0 0 3px var(--accent-primary-light);
+}
+
+/* Button Elements - FormControl Buttons */
+.form-grid-item .btn-control,
+.form-grid-wrapper .btn-control {
+  width: 100%;
+  padding: 14px;
+  color: white;
+  border: none;
+  border-radius: 10px;
+  font-size: 1.05rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  text-decoration: none;
+  margin: 0;
+}
+
+.form-grid-item .btn-control:disabled,
+.form-grid-wrapper .btn-control:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+/* Alert Styles */
+.alert {
+  padding: var(--spacing-md) var(--spacing-md);
+  border-radius: var(--radius-md);
+  margin-bottom: var(--spacing-lg);
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  border-left: 4px solid;
+}
+
+.alert-danger {
+  background: var(--error-light);
+  color: var(--error);
+  border-left-color: var(--error);
+}
+
+.alert-info {
+  background: var(--info-light);
+  color: var(--info);
+  border-left-color: var(--info);
+}
+
+.alert-warning {
+  background: var(--warning-light);
+  color: var(--warning);
+  border-left-color: var(--warning);
+}
+
+.alert-success {
+  background: var(--success-light);
+  color: var(--success);
+  border-left-color: var(--success);
+}
+
+/* Form Card Footer */
+.form-card-footer {
+  margin-top: 25px;
+  text-align: center;
+  font-size: 0.9rem;
+}
+
+.form-card-footer p {
+  margin: 8px 0;
+  color: var(--text-secondary);
+}
+
+.form-card-footer a {
+  text-decoration: none;
+  font-weight: 600;
+  transition: color 0.3s;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .form-card {
+    padding: 30px 20px;
+    max-width: calc(100% - 40px);
+  }
+
+  .form-card-header i {
+    font-size: 3rem;
+  }
+
+  .form-card-header h2 {
+    font-size: 24px;
+  }
+}
+
+@media (max-width: 480px) {
+  .form-container {
+    padding: 16px;
+  }
+
+  .form-card {
+    padding: 24px 16px;
+    border-radius: var(--radius-lg);
+  }
+
+  .form-card-header i {
+    font-size: 2.5rem;
+  }
+
+  .form-card-header h2 {
+    font-size: 20px;
+  }
+
+  .form-grid-wrapper input,
+  .form-grid-item .btn-control,
+  .form-grid-wrapper .btn-control {
+    font-size: 16px; /* Prevents iOS zoom on focus */
+  }
+}
