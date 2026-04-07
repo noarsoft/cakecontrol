@@ -24,6 +24,8 @@ const DEFAULT_LABELS = {
     actionsHeader: '',
     selectedCount: 'รายการที่เลือก',
     selectAllHeader: '',
+    bulkEditButton: 'เลือกรายการ',
+    bulkEditCancelButton: 'ยกเลิกเลือก',
 };
 
 function CRUDControl({ config = {} }) {
@@ -54,6 +56,7 @@ function CRUDControl({ config = {} }) {
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
     const [deletingRow, setDeletingRow] = useState(null);
     const [showBulkDeleteConfirm, setShowBulkDeleteConfirm] = useState(false);
+    const [bulkEditMode, setBulkEditMode] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
     const [sortKey, setSortKey] = useState(null);
     const [sortDirection, setSortDirection] = useState('asc');
@@ -282,8 +285,8 @@ function CRUDControl({ config = {} }) {
         const colwidths = [];
         const controls = [];
 
-        // Checkbox column
-        if (selectable) {
+        // Checkbox column (only in bulk edit mode)
+        if (selectable && bulkEditMode) {
             const offset = isClientPagination ? (internalPage - 1) * pageLimit : 0;
             const pageIndices = paginatedData.map((_, i) => offset + i);
             const allSelected = pageIndices.length > 0 && pageIndices.every(i => selectedRows.has(i));
@@ -358,7 +361,7 @@ function CRUDControl({ config = {} }) {
             } : {}),
         };
     }, [
-        paginatedData, columns, selectable, selectedRows, sortKey, sortDirection,
+        paginatedData, columns, selectable, bulkEditMode, selectedRows, sortKey, sortDirection,
         labels, currentPage, pageLimit, totalItems, totalPages,
         handleRowSelect, handleSelectAll, handleSort, handlePageChange,
         openEditModal, openDeleteConfirm, internalPage, isClientPagination,
@@ -366,7 +369,7 @@ function CRUDControl({ config = {} }) {
 
     // Sync checkbox checked state per row
     const tableConfigWithSelection = useMemo(() => {
-        if (!selectable) return tableConfig;
+        if (!selectable || !bulkEditMode) return tableConfig;
 
         const offset = isClientPagination ? (internalPage - 1) * pageLimit : 0;
 
@@ -388,11 +391,11 @@ function CRUDControl({ config = {} }) {
                 __crud_selected: selectedRows.has(offset + i),
             })),
         };
-    }, [tableConfig, selectable, selectedRows, paginatedData, isClientPagination, internalPage, pageLimit]);
+    }, [tableConfig, selectable, bulkEditMode, selectedRows, paginatedData, isClientPagination, internalPage, pageLimit]);
 
     // Final config: set checkbox databind to __crud_selected
     const finalTableConfig = useMemo(() => {
-        if (!selectable) return tableConfig;
+        if (!selectable || !bulkEditMode) return tableConfig;
         return {
             ...tableConfigWithSelection,
             controls: tableConfigWithSelection.controls.map((ctrl, idx) => {
@@ -410,26 +413,40 @@ function CRUDControl({ config = {} }) {
             {/* Toolbar */}
             <div className="crud-toolbar">
                 <div className="crud-toolbar-left">
-                    <TextboxControl control={{
-                        value: searchQuery,
-                        placeholder: labels.searchPlaceholder,
-                        className: 'crud-search',
-                        onChange: handleSearch,
-                    }} rowData={{}} rowIndex={0} />
-                    {selectable && selectedRows.size > 0 && (
+                    {selectable && !bulkEditMode && (
+                        <ButtonControl control={{
+                            value: labels.bulkEditButton,
+                            className: 'btn-secondary btn-sm',
+                            onClick: (e) => { setBulkEditMode(true); },
+                        }} rowData={{}} rowIndex={0} />
+                    )}
+                    {selectable && bulkEditMode && (
                         <>
-                            {onBulkDelete && (
+                            <ButtonControl control={{
+                                value: labels.bulkEditCancelButton,
+                                className: 'btn-secondary btn-sm',
+                                onClick: (e) => { setBulkEditMode(false); setSelectedRows(new Set()); },
+                            }} rowData={{}} rowIndex={0} />
+                            {onBulkDelete && selectedRows.size > 0 && (
                                 <ButtonControl control={{
                                     value: labels.bulkDeleteButton,
                                     className: 'btn-danger btn-sm',
                                     onClick: (e) => { openBulkDeleteConfirm(); },
                                 }} rowData={{}} rowIndex={0} />
                             )}
-                            <span className="crud-selected-count">
-                                {selectedRows.size} {labels.selectedCount}
-                            </span>
+                            {selectedRows.size > 0 && (
+                                <span className="crud-selected-count">
+                                    {selectedRows.size} {labels.selectedCount}
+                                </span>
+                            )}
                         </>
                     )}
+                    <TextboxControl control={{
+                        value: searchQuery,
+                        placeholder: labels.searchPlaceholder,
+                        className: 'crud-search',
+                        onChange: handleSearch,
+                    }} rowData={{}} rowIndex={0} />
                 </div>
                 <div className="crud-toolbar-right">
                     {onAdd && (
