@@ -65,6 +65,7 @@ function CRUDPage({ addLog }) {
                 <div className="example-demo">
                     <CRUDControl config={{
                         data: users,
+                        keyField: 'id',
                         columns: [
                             { key: 'name', header: 'ชื่อ', type: 'label', sortable: true, width: 'auto' },
                             { key: 'email', header: 'อีเมล', type: 'label', sortable: true, width: 'auto' },
@@ -105,20 +106,59 @@ function CRUDPage({ addLog }) {
                             setUsers(prev => [...prev, newUser]);
                             addLog(`Added: ${formData.name || 'New user'}`);
                         },
-                        onEdit: (formData, oldData, rowIndex) => {
-                            setUsers(prev => prev.map((u, i) =>
-                                u.id === oldData.id ? { ...u, ...formData } : u
+                        onEdit: (formData, oldData, rowKey) => {
+                            setUsers(prev => prev.map(u =>
+                                u.id === rowKey ? { ...u, ...formData } : u
                             ));
                             addLog(`Edited: ${oldData.name} -> ${formData.name || oldData.name}`);
                         },
-                        onDelete: (rowData, rowIndex) => {
-                            setUsers(prev => prev.filter(u => u.id !== rowData.id));
+                        onDelete: (rowData, rowKey) => {
+                            setUsers(prev => prev.filter(u => u.id !== rowKey));
                             addLog(`Deleted: ${rowData.name}`);
                         },
                         onBulkDelete: (selectedItems) => {
                             const ids = new Set(selectedItems.map(item => item.id));
                             setUsers(prev => prev.filter(u => !ids.has(u.id)));
                             addLog(`Bulk deleted: ${selectedItems.length} items`);
+                        },
+                    }} />
+                </div>
+            </section>
+
+            <section className="content-section">
+                <h2>Auto CRUD Mode</h2>
+                <p>
+                    ถ้าส่ง <code>keyField</code> โดยไม่ส่ง callback (onAdd, onEdit, onDelete, onBulkDelete)
+                    — CRUDControl จะจัดการ data ภายในเอง ใช้ <code>onChange</code> เพื่อ sync กลับ
+                </p>
+                <div className="example-demo">
+                    <CRUDControl config={{
+                        data: [
+                            { id: '1', name: 'Auto Item 1', category: 'A' },
+                            { id: '2', name: 'Auto Item 2', category: 'B' },
+                            { id: '3', name: 'Auto Item 3', category: 'A' },
+                        ],
+                        keyField: 'id',
+                        columns: [
+                            { key: 'name', header: 'ชื่อ', type: 'label', sortable: true, width: 'auto' },
+                            { key: 'category', header: 'หมวด', type: 'badge', sortable: true, width: '100' },
+                        ],
+                        formConfig: {
+                            colnumbers: 6,
+                            controls: [
+                                { colno: 1, rowno: 1, colspan: 6, type: 'textbox', databind: 'name', label: 'ชื่อ', placeholder: 'กรอกชื่อ' },
+                                { colno: 1, rowno: 2, colspan: 6, type: 'select', databind: 'category', label: 'หมวด',
+                                    options: [
+                                        { value: 'A', label: 'หมวด A' },
+                                        { value: 'B', label: 'หมวด B' },
+                                    ]
+                                },
+                            ]
+                        },
+                        searchFields: ['name', 'category'],
+                        selectable: true,
+                        onChange: (newData) => {
+                            addLog(`Auto mode: data changed (${newData.length} items)`);
                         },
                     }} />
                 </div>
@@ -140,6 +180,11 @@ function CRUDPage({ addLog }) {
                                 <td style={{ padding: '10px' }}><code>data</code></td>
                                 <td style={{ padding: '10px' }}>Array</td>
                                 <td style={{ padding: '10px' }}>ข้อมูลที่จะแสดงในตาราง</td>
+                            </tr>
+                            <tr style={{ borderBottom: '1px solid var(--border-secondary)' }}>
+                                <td style={{ padding: '10px' }}><code>keyField</code></td>
+                                <td style={{ padding: '10px' }}>string</td>
+                                <td style={{ padding: '10px' }}>ชื่อ field ที่เป็น key เช่น 'id', 'userId' — ใช้สำหรับ selection + auto CRUD mode</td>
                             </tr>
                             <tr style={{ borderBottom: '1px solid var(--border-secondary)' }}>
                                 <td style={{ padding: '10px' }}><code>columns</code></td>
@@ -200,6 +245,11 @@ function CRUDPage({ addLog }) {
                                 <td style={{ padding: '10px' }}><code>onPageChange</code></td>
                                 <td style={{ padding: '10px' }}>Function</td>
                                 <td style={{ padding: '10px' }}>(page) - server-side pagination (ถ้าไม่ส่งจะ paginate client-side)</td>
+                            </tr>
+                            <tr style={{ borderBottom: '1px solid var(--border-secondary)' }}>
+                                <td style={{ padding: '10px' }}><code>onChange</code></td>
+                                <td style={{ padding: '10px' }}>Function</td>
+                                <td style={{ padding: '10px' }}>(newData) — เรียกเมื่อ data เปลี่ยนใน auto CRUD mode</td>
                             </tr>
                             <tr>
                                 <td style={{ padding: '10px' }}><code>labels</code></td>
