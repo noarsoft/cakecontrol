@@ -276,7 +276,8 @@ function ControlsDocs() {
         chartsradar: { title: 'Radar Chart JS', category: 'Chart Controls', icon: '🎯' },
         chartsarea: { title: 'Area Chart JS', category: 'Chart Controls', icon: '📊' },
         chartsbubble: { title: 'Bubble Chart JS', category: 'Chart Controls', icon: '🫧' },
-        chartsmixed: { title: 'Mixed Chart JS', category: 'Chart Controls', icon: '📊' }
+        chartsmixed: { title: 'Mixed Chart JS', category: 'Chart Controls', icon: '📊' },
+        crud: { title: 'CRUD Control', category: 'Layout Controls', icon: '🗂️' }
     };
 
     const categories = {};
@@ -331,6 +332,7 @@ function ControlsDocs() {
             case 'chartsarea': return <AreaChartJSPage addLog={addLog} />;
             case 'chartsbubble': return <BubbleChartJSPage addLog={addLog} />;
             case 'chartsmixed': return <MixedChartJSPage addLog={addLog} />;
+            case 'crud': return <CRUDPage addLog={addLog} />;
             default: return <ComingSoonPage pageName={pages[currentPage]?.title || currentPage} />;
         }
     };
@@ -832,5 +834,6 @@ import RadarChartJSPage from './pages/RadarChartJSPage';
 import AreaChartJSPage from './pages/AreaChartJSPage';
 import BubbleChartJSPage from './pages/BubbleChartJSPage';
 import MixedChartJSPage from './pages/MixedChartJSPage';
+import CRUDPage from './pages/CRUDPage';
 
 export default ControlsDocs;
