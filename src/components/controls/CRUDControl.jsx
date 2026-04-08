@@ -475,7 +475,7 @@ function CRUDControl({ config = {} }) {
                     {selectable && !bulkEditMode && (
                         <ButtonControl control={{
                             value: labels.bulkEditButton,
-                            className: 'btn-secondary btn-sm',
+                            className: 'btn-outline',
                             onClick: (e) => { setBulkEditMode(true); },
                         }} rowData={{}} rowIndex={0} />
                     )}
@@ -483,13 +483,13 @@ function CRUDControl({ config = {} }) {
                         <>
                             <ButtonControl control={{
                                 value: labels.bulkEditCancelButton,
-                                className: 'btn-secondary btn-sm',
+                                className: 'btn-warning',
                                 onClick: (e) => { setBulkEditMode(false); setSelectedRows(new Set()); },
                             }} rowData={{}} rowIndex={0} />
                             {(onBulkDelete || isAutoBulkDelete) && selectedRows.size > 0 && (
                                 <ButtonControl control={{
                                     value: labels.bulkDeleteButton,
-                                    className: 'btn-danger btn-sm',
+                                    className: 'btn-danger',
                                     onClick: (e) => { openBulkDeleteConfirm(); },
                                 }} rowData={{}} rowIndex={0} />
                             )}
