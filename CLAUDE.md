@@ -155,3 +155,6 @@ data_form (เก็บข้อมูลที่กรอก)
 - CSS classes: kebab-case เช่น `crud-toolbar`, `btn-control`
 - Demo pages: `XxxPage.jsx`
 - UI ใช้ภาษาไทยเป็นหลัก
+
+# currentDate
+Today's date is 2026-04-08.
