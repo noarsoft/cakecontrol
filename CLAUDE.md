@@ -2,7 +2,7 @@
 
 ## Project Overview
 React 19 + Vite 7 UI Component Library สำหรับ CAMT มช.
-มี 40+ UI controls, Authentication system (JWT), Theme Light/Dark
+มี 40+ UI controls, Theme Light/Dark, ไม่มี auth ใช้ฟรี
 กำลังพัฒนา Form Builder system (สร้างฟอร์มแบบ Google Forms)
 
 ## Tech Stack
@@ -39,11 +39,7 @@ src/
 | ModalControl | Done |
 | Theme Light/Dark | Done |
 | Controls Docs + Demo pages | Done |
-| Auth API layer (JWT) | เขียนแล้ว รอ backend |
-| User/Group/Role API layer | เขียนแล้ว รอ backend |
-| File Upload API (chunked) | เขียนแล้ว รอ backend |
 | Dashboard page | ว่างเปล่า ยังไม่ implement |
-| Route guard | ยังไม่มี |
 | Form Builder (FE) | ยังไม่เริ่ม |
 | Backend repo | ยังไม่สร้าง |
 
@@ -88,46 +84,39 @@ Composite control แบบ dashboard สำหรับจัดการข้
 - Props: `isOpen`, `title`, `onClose`, `size` (sm/md/lg/xl), `children`, `footer`
 - CRUDControl ใช้ ModalControl สำหรับ Add/Edit modal
 
-## Data Entities (Backend API expectations)
-- **User (userx)**: email, password, isPowerUser, groups, roles
-- **Group (groupx)**: groupKey, name, description, members
-- **Role (rolex)**: roleKey, name, description, perms_schema, perms_service
-- **Application (appx)**: roles
-- **File**: chunked upload (initiate → chunk → finalize)
-- **Relationships**: User↔Group (M:M), User↔Role (M:M), Role↔App (M:M)
-
 ## Form Builder (Planned)
 FE: หน้าสร้างฟอร์มแบบ Google Forms / Microsoft Forms มีปุ่ม +/- เพิ่ม/ลบ control
 BE: แยก repo, controller + service
+ไม่มี auth ใช้ฟรี
 
-### DB Design (3 tables)
+### DB Design (4 tables) — ดู DB-DESIGN.md สำหรับ full detail
+
+**Design Principles**:
+- `root_id` = UUID PK ไม่เปลี่ยน, `id` = SERIAL ใช้เป็น FK
+- `previous_id` อิง `id` (versioning via linked list)
+- Date format: VARCHAR `yyyymmdd_hhmmss`
+- Default columns ทุก table: `root_id`, `id`, `previous_id`, `activate`, `flag`, `modified_date_time`
+
 ```
-Table 1: data_schema (โครงสร้าง field)
-root_id | id | previous_id | name | json | flag | activate | modified_date
-- json เก็บ field definitions: [{ key, type, label, validation, options }]
-- previous_id ใช้แทน version → linked list ย้อนดู schema เก่าได้
-- type ที่รองรับ: textbox, number, select, checkbox, toggle, date, password, boolean, email, file, array
-
-Table 2: data_view (การแสดงผล - 1 schema มีได้หลาย view)
-root_id | id | fk_data_schema | view_type | json | modified_date
-- view_type: 'table' → columns config (header, width, sortable)
-- view_type: 'form' → formConfig (colno, rowno, colspan)
-
-Table 3: data_form (ข้อมูลจริงที่กรอก)
-root_id | id | fk_data_schema | data | modified_date
-- data เก็บ JSON: { "name": "สมชาย", "role": "admin" }
+Table 1: data_schema — เช็ค format ของ data (key + type)
+Table 2: data_view — โชว์ตาราง (columns config)
+Table 3: data_formcfg — form config (label, layout, colno, rowno, colspan)
+Table 4: data_form — ข้อมูลจริงที่กรอก
 ```
+
+**Supported types**: string, number, boolean, date, email, file, array
 
 ### Flow
 ```
-data_schema (กำหนด fields + types)
+data_schema (เช็ค format: name=string, age=number)
      ↓
-data_view (กำหนดว่าแสดงยังไง)
+data_view (โชว์ตารางยังไง: columns config)
+data_formcfg (ฟอร์มหน้าตายังไง: label, layout)
      ↓ generate
 columns config → CRUDControl → TableviewControl
 formConfig     → CRUDControl → FormControl + ModalControl
      ↓
-data_form (เก็บข้อมูลที่กรอก)
+data_form (เก็บข้อมูลจริง)
 ```
 
 ### FE Components ที่ต้องสร้างเพิ่ม
@@ -137,11 +126,8 @@ data_form (เก็บข้อมูลที่กรอก)
 4. **SchemaManagerPage** - หน้า CRUD จัดการ schemas ทั้งหมด
 
 ## Known Issues
-- **API URL bug**: `AUTH.BASE` ไม่มีใน config → API calls พัง (auth.jsx, user.jsx line 3)
 - **Dashboard route missing**: Login navigate ไป `/dashboard` แต่ไม่มี route
 - **Dashboard.jsx ว่างเปล่า**: ยังไม่ได้ implement
-- **Config endpoints mismatch**: Defined endpoints (`/users`) ไม่ตรงกับ actual API paths (`/userx`, `/groupx`, `/rolex`)
-- **No route guard**: ไม่มี protected routes
 
 ## Communication Rules
 - ตอบตรงๆ ไม่อวย
@@ -157,4 +143,4 @@ data_form (เก็บข้อมูลที่กรอก)
 - UI ใช้ภาษาไทยเป็นหลัก
 
 # currentDate
-Today's date is 2026-04-08.
+Today's date is 2026-04-09.

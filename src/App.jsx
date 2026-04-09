@@ -3,6 +3,7 @@ import Login from './forms/Login';
 import Register from './forms/Register';
 import SampleControl from './components/SampleControl';
 import ControlsDocs from './components/controls_doc/ControlsDocs';
+import FormBuilder from './forms/FormBuilder';
 import AppLayout from './components/AppLayout';
 
 import './App.css';
@@ -16,6 +17,7 @@ function App() {
         <Route path="/register" element={<Register />} />
         <Route path="/sample" element={<SampleControl />} />
         <Route path="/controls-docs" element={<ControlsDocs />} />
+        <Route path="/formbuilder" element={<FormBuilder />} />
       </Routes>
     </Router>
   )

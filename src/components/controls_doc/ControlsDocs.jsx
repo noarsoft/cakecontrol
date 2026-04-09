@@ -278,7 +278,8 @@ function ControlsDocs() {
         chartsbubble: { title: 'Bubble Chart JS', category: 'Chart Controls', icon: '🫧' },
         chartsmixed: { title: 'Mixed Chart JS', category: 'Chart Controls', icon: '📊' },
         crud: { title: 'CRUD Control', category: 'Layout Controls', icon: '🗂️' },
-        modal: { title: 'Modal Control', category: 'Feedback Controls', icon: '🪟' }
+        modal: { title: 'Modal Control', category: 'Feedback Controls', icon: '🪟' },
+        benchmark: { title: 'DB Benchmark', category: 'Research', icon: '🔬' }
     };
 
     const categories = {};
@@ -335,6 +336,7 @@ function ControlsDocs() {
             case 'chartsmixed': return <MixedChartJSPage addLog={addLog} />;
             case 'crud': return <CRUDPage addLog={addLog} />;
             case 'modal': return <ModalPage addLog={addLog} />;
+            case 'benchmark': return <BenchmarkPage addLog={addLog} />;
             default: return <ComingSoonPage pageName={pages[currentPage]?.title || currentPage} />;
         }
     };
@@ -838,5 +840,6 @@ import BubbleChartJSPage from './pages/BubbleChartJSPage';
 import MixedChartJSPage from './pages/MixedChartJSPage';
 import CRUDPage from './pages/CRUDPage';
 import ModalPage from './pages/ModalPage';
+import BenchmarkPage from './pages/BenchmarkPage';
 
 export default ControlsDocs;
