@@ -328,6 +328,88 @@
     color: #e74c3c;
 }
 
+/* ─── Form Filler (Google Forms style) ─── */
+.fb-filler {
+    max-width: 640px;
+    margin: 0 auto;
+}
+
+.fb-filler-header {
+    padding: 24px;
+    border: 1px solid var(--border-primary);
+    border-top: 4px solid var(--accent-primary);
+    border-radius: 8px;
+    background: var(--bg-secondary);
+    margin-bottom: 16px;
+}
+
+.fb-filler-header h2 {
+    margin: 0 0 4px;
+    font-size: 22px;
+}
+
+.fb-filler-header p {
+    margin: 0;
+    font-size: 13px;
+    color: var(--text-secondary);
+}
+
+.fb-filler-body {
+    padding: 20px 24px;
+    border: 1px solid var(--border-primary);
+    border-radius: 8px;
+    background: var(--bg-secondary);
+    margin-bottom: 16px;
+}
+
+.fb-filler-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.fb-filler-success {
+    text-align: center;
+    padding: 48px 24px;
+    border: 1px solid var(--border-primary);
+    border-radius: 8px;
+    background: var(--bg-secondary);
+}
+
+.fb-filler-success-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: #2ecc7120;
+    color: #2ecc71;
+    font-size: 28px;
+    margin-bottom: 16px;
+}
+
+.fb-filler-success h3 {
+    margin: 0 0 8px;
+    font-size: 20px;
+}
+
+.fb-filler-success p {
+    margin: 0 0 20px;
+    color: var(--text-secondary);
+}
+
+/* ─── Standalone Page ─── */
+.fb-standalone-page {
+    min-height: 100vh;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    padding: 40px 20px;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+}
+
 /* ─── Responsive ─── */
 @media (max-width: 768px) {
     .fb-sidebar {

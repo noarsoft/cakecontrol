@@ -5,29 +5,33 @@ import ConfirmModal from '../components/controls/ConfirmModal';
 import { FIELD_TYPES, addField, removeField, updateField, moveField, getFieldEntries, validateSchema } from '../lib/schema';
 import { buildCrudConfig, schemaToFormConfig, generateDefaultView, generateDefaultFormcfg } from '../lib/schemaTransform';
 import {
+    initService, isApiMode,
     getSchemas, createSchema, updateSchema, deleteSchema,
     getViewsBySchema, createView, updateView,
     getFormcfgsBySchema, createFormcfg, updateFormcfg,
     getFormDataBySchema, createFormData, updateFormData, deleteFormData,
-    seedDemoData,
-} from '../lib/mockSchemaService';
+} from '../lib/schemaService';
 import './FormBuilder.css';
 
 function FormBuilder() {
     const [schemas, setSchemas] = useState([]);
     const [activeSchemaId, setActiveSchemaId] = useState(null);
-    const [mode, setMode] = useState('data'); // 'data' | 'builder' | 'preview'
+    const [mode, setMode] = useState('data'); // 'data' | 'builder' | 'preview' | 'fill'
     const [refreshKey, setRefreshKey] = useState(0);
     const [deleteConfirm, setDeleteConfirm] = useState(null);
+    const [schemaData, setSchemaData] = useState(null);
+    const [serviceMode, setServiceMode] = useState(null);
 
-    // Init: seed demo data + load schemas
+    // Init: detect backend + load schemas
     useEffect(() => {
-        seedDemoData();
-        reloadSchemas();
+        initService().then(mode => {
+            setServiceMode(mode);
+            reloadSchemas();
+        });
     }, []);
 
-    const reloadSchemas = () => {
-        const list = getSchemas();
+    const reloadSchemas = async () => {
+        const list = await getSchemas();
         setSchemas(list);
         return list;
     };
@@ -38,28 +42,34 @@ function FormBuilder() {
     );
 
     // Load related data for active schema
-    const schemaData = useMemo(() => {
-        if (!activeSchema) return null;
-        const views = getViewsBySchema(activeSchema.id);
-        const formcfgs = getFormcfgsBySchema(activeSchema.id);
-        const formData = getFormDataBySchema(activeSchema.id);
-        return {
-            view: views[0] || null,
-            formcfg: formcfgs[0] || null,
-            data: formData.map(f => ({ _formId: f.id, ...f.data })),
-            rawData: formData,
-        };
+    useEffect(() => {
+        if (!activeSchema) { setSchemaData(null); return; }
+        let cancelled = false;
+        (async () => {
+            const [views, formcfgs, formData] = await Promise.all([
+                getViewsBySchema(activeSchema.id),
+                getFormcfgsBySchema(activeSchema.id),
+                getFormDataBySchema(activeSchema.id),
+            ]);
+            if (cancelled) return;
+            setSchemaData({
+                view: views[0] || null,
+                formcfg: formcfgs[0] || null,
+                data: formData.map(f => ({ _formId: f.id, ...f.data })),
+                rawData: formData,
+            });
+        })();
+        return () => { cancelled = true; };
     }, [activeSchema, refreshKey]);
 
     // ─── Sidebar Actions ───
-    const handleAddSchema = () => {
-        const schema = createSchema('ฟอร์มใหม่', {
+    const handleAddSchema = async () => {
+        const schema = await createSchema('ฟอร์มใหม่', {
             field_1: { type: 'string' },
         });
-        // Auto-create default view + formcfg
-        createView(schema.id, 'table', generateDefaultView(schema.json), 'Default View');
-        createFormcfg(schema.id, generateDefaultFormcfg(schema.json), 'Default Form');
-        const list = reloadSchemas();
+        await createView(schema.id, 'table', generateDefaultView(schema.json), 'Default View');
+        await createFormcfg(schema.id, generateDefaultFormcfg(schema.json), 'Default Form');
+        await reloadSchemas();
         setActiveSchemaId(schema.id);
         setMode('builder');
     };
@@ -70,40 +80,40 @@ function FormBuilder() {
         setRefreshKey(k => k + 1);
     };
 
-    const handleDeleteSchema = () => {
+    const handleDeleteSchema = async () => {
         if (!deleteConfirm) return;
-        deleteSchema(deleteConfirm);
+        await deleteSchema(deleteConfirm);
         setDeleteConfirm(null);
         if (activeSchemaId === deleteConfirm) setActiveSchemaId(null);
-        reloadSchemas();
+        await reloadSchemas();
     };
 
-    const handleSchemaNameSave = (name) => {
+    const handleSchemaNameSave = async (name) => {
         if (!activeSchema || !name.trim()) return;
-        updateSchema(activeSchema.id, { name: name.trim() });
-        reloadSchemas();
+        await updateSchema(activeSchema.id, { name: name.trim() });
+        await reloadSchemas();
     };
 
     // ─── Data Manager: CRUDControl callbacks ───
-    const handleDataAdd = useCallback((formData) => {
+    const handleDataAdd = useCallback(async (formData) => {
         if (!activeSchema) return;
         const clean = { ...formData };
         delete clean._formId;
-        createFormData(activeSchema.id, clean);
+        await createFormData(activeSchema.id, clean);
         setRefreshKey(k => k + 1);
     }, [activeSchema]);
 
-    const handleDataEdit = useCallback((formData, oldData) => {
+    const handleDataEdit = useCallback(async (formData, oldData) => {
         if (!oldData?._formId) return;
         const clean = { ...formData };
         delete clean._formId;
-        updateFormData(oldData._formId, clean);
+        await updateFormData(oldData._formId, clean);
         setRefreshKey(k => k + 1);
     }, []);
 
-    const handleDataDelete = useCallback((rowData) => {
+    const handleDataDelete = useCallback(async (rowData) => {
         if (!rowData?._formId) return;
-        deleteFormData(rowData._formId);
+        await deleteFormData(rowData._formId);
         setRefreshKey(k => k + 1);
     }, []);
 
@@ -126,35 +136,38 @@ function FormBuilder() {
     }, [activeSchema, schemaData, handleDataAdd, handleDataEdit, handleDataDelete]);
 
     // ─── Form Builder: Schema editing ───
-    const handleSchemaJsonChange = (newJson) => {
+    const handleSchemaJsonChange = async (newJson) => {
         if (!activeSchema) return;
-        updateSchema(activeSchema.id, { json: newJson });
+        await updateSchema(activeSchema.id, { json: newJson });
 
         // Auto-update view + formcfg
-        const views = getViewsBySchema(activeSchema.id);
-        const formcfgs = getFormcfgsBySchema(activeSchema.id);
-        if (views[0]) {
-            updateView(views[0].id, { json: generateDefaultView(newJson) });
-        } else {
-            createView(activeSchema.id, 'table', generateDefaultView(newJson), 'Default View');
-        }
-        if (formcfgs[0]) {
-            updateFormcfg(formcfgs[0].id, { json: generateDefaultFormcfg(newJson) });
-        } else {
-            createFormcfg(activeSchema.id, generateDefaultFormcfg(newJson), 'Default Form');
-        }
+        const [views, formcfgs] = await Promise.all([
+            getViewsBySchema(activeSchema.id),
+            getFormcfgsBySchema(activeSchema.id),
+        ]);
+        const viewUpdate = views[0]
+            ? updateView(views[0].id, { json: generateDefaultView(newJson) })
+            : createView(activeSchema.id, 'table', generateDefaultView(newJson), 'Default View');
+        const cfgUpdate = formcfgs[0]
+            ? updateFormcfg(formcfgs[0].id, { json: generateDefaultFormcfg(newJson) })
+            : createFormcfg(activeSchema.id, generateDefaultFormcfg(newJson), 'Default Form');
+        await Promise.all([viewUpdate, cfgUpdate]);
 
-        reloadSchemas();
+        await reloadSchemas();
         setRefreshKey(k => k + 1);
     };
 
     // Form data counts per schema
-    const dataCounts = useMemo(() => {
-        const counts = {};
-        for (const s of schemas) {
-            counts[s.id] = getFormDataBySchema(s.id).length;
-        }
-        return counts;
+    const [dataCounts, setDataCounts] = useState({});
+    useEffect(() => {
+        (async () => {
+            const counts = {};
+            await Promise.all(schemas.map(async s => {
+                const data = await getFormDataBySchema(s.id);
+                counts[s.id] = data.length;
+            }));
+            setDataCounts(counts);
+        })();
     }, [schemas, refreshKey]);
 
     return (
@@ -164,6 +177,11 @@ function FormBuilder() {
                 <div className="fb-sidebar-header">
                     <h2>Form Builder</h2>
                     <p>สร้างและจัดการฟอร์ม</p>
+                    {serviceMode && (
+                        <span style={{ fontSize: 11, opacity: 0.5, display: 'block', marginTop: 4 }}>
+                            {serviceMode === 'api' ? '🟢 API' : '🟡 localStorage'}
+                        </span>
+                    )}
                 </div>
                 <div className="fb-sidebar-list">
                     {schemas.map(s => (
@@ -213,6 +231,24 @@ function FormBuilder() {
                                 แก้ไขฟอร์ม
                             </button>
                             <button
+                                className={`fb-mode-btn ${mode === 'fill' ? 'active' : ''}`}
+                                onClick={() => setMode('fill')}
+                            >
+                                กรอกฟอร์ม
+                            </button>
+                            <button
+                                className="fb-mode-btn"
+                                onClick={() => {
+                                    const url = `${window.location.origin}/form/${activeSchema.id}`;
+                                    navigator.clipboard.writeText(url).then(() => {
+                                        alert(`คัดลอก link แล้ว:\n${url}`);
+                                    });
+                                }}
+                                title="คัดลอก link สำหรับแชร์"
+                            >
+                                🔗 แชร์
+                            </button>
+                            <button
                                 className={`fb-mode-btn ${mode === 'preview' ? 'active' : ''}`}
                                 onClick={() => setMode('preview')}
                             >
@@ -227,6 +263,13 @@ function FormBuilder() {
                                 <SchemaBuilder
                                     schemaJson={activeSchema.json}
                                     onChange={handleSchemaJsonChange}
+                                />
+                            )}
+                            {mode === 'fill' && (
+                                <FormFiller
+                                    schema={activeSchema}
+                                    formcfgJson={schemaData?.formcfg?.json}
+                                    onSubmit={() => setRefreshKey(k => k + 1)}
                                 />
                             )}
                             {mode === 'preview' && (
@@ -460,6 +503,77 @@ function FormPreview({ schemaJson, formcfgJson, schemaName }) {
                 <pre style={{ margin: '8px 0 0', whiteSpace: 'pre-wrap' }}>
                     {JSON.stringify(formData, null, 2)}
                 </pre>
+            </div>
+        </div>
+    );
+}
+
+/* ─── Form Filler — Google Forms-like fill + submit ─── */
+function FormFiller({ schema, formcfgJson, onSubmit }) {
+    const [formData, setFormData] = useState({});
+    const [submitted, setSubmitted] = useState(false);
+
+    const formConfig = useMemo(
+        () => schemaToFormConfig(schema.json, formcfgJson),
+        [schema.json, formcfgJson]
+    );
+
+    const config = useMemo(() => ({
+        ...formConfig,
+        data: [formData],
+        onChange: (e) => {
+            const val = e?.target?.value;
+            if (val && typeof val === 'object') {
+                setFormData(val);
+            }
+        },
+    }), [formConfig, formData]);
+
+    const handleSubmit = async () => {
+        await createFormData(schema.id, formData);
+        setSubmitted(true);
+        onSubmit?.();
+    };
+
+    const handleReset = () => {
+        setFormData({});
+        setSubmitted(false);
+    };
+
+    if (submitted) {
+        return (
+            <div className="fb-filler">
+                <div className="fb-filler-header">
+                    <h2>{schema.name}</h2>
+                </div>
+                <div className="fb-filler-success">
+                    <span className="fb-filler-success-icon">✓</span>
+                    <h3>บันทึกสำเร็จ!</h3>
+                    <p>ข้อมูลของคุณถูกบันทึกเรียบร้อยแล้ว</p>
+                    <button className="fb-mode-btn active" onClick={handleReset}>
+                        กรอกอีกครั้ง
+                    </button>
+                </div>
+            </div>
+        );
+    }
+
+    return (
+        <div className="fb-filler">
+            <div className="fb-filler-header">
+                <h2>{schema.name}</h2>
+                <p>กรอกข้อมูลแล้วกดบันทึก</p>
+            </div>
+            <div className="fb-filler-body">
+                <FormControl config={config} />
+            </div>
+            <div className="fb-filler-footer">
+                <button className="fb-mode-btn" onClick={handleReset}>
+                    ล้างข้อมูล
+                </button>
+                <button className="fb-mode-btn active" onClick={handleSubmit}>
+                    บันทึก
+                </button>
             </div>
         </div>
     );
