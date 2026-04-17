@@ -92,7 +92,7 @@
 /* Search */
 .crud-search {
     width: 220px;
-    padding: 8px 12px;
+    padding: 6px 12px;
     font-size: 14px;
     color: var(--text-primary);
     background-color: var(--bg-primary);
@@ -162,129 +162,57 @@
 }
 
 /* ======================== */
-/* Modal (Add/Edit)         */
+/* CRUD Modal Form Styling  */
+/* Scoped: ไม่กระทบ control อื่น */
 /* ======================== */
-.crud-modal-backdrop {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background-color: rgba(0, 0, 0, 0.5);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 1000;
-    animation: crudFadeIn 0.2s ease-in-out;
+
+/* Form inside CRUD modal - ปรับ spacing ให้สวยขึ้น */
+.crud-control .modal-control-body .form-grid-grid {
+    gap: 20px;
+    padding: 8px 0;
 }
 
-@keyframes crudFadeIn {
-    from { opacity: 0; }
-    to { opacity: 1; }
+.crud-control .modal-control-body .form-grid-item {
+    gap: 8px;
 }
 
-@keyframes crudSlideUp {
-    from { transform: translateY(20px); opacity: 0; }
-    to { transform: translateY(0); opacity: 1; }
-}
-
-.crud-modal {
-    background-color: var(--bg-primary);
-    border-radius: var(--radius-lg);
-    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-    max-width: 600px;
-    width: 90%;
-    max-height: 85vh;
-    display: flex;
-    flex-direction: column;
-    animation: crudSlideUp 0.3s ease-out;
-    position: relative;
-}
-
-.crud-modal-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 20px 24px 16px;
-    border-bottom: 1px solid var(--border-secondary);
-}
-
-.crud-modal-title {
-    margin: 0;
-    font-size: 1.15em;
+/* Label สวยขึ้น */
+.crud-control .modal-control-body .form-grid-label {
+    font-size: 13px;
     font-weight: 600;
-    color: var(--text-primary);
+    color: var(--text-secondary);
+    text-transform: none;
+    letter-spacing: 0.01em;
 }
 
-.crud-modal-close {
-    width: 32px;
-    height: 32px;
-    border: none;
-    background: transparent;
-    font-size: 24px;
-    cursor: pointer;
-    color: var(--text-tertiary);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: var(--radius-sm);
-    transition: all 0.2s ease;
-    padding: 0;
-    flex-shrink: 0;
+/* Input fields ใน modal - ขอบมน + padding สม่ำเสมอ */
+.crud-control .modal-control-body .textbox-control,
+.crud-control .modal-control-body .select-control,
+.crud-control .modal-control-body .number-control,
+.crud-control .modal-control-body .password-control,
+.crud-control .modal-control-body .date-control {
+    padding: 10px 14px;
+    font-size: 14px;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border-primary);
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
-.crud-modal-close:hover {
-    background-color: var(--bg-tertiary);
-    color: var(--text-primary);
-}
-
-.crud-modal-body {
-    padding: 16px 24px;
-    overflow-y: auto;
-    flex: 1;
-}
-
-.crud-modal-body .form-grid {
-    padding: 0;
-}
-
-.crud-modal-body .form-grid-grid {
-    padding: 0;
-}
-
-.crud-modal-footer {
-    display: flex;
-    gap: 12px;
-    padding: 16px 24px 20px;
-    justify-content: flex-end;
-    border-top: 1px solid var(--border-secondary);
-}
-
-.crud-modal-footer .crud-btn {
-    min-width: 100px;
-    justify-content: center;
-}
-
-.crud-btn-cancel {
-    color: #fff;
-    background-color: var(--text-tertiary);
-    border-color: var(--text-tertiary);
-}
-
-.crud-btn-cancel:hover {
-    background-color: var(--text-secondary);
-    border-color: var(--text-secondary);
-}
-
-.crud-btn-save {
-    color: var(--text-on-accent);
-    background-color: var(--accent-primary);
+.crud-control .modal-control-body .textbox-control:focus,
+.crud-control .modal-control-body .select-control:focus,
+.crud-control .modal-control-body .number-control:focus {
     border-color: var(--accent-primary);
+    box-shadow: 0 0 0 3px var(--accent-primary-light);
 }
 
-.crud-btn-save:hover {
-    background-color: var(--accent-primary-hover);
-    border-color: var(--accent-primary-hover);
+/* Number control - ปุ่ม +/- ให้กลมกลืน */
+.crud-control .modal-control-body .number-control-wrapper {
+    border-radius: var(--radius-md);
+}
+
+/* Footer ปุ่ม - เพิ่ม padding บน */
+.crud-control .modal-control-footer {
+    padding-top: 16px;
 }
 
 /* ======================== */

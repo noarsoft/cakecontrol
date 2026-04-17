@@ -3,6 +3,7 @@ import React, { useState, useMemo, useEffect, useCallback, useRef } from 'react'
 import TableviewControl from './TableviewControl';
 import FormControl from './FormControl';
 import ConfirmModal from './ConfirmModal';
+import ModalControl from './ModalControl';
 import ButtonControl from './ButtonControl';
 import TextboxControl from './TextboxControl';
 import './CRUDControl.css';
@@ -30,8 +31,9 @@ const DEFAULT_LABELS = {
 
 function CRUDControl({ config = {} }) {
     const {
-        data = [],
+        data: dataProp = [],
         columns = [],
+        keyField,
         formConfig = {},
         pagination,
         searchFields = [],
@@ -40,11 +42,41 @@ function CRUDControl({ config = {} }) {
         onEdit,
         onDelete,
         onBulkDelete,
+        onChange,
         onPageChange,
         onSearch,
         onSort,
         className = '',
     } = config;
+
+    // Helper: get row identifier (key value if keyField, otherwise index)
+    const getRowKey = useCallback((row, index) => {
+        return keyField ? row[keyField] : index;
+    }, [keyField]);
+
+    // Auto CRUD mode: manage data internally when keyField is set and no callbacks provided
+    const isAutoAdd = keyField && !onAdd;
+    const isAutoEdit = keyField && !onEdit;
+    const isAutoDelete = keyField && !onDelete;
+    const isAutoBulkDelete = keyField && !onBulkDelete;
+    const isAutoMode = isAutoAdd || isAutoEdit || isAutoDelete || isAutoBulkDelete;
+
+    const [internalData, setInternalData] = useState(dataProp);
+    const autoKeyRef = useRef(0);
+
+    // Sync internal data when prop data changes from outside
+    useEffect(() => {
+        setInternalData(dataProp);
+    }, [dataProp]);
+
+    // Use internal data when in auto mode, otherwise use prop data
+    const data = isAutoMode ? internalData : dataProp;
+
+    // Helper: update internal data and notify parent via onChange
+    const updateData = useCallback((newData) => {
+        setInternalData(newData);
+        if (onChange) onChange(newData);
+    }, [onChange]);
 
     const labels = { ...DEFAULT_LABELS, ...config.labels };
 
@@ -75,22 +107,7 @@ function CRUDControl({ config = {} }) {
         setInternalPage(1);
     }, [searchQuery]);
 
-    // Close modal on Escape
-    useEffect(() => {
-        const handleEsc = (e) => {
-            if (e.key === 'Escape' && showModal) {
-                closeModal();
-            }
-        };
-        if (showModal) {
-            document.body.style.overflow = 'hidden';
-            document.addEventListener('keydown', handleEsc);
-        }
-        return () => {
-            document.body.style.overflow = '';
-            document.removeEventListener('keydown', handleEsc);
-        };
-    }, [showModal]);
+    // Note: Escape key + body overflow handled by ModalControl
 
     // ========== Data Pipeline ==========
     const filteredData = useMemo(() => {
@@ -185,41 +202,46 @@ function CRUDControl({ config = {} }) {
         }
     }, [isClientPagination, onPageChange]);
 
-    // Row selection
+    // Row selection — uses key values when keyField is set, otherwise array index
     const handleRowSelect = useCallback((rowIndex, checked) => {
         setSelectedRows(prev => {
             const next = new Set(prev);
-            // Map paginated index back to original data index
-            const offset = isClientPagination ? (internalPage - 1) * pageLimit : 0;
-            const dataIndex = offset + rowIndex;
-            if (checked) {
-                next.add(dataIndex);
+            const row = paginatedData[rowIndex];
+            if (!row) return prev;
+
+            if (keyField) {
+                const key = row[keyField];
+                if (checked) { next.add(key); } else { next.delete(key); }
             } else {
-                next.delete(dataIndex);
+                const offset = isClientPagination ? (internalPage - 1) * pageLimit : 0;
+                const dataIndex = offset + rowIndex;
+                if (checked) { next.add(dataIndex); } else { next.delete(dataIndex); }
             }
             return next;
         });
-    }, [isClientPagination, internalPage, pageLimit]);
+    }, [paginatedData, keyField, isClientPagination, internalPage, pageLimit]);
 
     const handleSelectAll = useCallback(() => {
-        const offset = isClientPagination ? (internalPage - 1) * pageLimit : 0;
-        const pageIndices = paginatedData.map((_, i) => offset + i);
-        const allSelected = pageIndices.every(i => selectedRows.has(i));
+        const pageKeys = keyField
+            ? paginatedData.map(row => row[keyField])
+            : paginatedData.map((_, i) => (isClientPagination ? (internalPage - 1) * pageLimit : 0) + i);
+
+        const allSelected = pageKeys.every(k => selectedRows.has(k));
 
         if (allSelected) {
             setSelectedRows(prev => {
                 const next = new Set(prev);
-                pageIndices.forEach(i => next.delete(i));
+                pageKeys.forEach(k => next.delete(k));
                 return next;
             });
         } else {
             setSelectedRows(prev => {
                 const next = new Set(prev);
-                pageIndices.forEach(i => next.add(i));
+                pageKeys.forEach(k => next.add(k));
                 return next;
             });
         }
-    }, [paginatedData, selectedRows, isClientPagination, internalPage, pageLimit]);
+    }, [paginatedData, selectedRows, keyField, isClientPagination, internalPage, pageLimit]);
 
     // Modal
     const openAddModal = useCallback(() => {
@@ -244,12 +266,24 @@ function CRUDControl({ config = {} }) {
 
     const handleSave = useCallback(() => {
         if (editingRow) {
-            if (onEdit) onEdit(modalFormData, editingRow.data, editingRow.index);
+            const rowKey = keyField ? editingRow.data[keyField] : editingRow.index;
+            if (onEdit) {
+                onEdit(modalFormData, editingRow.data, rowKey, editingRow.index);
+            } else if (isAutoEdit) {
+                updateData(data.map(row =>
+                    row[keyField] === rowKey ? { ...row, ...modalFormData } : row
+                ));
+            }
         } else {
-            if (onAdd) onAdd(modalFormData);
+            if (onAdd) {
+                onAdd(modalFormData);
+            } else if (isAutoAdd) {
+                const newRow = { ...modalFormData, [keyField]: `__auto_${++autoKeyRef.current}` };
+                updateData([...data, newRow]);
+            }
         }
         closeModal();
-    }, [editingRow, modalFormData, onAdd, onEdit, closeModal]);
+    }, [editingRow, modalFormData, onAdd, onEdit, closeModal, keyField, isAutoEdit, isAutoAdd, data, updateData]);
 
     // Delete
     const openDeleteConfirm = useCallback((rowData, rowIndex) => {
@@ -258,12 +292,17 @@ function CRUDControl({ config = {} }) {
     }, []);
 
     const handleDeleteConfirm = useCallback(() => {
-        if (deletingRow && onDelete) {
-            onDelete(deletingRow.data, deletingRow.index);
+        if (deletingRow) {
+            const rowKey = keyField ? deletingRow.data[keyField] : deletingRow.index;
+            if (onDelete) {
+                onDelete(deletingRow.data, rowKey, deletingRow.index);
+            } else if (isAutoDelete) {
+                updateData(data.filter(row => row[keyField] !== rowKey));
+            }
         }
         setShowDeleteConfirm(false);
         setDeletingRow(null);
-    }, [deletingRow, onDelete]);
+    }, [deletingRow, onDelete, keyField, isAutoDelete, data, updateData]);
 
     // Bulk delete
     const openBulkDeleteConfirm = useCallback(() => {
@@ -271,13 +310,25 @@ function CRUDControl({ config = {} }) {
     }, []);
 
     const handleBulkDeleteConfirm = useCallback(() => {
+        let selectedItems;
+        if (keyField) {
+            selectedItems = data.filter(row => selectedRows.has(row[keyField]));
+        } else {
+            selectedItems = Array.from(selectedRows).map(i => data[i]).filter(Boolean);
+        }
+        const selectedKeys = keyField
+            ? selectedItems.map(row => row[keyField])
+            : Array.from(selectedRows);
+
         if (onBulkDelete) {
-            const selectedItems = Array.from(selectedRows).map(i => data[i]).filter(Boolean);
-            onBulkDelete(selectedItems);
+            onBulkDelete(selectedItems, selectedKeys);
+        } else if (isAutoBulkDelete) {
+            const keysSet = new Set(selectedKeys);
+            updateData(data.filter(row => !keysSet.has(row[keyField])));
         }
         setSelectedRows(new Set());
         setShowBulkDeleteConfirm(false);
-    }, [selectedRows, data, onBulkDelete]);
+    }, [selectedRows, data, onBulkDelete, keyField, isAutoBulkDelete, updateData]);
 
     // ========== Build TableviewControl Config ==========
     const tableConfig = useMemo(() => {
@@ -287,9 +338,10 @@ function CRUDControl({ config = {} }) {
 
         // Checkbox column (only in bulk edit mode)
         if (selectable && bulkEditMode) {
-            const offset = isClientPagination ? (internalPage - 1) * pageLimit : 0;
-            const pageIndices = paginatedData.map((_, i) => offset + i);
-            const allSelected = pageIndices.length > 0 && pageIndices.every(i => selectedRows.has(i));
+            const pageKeys = keyField
+                ? paginatedData.map(row => row[keyField])
+                : paginatedData.map((_, i) => (isClientPagination ? (internalPage - 1) * pageLimit : 0) + i);
+            const allSelected = pageKeys.length > 0 && pageKeys.every(k => selectedRows.has(k));
             headers.push(allSelected ? '[ x ]' : '[   ]');
             colwidths.push('50');
             controls.push({
@@ -364,7 +416,7 @@ function CRUDControl({ config = {} }) {
         paginatedData, columns, selectable, bulkEditMode, selectedRows, sortKey, sortDirection,
         labels, currentPage, pageLimit, totalItems, totalPages,
         handleRowSelect, handleSelectAll, handleSort, handlePageChange,
-        openEditModal, openDeleteConfirm, internalPage, isClientPagination,
+        openEditModal, openDeleteConfirm, internalPage, isClientPagination, keyField,
     ]);
 
     // Sync checkbox checked state per row
@@ -379,8 +431,13 @@ function CRUDControl({ config = {} }) {
                 if (idx === 0 && ctrl.type === 'checkbox') {
                     return {
                         ...ctrl,
-                        // Use a function-style value to check per-row
-                        _getChecked: (rowIndex) => selectedRows.has(offset + rowIndex),
+                        _getChecked: (rowIndex) => {
+                            if (keyField) {
+                                const row = paginatedData[rowIndex];
+                                return row ? selectedRows.has(row[keyField]) : false;
+                            }
+                            return selectedRows.has(offset + rowIndex);
+                        },
                     };
                 }
                 return ctrl;
@@ -388,10 +445,12 @@ function CRUDControl({ config = {} }) {
             // Override data to inject checked state into each row
             data: paginatedData.map((row, i) => ({
                 ...row,
-                __crud_selected: selectedRows.has(offset + i),
+                __crud_selected: keyField
+                    ? selectedRows.has(row[keyField])
+                    : selectedRows.has(offset + i),
             })),
         };
-    }, [tableConfig, selectable, bulkEditMode, selectedRows, paginatedData, isClientPagination, internalPage, pageLimit]);
+    }, [tableConfig, selectable, bulkEditMode, selectedRows, paginatedData, isClientPagination, internalPage, pageLimit, keyField]);
 
     // Final config: set checkbox databind to __crud_selected
     const finalTableConfig = useMemo(() => {
@@ -416,7 +475,7 @@ function CRUDControl({ config = {} }) {
                     {selectable && !bulkEditMode && (
                         <ButtonControl control={{
                             value: labels.bulkEditButton,
-                            className: 'btn-secondary btn-sm',
+                            className: 'btn-outline',
                             onClick: (e) => { setBulkEditMode(true); },
                         }} rowData={{}} rowIndex={0} />
                     )}
@@ -424,13 +483,13 @@ function CRUDControl({ config = {} }) {
                         <>
                             <ButtonControl control={{
                                 value: labels.bulkEditCancelButton,
-                                className: 'btn-secondary btn-sm',
+                                className: 'btn-warning',
                                 onClick: (e) => { setBulkEditMode(false); setSelectedRows(new Set()); },
                             }} rowData={{}} rowIndex={0} />
-                            {onBulkDelete && selectedRows.size > 0 && (
+                            {(onBulkDelete || isAutoBulkDelete) && selectedRows.size > 0 && (
                                 <ButtonControl control={{
                                     value: labels.bulkDeleteButton,
-                                    className: 'btn-danger btn-sm',
+                                    className: 'btn-danger',
                                     onClick: (e) => { openBulkDeleteConfirm(); },
                                 }} rowData={{}} rowIndex={0} />
                             )}
@@ -449,7 +508,7 @@ function CRUDControl({ config = {} }) {
                     }} rowData={{}} rowIndex={0} />
                 </div>
                 <div className="crud-toolbar-right">
-                    {onAdd && (
+                    {(onAdd || isAutoAdd) && (
                         <ButtonControl control={{
                             value: '+ ' + labels.addButton,
                             className: 'btn-primary',
@@ -472,46 +531,37 @@ function CRUDControl({ config = {} }) {
             </div>
 
             {/* Add/Edit Modal */}
-            {showModal && (
-                <div className="crud-modal-backdrop" onClick={(e) => {
-                    if (e.target === e.currentTarget) closeModal();
-                }}>
-                    <div className="crud-modal">
-                        <div className="crud-modal-header">
-                            <h2 className="crud-modal-title">
-                                {editingRow ? labels.modalEditTitle : labels.modalAddTitle}
-                            </h2>
-                            <button className="crud-modal-close" onClick={closeModal}>
-                                &times;
-                            </button>
-                        </div>
-                        <div className="crud-modal-body">
-                            <FormControl
-                                key={modalKey}
-                                config={{
-                                    ...formConfig,
-                                    data: [modalFormData],
-                                    onChange: (event) => {
-                                        setModalFormData(event.target.value);
-                                    },
-                                }}
-                            />
-                        </div>
-                        <div className="crud-modal-footer">
-                            <ButtonControl control={{
-                                value: labels.cancelButton,
-                                className: 'btn-secondary',
-                                onClick: (e) => { closeModal(); },
-                            }} rowData={{}} rowIndex={0} />
-                            <ButtonControl control={{
-                                value: labels.saveButton,
-                                className: 'btn-primary',
-                                onClick: (e) => { handleSave(); },
-                            }} rowData={{}} rowIndex={0} />
-                        </div>
-                    </div>
-                </div>
-            )}
+            <ModalControl
+                isOpen={showModal}
+                title={editingRow ? labels.modalEditTitle : labels.modalAddTitle}
+                onClose={closeModal}
+                size="md"
+                footer={
+                    <>
+                        <ButtonControl control={{
+                            value: labels.cancelButton,
+                            className: 'btn-secondary',
+                            onClick: (e) => { closeModal(); },
+                        }} rowData={{}} rowIndex={0} />
+                        <ButtonControl control={{
+                            value: labels.saveButton,
+                            className: 'btn-primary',
+                            onClick: (e) => { handleSave(); },
+                        }} rowData={{}} rowIndex={0} />
+                    </>
+                }
+            >
+                <FormControl
+                    key={modalKey}
+                    config={{
+                        ...formConfig,
+                        data: [modalFormData],
+                        onChange: (event) => {
+                            setModalFormData(event.target.value);
+                        },
+                    }}
+                />
+            </ModalControl>
 
             {/* Delete Confirm */}
             <ConfirmModal

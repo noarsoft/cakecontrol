@@ -46,18 +46,40 @@ src/
 4. สร้าง demo page `XxxPage.jsx` ใน `controls_doc/pages/`
 5. Register ใน `ControlsDocs.jsx`: pages object + switch case + import
 
-## CRUDControl (In Progress)
+## CRUDControl
 Composite control แบบ dashboard สำหรับจัดการข้อมูล CRUD
-- ประกอบจาก controls ที่มีอยู่: TableviewControl, FormControl, ConfirmModal, ButtonControl, TextboxControl, CheckboxControl, PaginationControl
+- ประกอบจาก controls ที่มีอยู่: TableviewControl, FormControl, ModalControl, ConfirmModal, ButtonControl, TextboxControl, CheckboxControl, PaginationControl
 - มี: Toolbar (search + bulk edit + add), Table, Pagination, Add/Edit Modal, Delete Confirm
 - Bulk edit mode: กดปุ่มแล้ว checkbox ค่อยโผล่
 - Dual-mode: client-side (auto) / server-side (ถ้าส่ง callback)
-- Callbacks: `onAdd`, `onEdit`, `onDelete`, `onBulkDelete`, `onSearch`, `onSort`, `onPageChange`
+- Callbacks: `onAdd`, `onEdit`, `onDelete`, `onBulkDelete`, `onSearch`, `onSort`, `onPageChange`, `onChange`
 - Thai labels เป็น default
 
-### TODO สำหรับ CRUDControl
-- **สร้าง ModalControl ใหม่** - ตอนนี้ Add/Edit modal เขียน HTML เอง เพราะ AlertModal/ConfirmModal ใส่ form ข้างในไม่ได้ → สร้าง control ที่รองรับ custom content แล้วมาแทน
-- branch `peemodal` สร้างไว้แล้วสำหรับงานนี้
+### keyField
+- `keyField` prop ระบุชื่อ field ที่เป็น key เช่น `'id'`, `'userId'` — ไม่ต้อง map ชื่อ key ก่อนส่ง data
+- Selection (checkbox) ใช้ key value แทน array index → data เปลี่ยนก็ไม่พัง
+- Callback signatures: `onEdit(formData, oldData, rowKey, rowIndex)`, `onDelete(rowData, rowKey, rowIndex)`, `onBulkDelete(selectedItems, selectedKeys)`
+- ถ้าไม่ส่ง keyField → fallback ใช้ index เหมือนเดิม (backward compatible)
+
+### Auto CRUD Mode
+- ถ้าส่ง `keyField` + ไม่ส่ง callbacks → CRUDControl จัดการ add/edit/delete ภายในเอง
+- ใช้ `onChange(newData)` เพื่อ sync data กลับ parent
+- ตัวอย่าง:
+```jsx
+<CRUDControl config={{
+    data: items,
+    keyField: 'id',
+    columns: [...],
+    formConfig: {...},
+    onChange: (newData) => setItems(newData),
+}} />
+```
+
+## ModalControl
+- Generic modal component รองรับ custom content (children)
+- Props: `isOpen`, `title`, `onClose`, `size` (sm/md/lg/xl), `children`, `footer`
+- CRUDControl ใช้ ModalControl สำหรับ Add/Edit modal
+- แทนที่ raw HTML modal ที่เขียนเองใน CRUDControl เดิม
 
 ## Known Issues
 - **API URL bug**: `AUTH.BASE` ไม่มีใน config → API calls พัง (auth.jsx, user.jsx line 3)
