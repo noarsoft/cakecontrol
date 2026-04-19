@@ -3,8 +3,6 @@
  * ใช้แทน mockSchemaService เมื่อมี backend
  * API signatures เหมือน mockSchemaService เพื่อ swap ง่าย
  */
-import { getApiUrl } from '../config/api.config';
-
 const BASE = 'http://localhost:3002/api';
 
 async function request(path, options = {}) {
