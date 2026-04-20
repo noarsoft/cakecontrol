@@ -1,207 +1,323 @@
-# DB Benchmark — Flow ทำงานทั้งหมด
+# DB Benchmark — Flow ทำงานทั้งหมด (Real Benchmark)
 
 ## ภาพรวม
 
-**ไม่ใช่ benchmark จริง** — เป็น **estimator** ที่คำนวณจากสูตรอ้างอิงใน `research_mongo_vs_postgres.md` แล้วเอามาแสดงเป็น chart + table แบบ interactive
+**Benchmark จริง** — ยิง query ลง PostgreSQL + MongoDB ของจริง วัดเวลาด้วย `performance.now()` แล้ว return เป็น JSON ให้ FE แสดงเป็น chart
 
 ```
-User Input (N, K, M)  →  Pure Functions (lib/)  →  UI Tabs (BenchmarkPage)
-                           ├─ benchmarkCalc.js     ├─ CRUD Compare
-                           └─ storageCalc.js       ├─ Big O Table
-                                                   ├─ JSONB vs BSON
-                                                   ├─ Index Impact
-                                                   ├─ Storage Size
-                                                   └─ Growth Projector
+FE (BenchmarkPage.jsx)
+    │  fetch POST /api/benchmark/run  { n, k, m, runs }
+    ▼
+Express @ :3003 (benchmarkServer.js)
+    │
+    ├─ routes/benchmark.js     — validate input
+    └─ benchmark/benchmarkService.js
+         ├─ ensurePgDatabase()       — สร้าง DB ถ้ายังไม่มี
+         ├─ generateRecords()        — สุ่มข้อมูล
+         ├─ benchmarkPostgres()      — ยิง PG จริง
+         ├─ benchmarkMongo()         — ยิง Mongo จริง
+         ├─ benchmarkPostgresJson()  — JSONB GIN + B-Tree
+         ├─ benchmarkMongoJson()     — dotted path
+         └─ averageResults()         — เฉลี่ยหลาย runs
+    ▼
+{ postgres: {...ms}, mongodb: {...ms}, meta: {...} }
 ```
 
-ไฟล์ที่เกี่ยวข้อง:
-- `src/lib/benchmarkCalc.js` — pure math functions คำนวณเวลา
-- `src/lib/storageCalc.js` — pure math functions ประมาณ storage + วัด localStorage จริง
-- `src/components/controls_doc/pages/BenchmarkPage.jsx` — UI (6 tabs)
+**ไฟล์ที่เกี่ยวข้อง**
+- FE: `src/components/controls_doc/pages/BenchmarkPage.jsx`
+- BE: `server/src/benchmarkServer.js` (standalone Express @ port 3003)
+- BE: `server/src/routes/benchmark.js` (POST /run, GET /status)
+- BE: `server/src/benchmark/benchmarkService.js` (core logic)
+- BE: `server/src/benchmark/inspectDb.js` (utility)
 
 ## 1. Input Parameters
 
-| ตัวแปร | ความหมาย | default | max |
-|--------|----------|---------|-----|
-| **N** | จำนวน records ใน table | 10,000 | 1,000,000 |
-| **K** | จำนวน rows ที่ query ดึงออกมา (result size) | 10 | 10,000 |
-| **M** | จำนวน indexes | 2 | 20 |
-| `avgBytes` | ขนาดเฉลี่ย/record (Storage tab) | 200 | 10,000 |
-| `growthPerMonth` | records เพิ่ม/เดือน (Growth tab) | 500 | 100,000 |
+| ตัวแปร | ความหมาย | ช่วง | default |
+|--------|----------|------|---------|
+| **N** | จำนวน rows ที่ insert | 100 – 1,000,000 | 1,000 |
+| **K** | จำนวน **columns** ใน table | 1 – 50 | 5 |
+| **M** | **เปอร์เซ็นต์** ของ K ที่จะสร้าง index | 0 – 100 | 40 |
+| `runs` | รัน benchmark กี่รอบแล้วเฉลี่ย | 1 – 5 | 1 |
+| `SELECT_LIMIT` | hardcode ใน service | — | 10 |
 
-## 2. Core Calculation — `benchmarkCalc.js`
+**สำคัญ**: `numIndexes = round(K × M / 100)` เช่น K=10, M=40 → index 4 columns
 
-### 2.1 Reference data (จุดตั้งต้น)
+## 2. Data Generation — `generateRecords(n, k, queryColIndex)`
+
+**จุดที่เจนข้อมูลทีละ row × column**:
 
 ```js
-REFERENCE = {
-  insert:        { postgres: 65ms/1000,  mongodb: 45ms/1000 },
-  selectNoIndex: { postgres: 2ms/1000,   mongodb: 2ms/1000 },
-  selectIndexed: { postgres: 0.3ms,      mongodb: 0.3ms },
-  update:        { postgres: 0.35ms,     mongodb: 0.25ms },
-  delete:        { postgres: 0.35ms,     mongodb: 0.25ms },
+// Pool 5 values สำหรับ queryColIndex — ให้ SELECT เจอค่า
+const pool = Array.from({ length: 5 }, () => randomStr(8));
+
+for (let i = 0; i < n; i++) {
+  const row = {};
+  for (let j = 1; j <= k; j++) {
+    if (j === queryColIndex) {
+      row[`column${j}`] = pool[randomInt(0, 4)];   // ← จากพูล 5 ค่า
+    } else {
+      row[`column${j}`] = randomStr(8);            // ← สุ่ม 8 ตัวอักษร
+    }
+  }
+  records.push(row);
+}
+return { records, queryVal: pool[0] };
+```
+
+**Output schema** (1 row):
+```js
+{ column1: 'aB3xK9z2', column2: 'P8fq...', ..., columnK: '...' }
+```
+
+- `queryColIndex` คือ column ที่จะ SELECT หา → ใส่ค่าจาก pool 5 ค่า (ไม่งั้นสุ่มเกือบเจอยาก)
+- column อื่นๆ สุ่มล้วน
+- `queryVal = pool[0]` → FE ใช้ค่านี้ในการ query
+
+## 3. Random Index Selection — `pickRandomColumns(k, count)`
+
+ใช้ **Fisher-Yates shuffle** สุ่มเลือก column ไหนจะมี index:
+
+```js
+const nums = [1, 2, ..., k];
+for (let i = nums.length - 1; i > 0; i--) {
+  const j = Math.floor(Math.random() * (i + 1));
+  [nums[i], nums[j]] = [nums[j], nums[i]];
+}
+return nums.slice(0, count).sort((a, b) => a - b);
+```
+
+**ตัวอย่าง**: K=10, M=40 → `numIndexes=4` → เลือก `[2, 5, 7, 9]` (random แต่ sort แล้ว)
+
+**`queryCol`** = `indexedCols[0]` (column แรกที่มี index) → ใช้เป็น target ของ SELECT indexed
+**`unindexedCol`** = column ที่ไม่มี index → ใช้ SELECT full scan
+
+## 4. PostgreSQL Benchmark — `benchmarkPostgres()`
+
+### 4.1 Setup
+```sql
+DROP TABLE IF EXISTS bench_test;
+CREATE TABLE bench_test (
+  id SERIAL PRIMARY KEY,
+  column1 VARCHAR(50), column2 VARCHAR(50), ..., columnK VARCHAR(50)
+);
+```
+
+### 4.2 INSERT — chunked
+```js
+const chunkSize = Math.max(1, Math.floor(500 / k));  // adapt ตาม K
+// batch insert ด้วย placeholders $1, $2, ...
+INSERT INTO bench_test (column1, ..., columnK)
+VALUES ($1,$2,...), ($n+1,...), ...
+```
+**วัด**: `performance.now()` ครอบ loop ทั้งหมด → `results.insert`
+
+### 4.3 CREATE INDEXES
+```sql
+CREATE INDEX idx_bench_col2 ON bench_test (column2);
+CREATE INDEX idx_bench_col5 ON bench_test (column5);
+-- ... เฉพาะ indexedCols
+```
+
+### 4.4 SELECT (no index) — `LIKE 'a%'`
+```sql
+SELECT * FROM bench_test WHERE column{unindexedCol} LIKE 'a%'
+```
+Full scan เพราะ column นี้ไม่มี index → `results.selectNoIndex`
+
+### 4.5 SELECT (indexed) — equality + LIMIT
+```sql
+SELECT * FROM bench_test WHERE column{queryCol} = $1 LIMIT 10
+```
+Target: `queryVal` ที่อยู่ใน pool → เจอแน่ 10 rows → `results.selectIndexed`
+
+### 4.6 UPDATE & DELETE — by PK
+```sql
+UPDATE bench_test SET column{queryCol} = 'updated' WHERE id = $mid;
+DELETE FROM bench_test WHERE id = $last;
+```
+
+### 4.7 Cleanup
+```sql
+DROP TABLE IF EXISTS bench_test;
+```
+
+## 5. MongoDB Benchmark — `benchmarkMongo()`
+
+Mirror กับ PG แต่ใช้ MongoDB API — ใช้ `_seqId` field เป็น PK แทน SERIAL:
+
+| Operation | PostgreSQL | MongoDB |
+|-----------|------------|---------|
+| INSERT | `INSERT INTO ... VALUES (...)` | `col.insertMany(docs)` |
+| Index | `CREATE INDEX idx ON t(col)` | `col.createIndex({ col: 1 })` |
+| No-index scan | `LIKE 'a%'` | `$regex: '^a'` |
+| Indexed eq | `WHERE col = $1 LIMIT 10` | `.find({col:v}).limit(10)` |
+| UPDATE | `WHERE id = $mid` | `.updateOne({_seqId:mid},...)` |
+| DELETE | `WHERE id = $last` | `.deleteOne({_seqId:last})` |
+
+## 6. JSONB Benchmark — 3-way Comparison
+
+### 6.1 Data (separate from main)
+```js
+{
+  data: {
+    category: 'xyz',      // from pool of 5
+    tags: ['abc'],        // from pool of 10
+    meta: { seq: i }
+  }
 }
 ```
 
-### 2.2 สูตร 5 ตัวหลัก
+### 6.2 PostgreSQL JSONB — 2 index types
+```sql
+CREATE TABLE bench_json (id SERIAL PRIMARY KEY, data JSONB);
+CREATE INDEX idx_json_gin  ON bench_json USING GIN (data);
+CREATE INDEX idx_json_expr ON bench_json ((data->>'category'));
+```
 
-| Function | สูตร | Big O |
-|----------|------|-------|
-| `calcInsertTime(n, m)` | `(n/1000) × baseMs × (1 + m×0.15)` | O(N × M × log N) |
-| `calcSelectNoIndex(n)` | `n × baseMs` (linear scan) | O(N) |
-| `calcSelectIndexed(n, k)` | `0.02 × log₂N + k × 0.005` | O(log N + K) |
-| `calcUpdateTime(n, m)` | `0.025 × log₂N + m×0.02×log₂N + 0.1` | O(log N + M×log N) |
-| `calcDeleteTime(n, m)` | เหมือน update แต่ overhead น้อยกว่า | O(log N + M×log N) |
+**2 queries** (same result, different plans):
+```sql
+-- GIN containment
+SELECT * FROM bench_json WHERE data @> '{"category":"xyz"}'::jsonb LIMIT 10;
+-- Expression B-Tree
+SELECT * FROM bench_json WHERE data->>'category' = 'xyz' LIMIT 10;
+```
 
-**จุดสำคัญ**:
-- MongoDB insert เร็วกว่า ~30% (ไม่มี MVCC overhead)
-- PostgreSQL update ช้ากว่าเพราะ `+0.1ms` = MVCC overhead (สร้าง row version ใหม่)
-- Index มากขึ้น → insert/update/delete ช้าขึ้น (ต้อง update index ด้วย)
-
-## 3. Chart Data Generation — `generateChartData()`
-
-**จุดที่เจน row ต่อ row**:
-
+### 6.3 MongoDB — dotted path + single index
 ```js
-function generateChartData(nValues, k, indexCount) {
-  return nValues.map(n => {
-    const insert = calcInsertTime(n, indexCount);
-    const selectNo = calcSelectNoIndex(n);
-    const selectIdx = calcSelectIndexed(n, k);
-    const update = calcUpdateTime(n, indexCount);
-    const del = calcDeleteTime(n, indexCount);
+col.createIndex({ 'data.category': 1 });
+col.find({ 'data.category': queryCategory }).limit(10).toArray();
+```
 
-    return {
-      n, label: '10K',       // ← X-axis
-      insertPg, insertMg,    // ← Bar chart columns
-      selectNoPg, selectNoMg,
-      selectIdxPg, selectIdxMg,
-      updatePg, updateMg,
-      deletePg, deleteMg,
-    };
-  });
+**Output**: `selectJsonGin`, `selectJsonBtree`, `selectJsonMongo`
+
+## 7. Timing & Averaging
+
+### 7.1 Wrapper
+```js
+async function measureMs(fn) {
+  const start = performance.now();
+  await fn();
+  return +(performance.now() - start).toFixed(3);   // ms to 3 decimals
 }
 ```
 
-**Input**: `nValues = [100, 500, 1000, 2500, 5000, 7500, 10000, ...]`
-**Output**: 1 row ต่อ 1 N value (= 1 จุดบน chart)
-
-Columns แต่ละ row:
-
-| Column | ใช้ที่ไหน |
-|--------|-----------|
-| `n`, `label` | X-axis (`100`, `500`, `1K`, ...) |
-| `insertPg`, `insertMg` | INSERT BarChart (2 bar/row) |
-| `selectNoPg/Mg` | SELECT LineChart |
-| `selectIdxPg/Mg` | Index Impact BarChart |
-| `updatePg/Mg`, `deletePg/Mg` | UPDATE/DELETE BarChart |
-
-## 4. 6 Tabs ใน UI
-
-### Tab 1: CRUD Compare
-- **Cards สรุป 5 operations** ที่ N ปัจจุบัน (INSERT/SELECT×2/UPDATE/DELETE)
-- **3 charts**: INSERT (Bar), SELECT no-index (Line), UPDATE+DELETE (Bar 4 สี)
-- Card ระบุ winner: `PG < MG` = PostgreSQL เร็วกว่า X%
-
-### Tab 2: Big O Table
-- 2 ตาราง: ไม่มี index vs มี B-Tree index
-- `getBigOTable(n, k, m)` คำนวณ log₂N แล้วแทนค่าใน string template
-- เช่น `O(log N + K) ≈ 13.3 + 10`
-
-### Tab 3: JSONB vs BSON
-- `calcJsonQuery(n, hasIndex)`:
-  - ไม่มี index: `14ms × (n/10000)` (O(N))
-  - มี index: `0.02 × log₂N` (O(log N))
-- 3 cards: PG GIN, PG Expression B-Tree, MongoDB
-- + checkbox toggle "มี Index"
-- + guideline table "เมื่อไหร่ใช้อะไร"
-
-### Tab 4: Index Impact
-- 2 ตาราง reference: PG indexes (B-Tree/Hash/GIN) vs Mongo (Single/Compound/Text)
-- 1 bar chart: SELECT indexed vs no-index (4 bars/N)
-
-### Tab 5: Storage Size — `estimatePostgresSize()` + `estimateMongoSize()`
-
-**PostgreSQL row structure**:
-```
-Row = ROW_OVERHEAD(27) + fixedCols(56) + JSONB(avgBytes + 4)
-    = 27 + 56 + 204 = 287 bytes
-RowsPerPage = floor(8192 / (rowSize + 4))
-DataBytes = ceil(N / RowsPerPage) × 8192
-```
-
-**MongoDB document**:
-```
-BSON = 32 overhead + avgBytes × 1.1
-DataBytes = ceil(N × BSON × 0.6)   // WiredTiger compress 60%
-```
-
-**Index sizes**:
-- PG B-Tree: `N × 24 / 0.7` per index (fill factor 70%)
-- PG GIN (JSONB): `N × avgBytes × 0.4`
-- Mongo _id: `N × 28 / 0.7`
-- Mongo additional: `indexCount × N × 24 / 0.7`
-
-**UI**:
-- 3 summary cards (PG / Mongo / localStorage)
-- Breakdown BarChart (Data / Indexes / Overhead)
-- Total comparison BarChart (horizontal)
-- Detail table
-
-### Tab 6: Growth Projector — `projectGrowth()`
-
+### 7.2 Multi-run average
 ```js
-for (m = 0; m <= 12; m++) {
-  n = currentCount + growthPerMonth × m;
-  push({ month: m, records: n, pgBytes, mongoBytes, localBytes });
+// runs รอบ
+for (let run = 0; run < runs; run++) {
+  const indexedCols = pickRandomColumns(k, numIndexes);  // resample ทุกรอบ
+  // ... run pg + mongo + json
+  allPg.push(pgResults);
+  allMg.push(mgResults);
+}
+// เฉลี่ยทุก operation
+avg[key] = sum(runs) / runs.length
+```
+
+## 8. API Contract
+
+### POST `/api/benchmark/run`
+**Request**:
+```json
+{ "n": 1000, "k": 5, "m": 40, "runs": 1 }
+```
+
+**Response**:
+```json
+{
+  "success": true,
+  "data": {
+    "postgres": {
+      "insert": 245.123,
+      "selectNoIndex": 12.456,
+      "selectIndexed": 0.234,
+      "update": 0.891,
+      "delete": 0.456,
+      "selectJsonGin": 0.512,
+      "selectJsonBtree": 0.389
+    },
+    "mongodb": {
+      "insert": 178.234,
+      "selectNoIndex": 15.123,
+      "selectIndexed": 0.198,
+      "update": 0.645,
+      "delete": 0.234,
+      "selectJsonMongo": 0.412
+    },
+    "meta": {
+      "n": 1000, "k": 5, "m": 40,
+      "numIndexes": 2,
+      "indexedColumns": [2, 5],
+      "indexedColumnsAllRuns": [[2, 5]],
+      "runs": 1,
+      "selectLimit": 10,
+      "timestamp": "2026-04-20T...",
+      "pgVersion": "16.3",
+      "mongoVersion": "7.0.12"
+    }
+  }
 }
 ```
 
-- Output 13 rows (เดือน 0-12)
-- LineChart 3 เส้น: PG, Mongo, localStorage
-- Table แสดงทุก 3 เดือน + เดือนสุดท้าย
-- เตือน **localStorage limit 5MB จะเต็มเมื่อไหร่** (หารเอา)
+### GET `/api/benchmark/status`
+Returns version + connection status ของ PG และ Mongo
 
-## 5. Reactive Flow (useMemo)
+## 9. Environment Variables (server/.env)
+
+| var | default | |
+|-----|---------|---|
+| `PG_HOST` | `localhost` | |
+| `PG_PORT` | `5432` | |
+| `PG_USER` | `postgres` | |
+| `PG_PASSWORD` | `1234` | ⚠️ dev default |
+| `PG_DATABASE` | `cakecontrol_bench` | |
+| `MONGO_URL` | `mongodb://localhost:27017` | |
+| `MONGO_DB` | `cakecontrol_bench` | |
+| `BENCH_PORT` | `3003` | |
+
+Server timeout ตั้งไว้ **10 นาที** (N=1M ใช้เวลานาน)
+
+## 10. FE Flow — `LiveBenchmarkTab`
 
 ```
-User เปลี่ยน N/K/M
-  ↓
-useMemo recompute:
-  ├─ nValues         (array of N values)
-  ├─ chartData       = generateChartData(nValues, k, m)  ← เจนทุก row
-  ├─ bigO            = getBigOTable(n, k, m)
-  └─ currentResults  = { insert, selectNo, selectIdx, update, del, json }
-  ↓
-React re-render tabs
-  ↓
-Recharts วาด chart ใหม่ (animate)
+User กดปุ่ม "Run Benchmark"
+    ↓
+fetch POST /api/benchmark/run { n, k, m, runs }
+    ↓ (loading = true, ~5s – 2min)
+ได้ result → setResults + push เข้า history (เก็บล่าสุด 10)
+    ↓
+Render:
+  ├─ Comparison BarChart: 5 operations × 2 DBs
+  ├─ JSONB BarChart: 3 bars (PG GIN, PG B-Tree, MG)
+  ├─ Meta info: index columns, versions, timestamp
+  └─ History table: run ล่าสุด 10 รายการ
 ```
 
-## 6. Live localStorage Analysis — `measureLocalStorage()`
+**Status check** ก่อนรัน: กด "Check DB Status" → GET `/status` → แสดง PG/Mongo version หรือ offline
 
-นอกจาก estimator ยังมีฟังก์ชันวัด **localStorage จริง** (ไม่ใช่ประมาณ):
+## 11. สรุปกลไก
 
-```js
-STORAGE_KEYS = {
-  schemas:  'cakecontrol_schemas',
-  views:    'cakecontrol_views',
-  formcfgs: 'cakecontrol_formcfgs',
-  forms:    'cakecontrol_forms',
-}
+1. **เป็น benchmark จริง** — INSERT/SELECT/UPDATE/DELETE ของจริง ไม่ใช่สูตรประมาณ
+2. **`performance.now()`** วัดแต่ละ operation แยก → ความแม่น < 1ms
+3. **Drop + Create** ทุกรอบ → ไม่มี state หลงเหลือระหว่าง run
+4. **Random index selection** → แต่ละรอบเลือก column ที่ index ไม่เหมือนกัน (ลด bias จาก column order)
+5. **Pool pattern** → column ที่ query มีค่าซ้ำ 5 แบบ รับประกัน SELECT เจอ rows
+6. **Chunked INSERT** → หลีกเลี่ยง query size limit (`chunkSize = 500/K`)
+7. **Parallel PG + Mongo** ใช้ dataset เดียวกัน → เทียบได้ fair
+8. **Multi-run averaging** → ลด noise, resample index columns ทุกรอบ
+9. **Separate JSONB table** → เทียบ 3 วิธี (PG GIN vs PG Expression vs Mongo dotted path)
+10. **10-min timeout** → รองรับ N=1M
+
+## 12. การรัน (local)
+
+```bash
+# 1. ต้องมี PostgreSQL + MongoDB ทำงานอยู่
+# 2. รัน benchmark server (port 3003)
+cd server
+npm run bench       # หรือ node src/benchmarkServer.js
+
+# 3. รัน FE dev (port ปกติ Vite)
+npm run dev
+
+# 4. เปิด /controls-docs → หา Benchmark page → กด Run
 ```
-
-สำหรับแต่ละ key:
-- `new Blob([raw]).size` → byte count จริง
-- Parse records แล้วหา avg/min/max record size
-- รวม total + usage % เทียบ 5MB limit
-
-## 7. สรุปกลไก
-
-1. **ไม่มี DB จริง** — ทุกอย่างคือ math บน reference numbers จาก research
-2. **Pure functions** → unit test ง่าย (test 92 ทั้งหมด ใน `src/lib/__tests__/`)
-3. **Row-by-row generation**: map `nValues[]` เป็น array of `{n, label, pg*, mg*}`
-4. **Column-by-column**: แต่ละ column ใน output row = 1 operation × 1 DB
-5. **3 tunable inputs** (N, K, M) ควบคุมทุก tab พร้อมกันด้วย useMemo
-6. **Storage tab** มี `avgBytes` แยกต่างหาก เพราะขึ้นกับ schema
-7. **Growth tab** เดินลูปเดือน 0-12 → chart line 3 เส้น
