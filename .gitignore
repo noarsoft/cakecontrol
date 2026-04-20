@@ -24,3 +24,16 @@ coverage
 *.sln
 *.sw?
 .claude/settings.local.json
+
+# Env files (contain secrets)
+.env
+server/.env
+.env.local
+
+# Playwright artifacts
+.playwright-mcp/
+*.png
+
+# Local dev helpers (contain dev credentials)
+server/*.bat
+

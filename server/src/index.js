@@ -1,9 +1,11 @@
+import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
 import schemasRouter from './routes/schemas.js';
 import viewsRouter from './routes/views.js';
 import formcfgsRouter from './routes/formcfgs.js';
 import formsRouter from './routes/forms.js';
+import benchmarkRouter from './routes/benchmark.js';
 
 const app = express();
 const PORT = process.env.PORT || 3002;
@@ -17,6 +19,7 @@ app.use('/api/schemas', schemasRouter);
 app.use('/api/views', viewsRouter);
 app.use('/api/formcfgs', formcfgsRouter);
 app.use('/api/forms', formsRouter);
+app.use('/api/benchmark', benchmarkRouter);
 
 // Health check
 app.get('/api/health', (req, res) => {

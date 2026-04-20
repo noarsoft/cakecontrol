@@ -5,11 +5,16 @@
   "scripts": {
     "dev": "node --watch src/index.js",
     "start": "node src/index.js",
-    "seed": "node src/db/seed.js"
+    "seed": "node src/db/seed.js",
+    "bench": "node src/benchmarkServer.js",
+    "bench:dev": "node --watch src/benchmarkServer.js"
   },
   "dependencies": {
     "better-sqlite3": "^11.7.0",
     "cors": "^2.8.5",
-    "express": "^5.1.0"
+    "dotenv": "^17.4.2",
+    "express": "^5.1.0",
+    "mongodb": "^7.1.1",
+    "pg": "^8.20.0"
   }
 }
