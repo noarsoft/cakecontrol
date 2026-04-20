@@ -72,6 +72,9 @@ function LiveBenchmarkTab({ addLog }) {
         delete: 'DELETE (by PK)',
     };
 
+    const numIndexes = Math.round(liveK * liveM / 100);
+    const bigO = calcBigO(liveN, liveK, numIndexes, 10);
+
     const comparisonData = results ? ops.map(op => ({
         name: opLabels[op],
         pg: results.postgres[op] ?? 0,
@@ -224,8 +227,62 @@ function LiveBenchmarkTab({ addLog }) {
                                     title={opLabels[op]}
                                     pg={results.postgres[op] ?? 0}
                                     mg={results.mongodb[op] ?? 0}
+                                    bigO={bigO[op]?.formula}
                                 />
                             ))}
+                        </div>
+
+                        {/* Big O Analysis */}
+                        <h3>Big O Analysis (theoretical)</h3>
+                        <p style={{ fontSize: 13, opacity: 0.7, marginBottom: 8 }}>
+                            คำนวณจาก N={liveN.toLocaleString()}, K={liveK}, M={liveM}% → {numIndexes} indexes, log₂N ≈ {Math.log2(Math.max(liveN, 1)).toFixed(2)}
+                        </p>
+                        <table style={tableStyle}>
+                            <thead>
+                                <tr>
+                                    <th style={thStyle}>Operation</th>
+                                    <th style={thStyle}>Big O</th>
+                                    <th style={thStyle}>Estimated ops</th>
+                                    <th style={{ ...thStyle, color: COLORS.postgres }}>PG (measured)</th>
+                                    <th style={{ ...thStyle, color: COLORS.mongodb }}>MG (measured)</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {ops.map(op => (
+                                    <tr key={op}>
+                                        <td style={tdStyle}>{opLabels[op]}</td>
+                                        <td style={{ ...tdStyle, fontFamily: 'monospace', fontWeight: 600 }}>{bigO[op]?.formula}</td>
+                                        <td style={{ ...tdStyle, fontFamily: 'monospace', opacity: 0.8 }}>{bigO[op]?.estimate}</td>
+                                        <td style={{ ...tdStyle, color: COLORS.postgres }}>{formatMs(results.postgres[op] ?? 0)}</td>
+                                        <td style={{ ...tdStyle, color: COLORS.mongodb }}>{formatMs(results.mongodb[op] ?? 0)}</td>
+                                    </tr>
+                                ))}
+                                <tr>
+                                    <td style={tdStyle}>JSONB GIN</td>
+                                    <td style={{ ...tdStyle, fontFamily: 'monospace', fontWeight: 600 }}>{bigO.selectJsonGin.formula}</td>
+                                    <td style={{ ...tdStyle, fontFamily: 'monospace', opacity: 0.8 }}>{bigO.selectJsonGin.estimate}</td>
+                                    <td style={{ ...tdStyle, color: COLORS.postgres }}>{formatMs(results.postgres.selectJsonGin ?? 0)}</td>
+                                    <td style={{ ...tdStyle, opacity: 0.4 }}>—</td>
+                                </tr>
+                                <tr>
+                                    <td style={tdStyle}>JSONB Expression B-Tree</td>
+                                    <td style={{ ...tdStyle, fontFamily: 'monospace', fontWeight: 600 }}>{bigO.selectJsonBtree.formula}</td>
+                                    <td style={{ ...tdStyle, fontFamily: 'monospace', opacity: 0.8 }}>{bigO.selectJsonBtree.estimate}</td>
+                                    <td style={{ ...tdStyle, color: COLORS.postgres }}>{formatMs(results.postgres.selectJsonBtree ?? 0)}</td>
+                                    <td style={{ ...tdStyle, opacity: 0.4 }}>—</td>
+                                </tr>
+                                <tr>
+                                    <td style={tdStyle}>JSONB Mongo (dotted)</td>
+                                    <td style={{ ...tdStyle, fontFamily: 'monospace', fontWeight: 600 }}>{bigO.selectJsonMongo.formula}</td>
+                                    <td style={{ ...tdStyle, fontFamily: 'monospace', opacity: 0.8 }}>{bigO.selectJsonMongo.estimate}</td>
+                                    <td style={{ ...tdStyle, opacity: 0.4 }}>—</td>
+                                    <td style={{ ...tdStyle, color: COLORS.mongodb }}>{formatMs(results.mongodb.selectJsonMongo ?? 0)}</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        <div style={{ ...noteStyle, marginTop: 8, marginBottom: 24, fontSize: 12 }}>
+                            <strong>หมายเหตุ:</strong> Big O เป็นทฤษฎี ส่วน ms เป็นการวัดจริง —
+                            ปกติ measured ∝ estimated แต่ scale ต่างกัน (constant factor + I/O + network)
                         </div>
 
                         {/* PG vs Mongo Chart */}
@@ -372,7 +429,7 @@ function LiveBenchmarkTab({ addLog }) {
 }
 
 /* ───── Result Card ───── */
-function ResultCard({ title, pg, mg }) {
+function ResultCard({ title, pg, mg, bigO }) {
     const winner = pg < mg ? 'postgres' : pg > mg ? 'mongodb' : 'tie';
     const diff = pg > 0 && mg > 0 ? Math.abs(((pg - mg) / Math.max(pg, mg)) * 100).toFixed(0) : 0;
     return (
@@ -386,6 +443,11 @@ function ResultCard({ title, pg, mg }) {
                     MG: {formatMs(mg)}
                 </span>
             </div>
+            {bigO && (
+                <div style={{ fontSize: 11, opacity: 0.6, fontFamily: 'monospace', marginTop: 4 }}>
+                    {bigO}
+                </div>
+            )}
             {winner !== 'tie' && (
                 <div style={{
                     fontSize: 11, marginTop: 4, padding: '2px 6px', borderRadius: 4,
@@ -398,6 +460,55 @@ function ResultCard({ title, pg, mg }) {
             )}
         </div>
     );
+}
+
+/**
+ * Big O analysis สำหรับแต่ละ operation
+ * - N = จำนวน rows
+ * - K = จำนวน columns
+ * - M = จำนวน indexes (number, ไม่ใช่ percent)
+ * - L = LIMIT (default 10)
+ */
+function calcBigO(n, k, m, limit = 10) {
+    const logN = Math.log2(Math.max(n, 1));
+    const fmt = (x) => x >= 1000 ? x.toExponential(2) : x.toLocaleString(undefined, { maximumFractionDigits: 1 });
+
+    return {
+        insert: {
+            formula: m > 0 ? 'O(N × (K + M × log N))' : 'O(N × K)',
+            estimate: m > 0
+                ? `${n} × (${k} + ${m} × ${logN.toFixed(1)}) ≈ ${fmt(n * (k + m * logN))} ops`
+                : `${n} × ${k} = ${fmt(n * k)} ops`,
+        },
+        selectNoIndex: {
+            formula: 'O(N)',
+            estimate: `≈ ${fmt(n)} ops (full scan)`,
+        },
+        selectIndexed: {
+            formula: 'O(log N + L)',
+            estimate: `${logN.toFixed(1)} + ${limit} ≈ ${fmt(logN + limit)} ops`,
+        },
+        update: {
+            formula: m > 0 ? 'O((1 + M) × log N)' : 'O(log N)',
+            estimate: `${1 + m} × ${logN.toFixed(1)} ≈ ${fmt((1 + m) * logN)} ops`,
+        },
+        delete: {
+            formula: m > 0 ? 'O((1 + M) × log N)' : 'O(log N)',
+            estimate: `${1 + m} × ${logN.toFixed(1)} ≈ ${fmt((1 + m) * logN)} ops`,
+        },
+        selectJsonGin: {
+            formula: 'O(log N + L)',
+            estimate: `${logN.toFixed(1)} + ${limit} ≈ ${fmt(logN + limit)} ops`,
+        },
+        selectJsonBtree: {
+            formula: 'O(log N + L)',
+            estimate: `${logN.toFixed(1)} + ${limit} ≈ ${fmt(logN + limit)} ops`,
+        },
+        selectJsonMongo: {
+            formula: 'O(log N + L)',
+            estimate: `${logN.toFixed(1)} + ${limit} ≈ ${fmt(logN + limit)} ops`,
+        },
+    };
 }
 
 function formatMs(ms) {
