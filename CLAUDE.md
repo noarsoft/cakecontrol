@@ -17,7 +17,7 @@ React 19 + Vite 7 UI Component Library สำหรับ CAMT มช.
 src/
 ├── Apis/              # API service layer (auth.jsx, user.jsx)
 ├── config/            # api.config.js
-├── forms/             # Login, Register, Dashboard (ว่าง)
+├── forms/             # FormBuilder, TemplateManager, ControlDesignerModal, Login, Register
 ├── components/
 │   ├── controls/      # 40+ UI controls + CRUDControl + ModalControl
 │   │   ├── index.js   # Central export ทุก control
@@ -41,6 +41,8 @@ src/
 | Controls Docs + Demo pages | Done |
 | Dashboard page | ว่างเปล่า ยังไม่ implement |
 | Form Builder (FE) | Done |
+| Template Manager (จัดการแม่แบบ) | Done |
+| Control Designer Modal | Done |
 | Backend repo (rootid) | Done — Express 5 + Prisma |
 
 ## Control Architecture Pattern
@@ -88,8 +90,27 @@ Composite control แบบ dashboard สำหรับจัดการข้
 FE: หน้าสร้างฟอร์มแบบ Google Forms / Microsoft Forms
 BE: rootid repo (Express 5 + Prisma + PostgreSQL)
 ไม่มี auth ใช้ฟรี
+Route: `/formbuilder` — default mode: `templates`
 
-### DB Design (4 tables) — ดู DB-DESIGN.md สำหรับ full detail
+### Template Manager (จัดการแม่แบบ)
+- `src/forms/TemplateManager.jsx` — tab แรกที่เปิดมา แสดงตาราง schema ทั้งหมด
+- ใช้ `TableviewControl` + `ButtonControl` (existing controls)
+- Columns: ชื่อแม่แบบ, Fields count, วันที่แก้ไข, จัดการ (จัดการฟอร์ม/แก้ไข/ลบ)
+- มี search + pagination (10 per page)
+- "จัดการฟอร์ม" → ไปหน้า data mode ของ schema นั้น
+- "แก้ไข" → เปิด ControlDesignerModal
+- "+ สร้างแม่แบบ" → เปิด ControlDesignerModal (create mode)
+
+### Control Designer Modal
+- `src/forms/ControlDesignerModal.jsx` — modal ออกแบบ fields ของฟอร์ม
+- ใช้ `ModalControl` (existing, size: lg)
+- แต่ละ row กำหนด: ชื่อช่องกรอก (label), databind (field key), ชนิด control (dropdown)
+- Control types: Textbox, Number, Dropdown, Datepicker, Checkbox, Email, File
+- Dropdown type → แสดง key-value pair editor + default select
+- บันทึก → สร้าง/อัพเดต `data_schema.json` + `form.json_form_config` + `view.json_table_config`
+- มี move up/down, remove, "+ เพิ่ม Control"
+
+### DB Design (4 tables) — ดู rootid/DB-DESIGN.md สำหรับ full detail
 
 **Design Principles**:
 - `rootid` = UUID PK ไม่เปลี่ยน, `id` = SERIAL ใช้เป็น FK
@@ -106,13 +127,24 @@ Table 4: data — ข้อมูลจริง, FK: `data_schema_id`, json col
 
 **Supported types**: string, number, yymmdd, hhmm, yymmddhhmmhh
 
+### FormBuilder Modes
+| Mode | Component | Description |
+|------|-----------|-------------|
+| `templates` | TemplateManager | ตารางแม่แบบทั้งหมด (default) |
+| `data` | CRUDControl | จัดการข้อมูลของ schema ที่เลือก |
+| `builder` | SchemaBuilder | แก้ไข fields แบบ raw (key + type) |
+| `fill` | FormFiller | กรอกฟอร์มแบบ Google Forms |
+| `preview` | FormPreview | Preview ฟอร์ม |
+
 ### Flow
 ```
+TemplateManager (จัดการแม่แบบ — list/create/edit/delete)
+     ↓ สร้าง/แก้ไข via ControlDesignerModal
 data_schema (เช็ค format: name=string, age=number)
-     ↓
+     ↓ auto-generate
 view (โชว์ตารางยังไง: json_table_config)
 form (ฟอร์มหน้าตายังไง: json_form_config)
-     ↓ generate
+     ↓ transform
 json_table_config → CRUDControl → TableviewControl
 json_form_config  → CRUDControl → FormControl + ModalControl
      ↓
@@ -142,4 +174,4 @@ data (เก็บข้อมูลจริง)
 - UI ใช้ภาษาไทยเป็นหลัก
 
 # currentDate
-Today's date is 2026-04-22.
+Today's date is 2026-04-23.
