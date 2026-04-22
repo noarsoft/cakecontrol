@@ -1,0 +1,259 @@
+/* ControlDesignerModal.css */
+
+.cd-modal .modal-control-body {
+    padding: 0;
+}
+
+.cd-body {
+    padding: 20px 24px;
+}
+
+.cd-name-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 20px;
+}
+
+.cd-name-row .cd-label {
+    font-weight: 600;
+    font-size: 14px;
+    white-space: nowrap;
+}
+
+.cd-name-input {
+    flex: 1;
+}
+
+.cd-input {
+    padding: 7px 10px;
+    border: 1px solid var(--border-primary);
+    border-radius: 4px;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    font-size: 13px;
+    outline: none;
+    transition: border-color 0.15s;
+}
+
+.cd-input:focus {
+    border-color: var(--accent-primary);
+}
+
+.cd-select {
+    padding: 7px 10px;
+    border: 1px solid var(--border-primary);
+    border-radius: 4px;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    font-size: 13px;
+    outline: none;
+    cursor: pointer;
+}
+
+.cd-select:focus {
+    border-color: var(--accent-primary);
+}
+
+/* ─── Header row ─── */
+.cd-controls-header {
+    display: flex;
+    gap: 8px;
+    padding: 8px 12px 8px 36px;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border-bottom: 1px solid var(--border-primary);
+    margin-bottom: 8px;
+}
+
+.cd-controls-header .cd-col-label { flex: 2; }
+.cd-controls-header .cd-col-databind { flex: 2; }
+.cd-controls-header .cd-col-type { flex: 1.5; }
+.cd-controls-header .cd-col-actions { width: 80px; }
+
+/* ─── Control row ─── */
+.cd-control-row {
+    border: 1px solid var(--border-primary);
+    border-radius: 6px;
+    margin-bottom: 8px;
+    background: var(--bg-secondary);
+    overflow: hidden;
+    transition: box-shadow 0.15s;
+}
+
+.cd-control-row:hover {
+    box-shadow: 0 1px 6px rgba(0, 0, 0, 0.06);
+}
+
+.cd-control-main {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 12px;
+}
+
+.cd-row-num {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    min-width: 20px;
+    text-align: center;
+}
+
+.cd-control-main .cd-col-label { flex: 2; }
+.cd-control-main .cd-col-databind { flex: 2; }
+.cd-control-main .cd-col-type { flex: 1.5; }
+
+.cd-row-actions {
+    display: flex;
+    gap: 2px;
+    width: 80px;
+    justify-content: flex-end;
+}
+
+.cd-row-actions button {
+    padding: 4px 6px;
+    border: none;
+    border-radius: 3px;
+    background: transparent;
+    cursor: pointer;
+    font-size: 13px;
+    color: var(--text-secondary);
+    transition: all 0.15s;
+}
+
+.cd-row-actions button:hover:not(:disabled) {
+    background: var(--bg-tertiary, rgba(128,128,128,0.1));
+    color: var(--text-primary);
+}
+
+.cd-row-actions button:disabled {
+    opacity: 0.3;
+    cursor: default;
+}
+
+.cd-btn-remove:hover:not(:disabled) {
+    color: #e74c3c !important;
+}
+
+/* ─── Dropdown options panel ─── */
+.cd-options-panel {
+    padding: 10px 12px 12px 44px;
+    border-top: 1px dashed var(--border-primary);
+    background: var(--bg-primary);
+}
+
+.cd-options-title {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    margin-bottom: 8px;
+}
+
+.cd-option-row {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    margin-bottom: 6px;
+}
+
+.cd-opt-key {
+    flex: 1;
+}
+
+.cd-opt-value {
+    flex: 1;
+}
+
+.cd-btn-remove-opt {
+    padding: 4px 8px;
+    border: none;
+    border-radius: 3px;
+    background: transparent;
+    cursor: pointer;
+    font-size: 12px;
+    color: var(--text-secondary);
+    transition: color 0.15s;
+}
+
+.cd-btn-remove-opt:hover {
+    color: #e74c3c;
+}
+
+.cd-btn-add-opt {
+    padding: 4px 0;
+    border: none;
+    background: transparent;
+    color: var(--accent-primary);
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 500;
+    margin-top: 4px;
+}
+
+.cd-btn-add-opt:hover {
+    text-decoration: underline;
+}
+
+.cd-default-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 8px;
+    font-size: 12px;
+    color: var(--text-secondary);
+}
+
+.cd-default-select {
+    font-size: 12px;
+    padding: 4px 8px;
+}
+
+/* ─── Add control button ─── */
+.cd-btn-add-control {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    padding: 12px;
+    border: 2px dashed var(--border-primary);
+    border-radius: 6px;
+    background: transparent;
+    color: var(--text-secondary);
+    cursor: pointer;
+    font-size: 14px;
+    margin-top: 12px;
+    transition: all 0.15s;
+}
+
+.cd-btn-add-control:hover {
+    border-color: var(--accent-primary);
+    color: var(--accent-primary);
+}
+
+/* ─── Footer ─── */
+.cd-footer {
+    display: flex;
+    gap: 8px;
+    justify-content: flex-end;
+}
+
+/* ─── Responsive ─── */
+@media (max-width: 768px) {
+    .cd-control-main {
+        flex-wrap: wrap;
+    }
+    .cd-controls-header {
+        display: none;
+    }
+    .cd-control-main .cd-col-label,
+    .cd-control-main .cd-col-databind {
+        flex: 1 1 45%;
+    }
+    .cd-control-main .cd-col-type {
+        flex: 1 1 100%;
+    }
+}

@@ -5,6 +5,7 @@ import SchemaBuilder from './SchemaBuilder';
 import SchemaNameInput from './SchemaNameInput';
 import FormPreview from './FormPreview';
 import FormFiller from './FormFiller';
+import TemplateManager from './TemplateManager';
 import { buildCrudConfig, generateDefaultView, generateDefaultFormcfg } from '../lib/schemaTransform';
 import {
     initService,
@@ -18,7 +19,7 @@ import './FormBuilder.css';
 function FormBuilder() {
     const [schemas, setSchemas] = useState([]);
     const [activeSchemaId, setActiveSchemaId] = useState(null);
-    const [mode, setMode] = useState('data'); // 'data' | 'builder' | 'preview' | 'fill'
+    const [mode, setMode] = useState('templates'); // 'templates' | 'data' | 'builder' | 'preview' | 'fill'
     const [refreshKey, setRefreshKey] = useState(0);
     const [deleteConfirm, setDeleteConfirm] = useState(null);
     const [schemaData, setSchemaData] = useState(null);
@@ -172,6 +173,59 @@ function FormBuilder() {
         })();
     }, [schemas, refreshKey]);
 
+    // Formcfgs cache for template manager
+    const [formcfgsCache, setFormcfgsCache] = useState({});
+    useEffect(() => {
+        (async () => {
+            const cache = {};
+            await Promise.all(schemas.map(async s => {
+                const cfgs = await getFormcfgsBySchema(s.id);
+                if (cfgs[0]) cache[s.id] = cfgs[0];
+            }));
+            setFormcfgsCache(cache);
+        })();
+    }, [schemas, refreshKey]);
+
+    // ─── Template Manager Callbacks ───
+    const handleTemplateCreate = async (name, json, formcfg) => {
+        const schema = await createSchema(name, json);
+        await createView(schema.id, 'table', generateDefaultView(json), 'Default View');
+        await createFormcfg(schema.id, formcfg, 'Default Form');
+        await reloadSchemas();
+        setActiveSchemaId(schema.id);
+        setMode('data');
+        setRefreshKey(k => k + 1);
+    };
+
+    const handleTemplateUpdate = async (schema, name, json, formcfg) => {
+        await updateSchema(schema.id, { name, json });
+        const [views, formcfgs] = await Promise.all([
+            getViewsBySchema(schema.id),
+            getFormcfgsBySchema(schema.id),
+        ]);
+        const viewUpdate = views[0]
+            ? updateView(views[0].id, { json_table_config: generateDefaultView(json) })
+            : createView(schema.id, 'table', generateDefaultView(json), 'Default View');
+        const cfgUpdate = formcfgs[0]
+            ? updateFormcfg(formcfgs[0].id, { json_form_config: formcfg })
+            : createFormcfg(schema.id, formcfg, 'Default Form');
+        await Promise.all([viewUpdate, cfgUpdate]);
+        await reloadSchemas();
+        setRefreshKey(k => k + 1);
+    };
+
+    const handleTemplateDelete = async (schemaId) => {
+        await deleteSchema(schemaId);
+        if (activeSchemaId === schemaId) setActiveSchemaId(null);
+        await reloadSchemas();
+    };
+
+    const handleTemplateSelect = (schemaId) => {
+        setActiveSchemaId(schemaId);
+        setMode('data');
+        setRefreshKey(k => k + 1);
+    };
+
     return (
         <div className="formbuilder-container">
             {/* Sidebar */}
@@ -208,11 +262,28 @@ function FormBuilder() {
                 <button className="fb-add-schema-btn" onClick={handleAddSchema}>
                     + สร้างฟอร์มใหม่
                 </button>
+                <button
+                    className={`fb-template-btn ${mode === 'templates' ? 'active' : ''}`}
+                    onClick={() => { setMode('templates'); setActiveSchemaId(null); }}
+                >
+                    จัดการแม่แบบ
+                </button>
             </aside>
 
             {/* Main */}
             <main className="fb-main">
-                {activeSchema ? (
+                {mode === 'templates' ? (
+                    <div className="fb-content">
+                        <TemplateManager
+                            schemas={schemas}
+                            formcfgs={formcfgsCache}
+                            onSelectSchema={handleTemplateSelect}
+                            onCreateSchema={handleTemplateCreate}
+                            onUpdateSchema={handleTemplateUpdate}
+                            onDeleteSchema={handleTemplateDelete}
+                        />
+                    </div>
+                ) : activeSchema ? (
                     <>
                         <div className="fb-toolbar">
                             <SchemaNameInput
