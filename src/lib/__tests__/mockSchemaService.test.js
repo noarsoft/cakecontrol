@@ -31,7 +31,7 @@ describe('mockSchemaService.js', () => {
         test('createSchema creates a schema', () => {
             const schema = createSchema('Test Schema', { name: { type: 'string' } });
             expect(schema.name).toBe('Test Schema');
-            expect(schema.root_id).toBeDefined();
+            expect(schema.rootid).toBeDefined();
             expect(schema.id).toBe(1);
             expect(schema.activate).toBe(true);
             expect(schema.json).toEqual({ name: { type: 'string' } });
@@ -50,33 +50,33 @@ describe('mockSchemaService.js', () => {
             expect(found.name).toBe('Find Me');
         });
 
-        test('updateSchema updates fields but protects id/root_id', () => {
+        test('updateSchema updates fields but protects id/rootid', () => {
             const s = createSchema('Original', {});
-            const updated = updateSchema(s.id, { name: 'Updated', id: 999, root_id: 'hack' });
+            const updated = updateSchema(s.id, { name: 'Updated', id: 999, rootid: 'hack' });
             expect(updated.name).toBe('Updated');
-            expect(updated.id).toBe(s.id); // protected
-            expect(updated.root_id).toBe(s.root_id); // protected
+            expect(updated.id).toBe(s.id);
+            expect(updated.rootid).toBe(s.rootid);
         });
 
         test('deleteSchema soft-deletes', () => {
             const s = createSchema('To Delete', {});
             expect(getSchemas()).toHaveLength(1);
             deleteSchema(s.id);
-            expect(getSchemas()).toHaveLength(0); // filtered by activate
+            expect(getSchemas()).toHaveLength(0);
         });
     });
 
-    describe('data_view CRUD', () => {
+    describe('view CRUD', () => {
         test('createView + getViewsBySchema', () => {
             const schema = createSchema('S', {});
             createView(schema.id, 'table', { columns: [] }, 'My View');
             const views = getViewsBySchema(schema.id);
             expect(views).toHaveLength(1);
             expect(views[0].name).toBe('My View');
-            expect(views[0].fk_data_schema).toBe(schema.id);
+            expect(views[0].data_schema_id).toBe(schema.id);
         });
 
-        test('updateView protects id/root_id', () => {
+        test('updateView protects id/rootid', () => {
             const schema = createSchema('S', {});
             const view = createView(schema.id, 'table', {}, '');
             const updated = updateView(view.id, { name: 'New Name', id: 999 });
@@ -85,25 +85,25 @@ describe('mockSchemaService.js', () => {
         });
     });
 
-    describe('data_formcfg CRUD', () => {
+    describe('form (config) CRUD', () => {
         test('createFormcfg + getFormcfgsBySchema', () => {
             const schema = createSchema('S', {});
             createFormcfg(schema.id, { colnumbers: 6, controls: [] }, 'Form Config');
             const cfgs = getFormcfgsBySchema(schema.id);
             expect(cfgs).toHaveLength(1);
-            expect(cfgs[0].json.colnumbers).toBe(6);
+            expect(cfgs[0].json_form_config.colnumbers).toBe(6);
         });
 
-        test('updateFormcfg protects id/root_id', () => {
+        test('updateFormcfg protects id/rootid', () => {
             const schema = createSchema('S', {});
             const cfg = createFormcfg(schema.id, {}, '');
-            const updated = updateFormcfg(cfg.id, { name: 'Updated', root_id: 'hack' });
+            const updated = updateFormcfg(cfg.id, { name: 'Updated', rootid: 'hack' });
             expect(updated.name).toBe('Updated');
-            expect(updated.root_id).toBe(cfg.root_id);
+            expect(updated.rootid).toBe(cfg.rootid);
         });
     });
 
-    describe('data_form CRUD', () => {
+    describe('data CRUD', () => {
         test('createFormData + getFormDataBySchema', () => {
             const schema = createSchema('S', {});
             createFormData(schema.id, { name: 'John', age: 30 });
@@ -155,9 +155,9 @@ describe('mockSchemaService.js', () => {
     });
 
     describe('date format', () => {
-        test('modified_date_time follows yyyymmdd_hhmmss format', () => {
+        test('modify_datetime follows yyyymmdd_hhmmss format', () => {
             const s = createSchema('Test', {});
-            expect(s.modified_date_time).toMatch(/^\d{8}_\d{6}$/);
+            expect(s.modify_datetime).toMatch(/^\d{8}_\d{6}$/);
         });
     });
 });

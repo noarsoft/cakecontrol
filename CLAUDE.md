@@ -10,7 +10,7 @@ React 19 + Vite 7 UI Component Library สำหรับ CAMT มช.
 - Jest 30 + Testing Library
 - Chart.js 4 + Recharts 2
 - Axios, CSS variables (ไม่ใช้ CSS-in-JS)
-- Backend API: `http://localhost:3002` (ยังไม่มี backend repo)
+- Backend API: `http://localhost:3002` (rootid repo)
 
 ## Project Structure
 ```
@@ -40,8 +40,8 @@ src/
 | Theme Light/Dark | Done |
 | Controls Docs + Demo pages | Done |
 | Dashboard page | ว่างเปล่า ยังไม่ implement |
-| Form Builder (FE) | ยังไม่เริ่ม |
-| Backend repo | ยังไม่สร้าง |
+| Form Builder (FE) | Done |
+| Backend repo (rootid) | Done — Express 5 + Prisma |
 
 ## Control Architecture Pattern
 ทุก control ทำตาม pattern เดียวกัน:
@@ -84,46 +84,45 @@ Composite control แบบ dashboard สำหรับจัดการข้
 - Props: `isOpen`, `title`, `onClose`, `size` (sm/md/lg/xl), `children`, `footer`
 - CRUDControl ใช้ ModalControl สำหรับ Add/Edit modal
 
-## Form Builder (Planned)
-FE: หน้าสร้างฟอร์มแบบ Google Forms / Microsoft Forms มีปุ่ม +/- เพิ่ม/ลบ control
-BE: แยก repo, controller + service
+## Form Builder
+FE: หน้าสร้างฟอร์มแบบ Google Forms / Microsoft Forms
+BE: rootid repo (Express 5 + Prisma + PostgreSQL)
 ไม่มี auth ใช้ฟรี
 
 ### DB Design (4 tables) — ดู DB-DESIGN.md สำหรับ full detail
 
 **Design Principles**:
-- `root_id` = UUID PK ไม่เปลี่ยน, `id` = SERIAL ใช้เป็น FK
-- `previous_id` อิง `id` (versioning via linked list)
+- `rootid` = UUID PK ไม่เปลี่ยน, `id` = SERIAL ใช้เป็น FK
+- `prev_id` อิง `id` (versioning via linked list)
 - Date format: VARCHAR `yyyymmdd_hhmmss`
-- Default columns ทุก table: `root_id`, `id`, `previous_id`, `activate`, `flag`, `modified_date_time`
+- Default columns ทุก table: `rootid`, `id`, `prev_id`, `activate`, `flag`, `modify_datetime`
 
 ```
-Table 1: data_schema — เช็ค format ของ data (key + type)
-Table 2: data_view — โชว์ตาราง (columns config)
-Table 3: data_formcfg — form config (label, layout, colno, rowno, colspan)
-Table 4: data_form — ข้อมูลจริงที่กรอก
+Table 1: data_schema — เช็ค format ของ data (key + type), json column: `json`
+Table 2: view — โชว์ตาราง, FK: `data_schema_id`, json column: `json_table_config`
+Table 3: form — form config, FK: `data_id` → data_schema, json column: `json_form_config`
+Table 4: data — ข้อมูลจริง, FK: `data_schema_id`, json column: `data`
 ```
 
-**Supported types**: string, number, boolean, date, email, file, array
+**Supported types**: string, number, yymmdd, hhmm, yymmddhhmmhh
 
 ### Flow
 ```
 data_schema (เช็ค format: name=string, age=number)
      ↓
-data_view (โชว์ตารางยังไง: columns config)
-data_formcfg (ฟอร์มหน้าตายังไง: label, layout)
+view (โชว์ตารางยังไง: json_table_config)
+form (ฟอร์มหน้าตายังไง: json_form_config)
      ↓ generate
-columns config → CRUDControl → TableviewControl
-formConfig     → CRUDControl → FormControl + ModalControl
+json_table_config → CRUDControl → TableviewControl
+json_form_config  → CRUDControl → FormControl + ModalControl
      ↓
-data_form (เก็บข้อมูลจริง)
+data (เก็บข้อมูลจริง)
 ```
 
-### FE Components ที่ต้องสร้างเพิ่ม
-1. **SchemaBuilderControl** - หน้าสร้าง schema (กดเพิ่ม/ลบ field, กำหนด type + validation)
-2. **FormPreviewControl** - preview ฟอร์มจาก schema
-3. **ViewConfigControl** - ตั้งค่า columns / form layout
-4. **SchemaManagerPage** - หน้า CRUD จัดการ schemas ทั้งหมด
+### FE Service Layer
+- `schemaService.js` — strategy pattern: auto-detect API vs localStorage
+- `apiSchemaService.js` — API CRUD (expects `{ success, data }` response)
+- `mockSchemaService.js` — localStorage fallback
 
 ## Known Issues
 - **Dashboard route missing**: Login navigate ไป `/dashboard` แต่ไม่มี route
@@ -143,4 +142,4 @@ data_form (เก็บข้อมูลจริง)
 - UI ใช้ภาษาไทยเป็นหลัก
 
 # currentDate
-Today's date is 2026-04-09.
+Today's date is 2026-04-22.

@@ -1,0 +1,96 @@
+import { useState, useEffect } from 'react';
+import { FIELD_TYPES, addField, removeField, updateField, moveField, getFieldEntries, validateSchema } from '../lib/schema';
+
+function SchemaBuilder({ schemaJson, onChange }) {
+    const [draft, setDraft] = useState(schemaJson);
+    const [isDirty, setIsDirty] = useState(false);
+
+    useEffect(() => {
+        setDraft(schemaJson);
+        setIsDirty(false);
+    }, [schemaJson]);
+
+    const fields = getFieldEntries(draft);
+
+    const updateDraft = (newJson) => { setDraft(newJson); setIsDirty(true); };
+    const handleSave = () => { onChange(draft); setIsDirty(false); };
+    const handleCancel = () => { setDraft(schemaJson); setIsDirty(false); };
+
+    const handleAddField = () => {
+        const idx = fields.length + 1;
+        let key = `field_${idx}`;
+        while (draft[key]) key = `field_${idx}_${Date.now()}`;
+        updateDraft(addField(draft, key, 'string'));
+    };
+
+    const handleRemoveField = (key) => updateDraft(removeField(draft, key));
+
+    const handleUpdateKey = (oldKey, newKey) => {
+        if (!newKey.trim() || (newKey !== oldKey && draft[newKey])) return;
+        updateDraft(updateField(draft, oldKey, newKey, draft[oldKey]));
+    };
+
+    const handleUpdateType = (key, type) => {
+        const def = { ...draft[key], type };
+        if (type === 'select' && !def.enum) def.enum = ['ตัวเลือก 1', 'ตัวเลือก 2'];
+        if (type !== 'select') delete def.enum;
+        updateDraft(updateField(draft, key, key, def));
+    };
+
+    const handleUpdateOptions = (key, optionsStr) => {
+        const opts = optionsStr.split(',').map(s => s.trim()).filter(Boolean);
+        updateDraft(updateField(draft, key, key, { ...draft[key], enum: opts }));
+    };
+
+    const handleUpdateLabel = (key, label) => {
+        updateDraft(updateField(draft, key, key, { ...draft[key], label }));
+    };
+
+    const handleMove = (key, dir) => updateDraft(moveField(draft, key, dir));
+    const errors = validateSchema(draft);
+
+    return (
+        <div className="fb-builder">
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <h3 style={{ marginTop: 0 }}>กำหนด Fields ({fields.length} fields)</h3>
+                {isDirty && <span style={{ fontSize: 12, color: 'var(--accent-primary)' }}>* มีการเปลี่ยนแปลง</span>}
+            </div>
+
+            {fields.map(([key, def], idx) => (
+                <div key={idx} className="fb-field-card">
+                    <span className="field-drag">⠿</span>
+                    <div className="field-info">
+                        <input className="field-key-input" value={key} onChange={e => handleUpdateKey(key, e.target.value)} placeholder="key" />
+                        <input className="field-label-input" value={def.label || ''} onChange={e => handleUpdateLabel(key, e.target.value)} placeholder="label (ชื่อแสดง)" />
+                        <select className="field-type-select" value={def.type} onChange={e => handleUpdateType(key, e.target.value)}>
+                            {FIELD_TYPES.map(t => <option key={t.value} value={t.value}>{t.icon} {t.label}</option>)}
+                        </select>
+                        {def.type === 'select' && (
+                            <input className="field-options-input" value={(def.enum || []).join(', ')} onChange={e => handleUpdateOptions(key, e.target.value)} placeholder="ตัวเลือก (คั่นด้วย ,)" />
+                        )}
+                    </div>
+                    <div className="fb-field-actions">
+                        <button onClick={() => handleMove(key, 'up')} title="ขึ้น" disabled={idx === 0}>↑</button>
+                        <button onClick={() => handleMove(key, 'down')} title="ลง" disabled={idx === fields.length - 1}>↓</button>
+                        <button onClick={() => handleRemoveField(key)} title="ลบ" style={{ color: '#e74c3c' }}>✕</button>
+                    </div>
+                </div>
+            ))}
+
+            <button className="fb-add-field-btn" onClick={handleAddField}>+ เพิ่ม Field</button>
+
+            {errors.length > 0 && (
+                <div style={{ marginTop: 12, padding: 12, borderRadius: 6, background: '#e74c3c15', border: '1px solid #e74c3c40', fontSize: 13 }}>
+                    {errors.map((e, i) => <div key={i} style={{ color: '#e74c3c' }}>{e}</div>)}
+                </div>
+            )}
+
+            <div className="fb-builder-actions">
+                <button className="fb-mode-btn" onClick={handleCancel} disabled={!isDirty}>ยกเลิก</button>
+                <button className="fb-mode-btn active" onClick={handleSave} disabled={!isDirty || errors.length > 0}>บันทึก</button>
+            </div>
+        </div>
+    );
+}
+
+export default SchemaBuilder;

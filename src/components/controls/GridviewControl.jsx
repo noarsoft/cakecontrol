@@ -1,6 +1,6 @@
 import React from 'react';
 import './GridviewControl.css';
-import { genControl } from './TableviewControl';
+import { genControl } from './registry';
 import PaginationControl from './PaginationControl';
 
 function GridviewControl({ config }) {

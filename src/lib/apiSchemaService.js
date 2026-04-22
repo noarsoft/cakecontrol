@@ -1,7 +1,6 @@
 /**
  * apiSchemaService.js — API-based CRUD สำหรับ 4 tables
  * ใช้แทน mockSchemaService เมื่อมี backend
- * API signatures เหมือน mockSchemaService เพื่อ swap ง่าย
  */
 const BASE = 'http://localhost:3002/api';
 
@@ -18,96 +17,95 @@ async function request(path, options = {}) {
 // ─── data_schema ───
 
 export async function getSchemas() {
-    return request('/schemas');
+    return request('/schemax');
 }
 
-export async function getSchemaById(id) {
-    return request(`/schemas/${id}`);
+export async function getSchemaById(rootid) {
+    return request(`/schemax/${rootid}`);
 }
 
 export async function createSchema(name, json = {}) {
-    return request('/schemas', {
+    return request('/schemax', {
         method: 'POST',
         body: JSON.stringify({ name, json }),
     });
 }
 
-export async function updateSchema(id, updates) {
-    return request(`/schemas/${id}`, {
+export async function updateSchema(rootid, updates) {
+    return request(`/schemax/${rootid}`, {
         method: 'PUT',
         body: JSON.stringify(updates),
     });
 }
 
-export async function deleteSchema(id) {
-    return request(`/schemas/${id}`, { method: 'DELETE' });
+export async function deleteSchema(rootid) {
+    return request(`/schemax/${rootid}`, { method: 'DELETE' });
 }
 
-// ─── data_view ───
+// ─── view ───
 
 export async function getViewsBySchema(schemaId) {
-    return request(`/views?schemaId=${schemaId}`);
+    return request(`/viewx?data_schema_id=${schemaId}`);
 }
 
-export async function createView(schemaId, viewType, json, name = '') {
-    return request('/views', {
+export async function createView(schemaId, viewType, json_table_config, name = '') {
+    return request('/viewx', {
         method: 'POST',
-        body: JSON.stringify({ schemaId, viewType, json, name }),
+        body: JSON.stringify({ data_schema_id: schemaId, view_type: viewType, json_table_config, name }),
     });
 }
 
-export async function updateView(id, updates) {
-    return request(`/views/${id}`, {
+export async function updateView(rootid, updates) {
+    return request(`/viewx/${rootid}`, {
         method: 'PUT',
         body: JSON.stringify(updates),
     });
 }
 
-// ─── data_formcfg ───
+// ─── form (config) ───
 
 export async function getFormcfgsBySchema(schemaId) {
-    return request(`/formcfgs?schemaId=${schemaId}`);
+    return request(`/formcfgx?data_id=${schemaId}`);
 }
 
-export async function createFormcfg(schemaId, json, name = '') {
-    return request('/formcfgs', {
+export async function createFormcfg(schemaId, json_form_config, name = '') {
+    return request('/formcfgx', {
         method: 'POST',
-        body: JSON.stringify({ schemaId, json, name }),
+        body: JSON.stringify({ data_id: schemaId, json_form_config, name }),
     });
 }
 
-export async function updateFormcfg(id, updates) {
-    return request(`/formcfgs/${id}`, {
+export async function updateFormcfg(rootid, updates) {
+    return request(`/formcfgx/${rootid}`, {
         method: 'PUT',
         body: JSON.stringify(updates),
     });
 }
 
-// ─── data_form ───
+// ─── data (ข้อมูลจริง) ───
 
 export async function getFormDataBySchema(schemaId) {
-    return request(`/forms?schemaId=${schemaId}`);
+    return request(`/formx?data_schema_id=${schemaId}`);
 }
 
 export async function createFormData(schemaId, data) {
-    return request('/forms', {
+    return request('/formx', {
         method: 'POST',
-        body: JSON.stringify({ schemaId, data }),
+        body: JSON.stringify({ data_schema_id: schemaId, data }),
     });
 }
 
-export async function updateFormData(id, data) {
-    return request(`/forms/${id}`, {
+export async function updateFormData(rootid, data) {
+    return request(`/formx/${rootid}`, {
         method: 'PUT',
         body: JSON.stringify({ data }),
     });
 }
 
-export async function deleteFormData(id) {
-    return request(`/forms/${id}`, { method: 'DELETE' });
+export async function deleteFormData(rootid) {
+    return request(`/formx/${rootid}`, { method: 'DELETE' });
 }
 
-// No-op for API mode (seed is done on server side)
 export async function seedDemoData() {
     // Server handles its own seeding
 }

@@ -32,7 +32,7 @@ function FormFillerPage() {
             }
             setSchema(s);
             const cfgs = await getFormcfgsBySchema(id);
-            if (cfgs[0]) setFormcfgJson(cfgs[0].json);
+            if (cfgs[0]) setFormcfgJson(cfgs[0].json_form_config);
         })();
     }, [schemaId]);
 

@@ -6,8 +6,8 @@
 const STORAGE_KEYS = {
     schemas: 'cakecontrol_schemas',
     views: 'cakecontrol_views',
-    formcfgs: 'cakecontrol_formcfgs',
     forms: 'cakecontrol_forms',
+    data: 'cakecontrol_data',
 };
 
 function genId() {
@@ -32,7 +32,6 @@ function setStore(key, data) {
     localStorage.setItem(key, JSON.stringify(data));
 }
 
-// Auto-increment ID counter per table
 function nextId(key) {
     const items = getStore(key);
     const maxId = items.reduce((max, item) => Math.max(max, item.id || 0), 0);
@@ -49,21 +48,21 @@ export function getSchemaById(id) {
     return getStore(STORAGE_KEYS.schemas).find(s => s.id === id && s.activate !== false);
 }
 
-export function getSchemaByRootId(rootId) {
-    return getStore(STORAGE_KEYS.schemas).find(s => s.root_id === rootId && s.activate !== false);
+export function getSchemaByRootId(rootid) {
+    return getStore(STORAGE_KEYS.schemas).find(s => s.rootid === rootid && s.activate !== false);
 }
 
 export function createSchema(name, json = {}) {
     const items = getStore(STORAGE_KEYS.schemas);
     const item = {
-        root_id: genId(),
+        rootid: genId(),
         id: nextId(STORAGE_KEYS.schemas),
-        previous_id: null,
+        prev_id: null,
         name,
         json,
         flag: 'draft',
         activate: true,
-        modified_date_time: now(),
+        modify_datetime: now(),
     };
     items.push(item);
     setStore(STORAGE_KEYS.schemas, items);
@@ -74,8 +73,8 @@ export function updateSchema(id, updates) {
     const items = getStore(STORAGE_KEYS.schemas);
     const idx = items.findIndex(s => s.id === id);
     if (idx < 0) return null;
-    const { id: _id, root_id: _root, ...safeUpdates } = updates;
-    items[idx] = { ...items[idx], ...safeUpdates, modified_date_time: now() };
+    const { id: _id, rootid: _root, ...safeUpdates } = updates;
+    items[idx] = { ...items[idx], ...safeUpdates, modify_datetime: now() };
     setStore(STORAGE_KEYS.schemas, items);
     return items[idx];
 }
@@ -89,25 +88,25 @@ export function deleteSchema(id) {
     return true;
 }
 
-// ─── data_view ───
+// ─── view ───
 
 export function getViewsBySchema(schemaId) {
-    return getStore(STORAGE_KEYS.views).filter(v => v.fk_data_schema === schemaId && v.activate !== false);
+    return getStore(STORAGE_KEYS.views).filter(v => v.data_schema_id === schemaId && v.activate !== false);
 }
 
-export function createView(schemaId, viewType, json, name = '') {
+export function createView(schemaId, viewType, json_table_config, name = '') {
     const items = getStore(STORAGE_KEYS.views);
     const item = {
-        root_id: genId(),
+        rootid: genId(),
         id: nextId(STORAGE_KEYS.views),
-        previous_id: null,
-        fk_data_schema: schemaId,
+        prev_id: null,
+        data_schema_id: schemaId,
         view_type: viewType,
         name,
-        json,
+        json_table_config,
         flag: 'draft',
         activate: true,
-        modified_date_time: now(),
+        modify_datetime: now(),
     };
     items.push(item);
     setStore(STORAGE_KEYS.views, items);
@@ -118,102 +117,100 @@ export function updateView(id, updates) {
     const items = getStore(STORAGE_KEYS.views);
     const idx = items.findIndex(v => v.id === id);
     if (idx < 0) return null;
-    const { id: _id, root_id: _root, ...safeUpdates } = updates;
-    items[idx] = { ...items[idx], ...safeUpdates, modified_date_time: now() };
+    const { id: _id, rootid: _root, ...safeUpdates } = updates;
+    items[idx] = { ...items[idx], ...safeUpdates, modify_datetime: now() };
     setStore(STORAGE_KEYS.views, items);
     return items[idx];
 }
 
-// ─── data_formcfg ───
+// ─── form (config) ───
 
 export function getFormcfgsBySchema(schemaId) {
-    return getStore(STORAGE_KEYS.formcfgs).filter(f => f.fk_data_schema === schemaId && f.activate !== false);
+    return getStore(STORAGE_KEYS.forms).filter(f => f.data_id === schemaId && f.activate !== false);
 }
 
-export function createFormcfg(schemaId, json, name = '') {
-    const items = getStore(STORAGE_KEYS.formcfgs);
+export function createFormcfg(schemaId, json_form_config, name = '') {
+    const items = getStore(STORAGE_KEYS.forms);
     const item = {
-        root_id: genId(),
-        id: nextId(STORAGE_KEYS.formcfgs),
-        previous_id: null,
-        fk_data_schema: schemaId,
+        rootid: genId(),
+        id: nextId(STORAGE_KEYS.forms),
+        prev_id: null,
+        data_id: schemaId,
         name,
-        json,
+        json_form_config,
         flag: 'draft',
         activate: true,
-        modified_date_time: now(),
+        modify_datetime: now(),
     };
     items.push(item);
-    setStore(STORAGE_KEYS.formcfgs, items);
+    setStore(STORAGE_KEYS.forms, items);
     return item;
 }
 
 export function updateFormcfg(id, updates) {
-    const items = getStore(STORAGE_KEYS.formcfgs);
+    const items = getStore(STORAGE_KEYS.forms);
     const idx = items.findIndex(f => f.id === id);
     if (idx < 0) return null;
-    const { id: _id, root_id: _root, ...safeUpdates } = updates;
-    items[idx] = { ...items[idx], ...safeUpdates, modified_date_time: now() };
-    setStore(STORAGE_KEYS.formcfgs, items);
+    const { id: _id, rootid: _root, ...safeUpdates } = updates;
+    items[idx] = { ...items[idx], ...safeUpdates, modify_datetime: now() };
+    setStore(STORAGE_KEYS.forms, items);
     return items[idx];
 }
 
-// ─── data_form (ข้อมูลจริง) ───
+// ─── data (ข้อมูลจริง) ───
 
 export function getFormDataBySchema(schemaId) {
-    return getStore(STORAGE_KEYS.forms).filter(f => f.fk_data_schema === schemaId && f.activate !== false);
+    return getStore(STORAGE_KEYS.data).filter(f => f.data_schema_id === schemaId && f.activate !== false);
 }
 
 export function createFormData(schemaId, data) {
-    const items = getStore(STORAGE_KEYS.forms);
+    const items = getStore(STORAGE_KEYS.data);
     const item = {
-        root_id: genId(),
-        id: nextId(STORAGE_KEYS.forms),
-        previous_id: null,
-        fk_data_schema: schemaId,
+        rootid: genId(),
+        id: nextId(STORAGE_KEYS.data),
+        prev_id: null,
+        data_schema_id: schemaId,
         data,
         flag: 'active',
         activate: true,
-        modified_date_time: now(),
+        modify_datetime: now(),
     };
     items.push(item);
-    setStore(STORAGE_KEYS.forms, items);
+    setStore(STORAGE_KEYS.data, items);
     return item;
 }
 
 export function updateFormData(id, data) {
-    const items = getStore(STORAGE_KEYS.forms);
+    const items = getStore(STORAGE_KEYS.data);
     const idx = items.findIndex(f => f.id === id);
     if (idx < 0) return null;
-    items[idx] = { ...items[idx], data, modified_date_time: now() };
-    setStore(STORAGE_KEYS.forms, items);
+    items[idx] = { ...items[idx], data, modify_datetime: now() };
+    setStore(STORAGE_KEYS.data, items);
     return items[idx];
 }
 
 export function deleteFormData(id) {
-    const items = getStore(STORAGE_KEYS.forms);
+    const items = getStore(STORAGE_KEYS.data);
     const idx = items.findIndex(f => f.id === id);
     if (idx < 0) return false;
     items[idx].activate = false;
-    setStore(STORAGE_KEYS.forms, items);
+    setStore(STORAGE_KEYS.data, items);
     return true;
 }
 
 // ─── Seed: สร้าง demo data ───
 
 export function seedDemoData() {
-    if (getSchemas().length > 0) return; // มี data แล้วไม่ seed
+    if (getSchemas().length > 0) return;
 
-    // Schema: พนักงาน
     const schema1 = createSchema('พนักงาน', {
         name: { type: 'string' },
         age: { type: 'number' },
         role: { type: 'select', enum: ['Admin', 'User', 'Guest'] },
-        email: { type: 'email' },
-        is_active: { type: 'boolean' },
+        email: { type: 'string' },
+        is_active: { type: 'string' },
     });
 
-    // View สำหรับ พนักงาน
     createView(schema1.id, 'table', {
         columns: [
             { key: 'name', header: 'ชื่อ', width: 'auto', sortable: true },
@@ -224,7 +221,6 @@ export function seedDemoData() {
         ],
     }, 'ตารางพนักงาน');
 
-    // Formcfg สำหรับ พนักงาน
     createFormcfg(schema1.id, {
         colnumbers: 6,
         controls: [
@@ -236,17 +232,15 @@ export function seedDemoData() {
         ],
     }, 'ฟอร์มพนักงาน');
 
-    // Demo data
-    createFormData(schema1.id, { name: 'สมชาย ใจดี', age: 28, role: 'Admin', email: 'somchai@example.com', is_active: true });
-    createFormData(schema1.id, { name: 'สมหญิง รักงาน', age: 25, role: 'User', email: 'somying@example.com', is_active: true });
-    createFormData(schema1.id, { name: 'สมศักดิ์ มานะ', age: 32, role: 'User', email: 'somsak@example.com', is_active: false });
+    createFormData(schema1.id, { name: 'สมชาย ใจดี', age: 28, role: 'Admin', email: 'somchai@example.com', is_active: 'true' });
+    createFormData(schema1.id, { name: 'สมหญิง รักงาน', age: 25, role: 'User', email: 'somying@example.com', is_active: 'true' });
+    createFormData(schema1.id, { name: 'สมศักดิ์ มานะ', age: 32, role: 'User', email: 'somsak@example.com', is_active: 'false' });
 
-    // Schema: สินค้า
     const schema2 = createSchema('สินค้า', {
         product_name: { type: 'string' },
         price: { type: 'number' },
         category: { type: 'select', enum: ['อาหาร', 'เครื่องดื่ม', 'ของใช้', 'อื่นๆ'] },
-        in_stock: { type: 'boolean' },
+        in_stock: { type: 'string' },
     });
 
     createView(schema2.id, 'table', {
@@ -268,6 +262,6 @@ export function seedDemoData() {
         ],
     }, 'ฟอร์มสินค้า');
 
-    createFormData(schema2.id, { product_name: 'ข้าวผัด', price: 50, category: 'อาหาร', in_stock: true });
-    createFormData(schema2.id, { product_name: 'น้ำส้ม', price: 25, category: 'เครื่องดื่ม', in_stock: true });
+    createFormData(schema2.id, { product_name: 'ข้าวผัด', price: 50, category: 'อาหาร', in_stock: 'true' });
+    createFormData(schema2.id, { product_name: 'น้ำส้ม', price: 25, category: 'เครื่องดื่ม', in_stock: 'true' });
 }

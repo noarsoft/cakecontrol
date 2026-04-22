@@ -1,11 +1,13 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import CRUDControl from '../components/controls/CRUDControl';
-import FormControl from '../components/controls/FormControl';
 import ConfirmModal from '../components/controls/ConfirmModal';
-import { FIELD_TYPES, addField, removeField, updateField, moveField, getFieldEntries, validateSchema } from '../lib/schema';
-import { buildCrudConfig, schemaToFormConfig, generateDefaultView, generateDefaultFormcfg } from '../lib/schemaTransform';
+import SchemaBuilder from './SchemaBuilder';
+import SchemaNameInput from './SchemaNameInput';
+import FormPreview from './FormPreview';
+import FormFiller from './FormFiller';
+import { buildCrudConfig, generateDefaultView, generateDefaultFormcfg } from '../lib/schemaTransform';
 import {
-    initService, isApiMode,
+    initService,
     getSchemas, createSchema, updateSchema, deleteSchema,
     getViewsBySchema, createView, updateView,
     getFormcfgsBySchema, createFormcfg, updateFormcfg,
@@ -122,8 +124,8 @@ function FormBuilder() {
         if (!activeSchema || !schemaData) return null;
         const cfg = buildCrudConfig({
             schemaJson: activeSchema.json,
-            viewJson: schemaData.view?.json,
-            formcfgJson: schemaData.formcfg?.json,
+            viewJson: schemaData.view?.json_table_config,
+            formcfgJson: schemaData.formcfg?.json_form_config,
             data: schemaData.data,
             keyField: '_formId',
         });
@@ -146,10 +148,10 @@ function FormBuilder() {
             getFormcfgsBySchema(activeSchema.id),
         ]);
         const viewUpdate = views[0]
-            ? updateView(views[0].id, { json: generateDefaultView(newJson) })
+            ? updateView(views[0].id, { json_table_config: generateDefaultView(newJson) })
             : createView(activeSchema.id, 'table', generateDefaultView(newJson), 'Default View');
         const cfgUpdate = formcfgs[0]
-            ? updateFormcfg(formcfgs[0].id, { json: generateDefaultFormcfg(newJson) })
+            ? updateFormcfg(formcfgs[0].id, { json_form_config: generateDefaultFormcfg(newJson) })
             : createFormcfg(activeSchema.id, generateDefaultFormcfg(newJson), 'Default Form');
         await Promise.all([viewUpdate, cfgUpdate]);
 
@@ -268,14 +270,14 @@ function FormBuilder() {
                             {mode === 'fill' && (
                                 <FormFiller
                                     schema={activeSchema}
-                                    formcfgJson={schemaData?.formcfg?.json}
+                                    formcfgJson={schemaData?.formcfg?.json_form_config}
                                     onSubmit={() => setRefreshKey(k => k + 1)}
                                 />
                             )}
                             {mode === 'preview' && (
                                 <FormPreview
                                     schemaJson={activeSchema.json}
-                                    formcfgJson={schemaData?.formcfg?.json}
+                                    formcfgJson={schemaData?.formcfg?.json_form_config}
                                     schemaName={activeSchema.name}
                                 />
                             )}
@@ -297,284 +299,6 @@ function FormBuilder() {
                 onConfirm={handleDeleteSchema}
                 onCancel={() => setDeleteConfirm(null)}
             />
-        </div>
-    );
-}
-
-/* ─── Schema Builder Component ─── */
-function SchemaBuilder({ schemaJson, onChange }) {
-    // Local buffer — edit locally, save explicitly
-    const [draft, setDraft] = useState(schemaJson);
-    const [isDirty, setIsDirty] = useState(false);
-
-    // Sync draft when parent schema changes (e.g. switching schemas)
-    useEffect(() => {
-        setDraft(schemaJson);
-        setIsDirty(false);
-    }, [schemaJson]);
-
-    const fields = getFieldEntries(draft);
-
-    const updateDraft = (newJson) => {
-        setDraft(newJson);
-        setIsDirty(true);
-    };
-
-    const handleSave = () => {
-        onChange(draft);
-        setIsDirty(false);
-    };
-
-    const handleCancel = () => {
-        setDraft(schemaJson);
-        setIsDirty(false);
-    };
-
-    const handleAddField = () => {
-        const idx = fields.length + 1;
-        let key = `field_${idx}`;
-        while (draft[key]) key = `field_${idx}_${Date.now()}`;
-        updateDraft(addField(draft, key, 'string'));
-    };
-
-    const handleRemoveField = (key) => {
-        updateDraft(removeField(draft, key));
-    };
-
-    const handleUpdateKey = (oldKey, newKey) => {
-        if (!newKey.trim() || (newKey !== oldKey && draft[newKey])) return;
-        updateDraft(updateField(draft, oldKey, newKey, draft[oldKey]));
-    };
-
-    const handleUpdateType = (key, type) => {
-        const def = { ...draft[key], type };
-        if (type === 'select' && !def.enum) def.enum = ['ตัวเลือก 1', 'ตัวเลือก 2'];
-        if (type !== 'select') delete def.enum;
-        updateDraft(updateField(draft, key, key, def));
-    };
-
-    const handleUpdateOptions = (key, optionsStr) => {
-        const opts = optionsStr.split(',').map(s => s.trim()).filter(Boolean);
-        updateDraft(updateField(draft, key, key, { ...draft[key], enum: opts }));
-    };
-
-    const handleUpdateLabel = (key, label) => {
-        updateDraft(updateField(draft, key, key, { ...draft[key], label }));
-    };
-
-    const handleMove = (key, dir) => {
-        updateDraft(moveField(draft, key, dir));
-    };
-
-    const errors = validateSchema(draft);
-
-    return (
-        <div className="fb-builder">
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <h3 style={{ marginTop: 0 }}>กำหนด Fields ({fields.length} fields)</h3>
-                {isDirty && <span style={{ fontSize: 12, color: 'var(--accent-primary)' }}>* มีการเปลี่ยนแปลง</span>}
-            </div>
-
-            {fields.map(([key, def], idx) => (
-                <div key={idx} className="fb-field-card">
-                    <span className="field-drag">⠿</span>
-                    <div className="field-info">
-                        <input
-                            className="field-key-input"
-                            value={key}
-                            onChange={e => handleUpdateKey(key, e.target.value)}
-                            placeholder="key"
-                        />
-                        <input
-                            className="field-label-input"
-                            value={def.label || ''}
-                            onChange={e => handleUpdateLabel(key, e.target.value)}
-                            placeholder="label (ชื่อแสดง)"
-                        />
-                        <select
-                            className="field-type-select"
-                            value={def.type}
-                            onChange={e => handleUpdateType(key, e.target.value)}
-                        >
-                            {FIELD_TYPES.map(t => (
-                                <option key={t.value} value={t.value}>
-                                    {t.icon} {t.label}
-                                </option>
-                            ))}
-                        </select>
-                        {def.type === 'select' && (
-                            <input
-                                className="field-options-input"
-                                value={(def.enum || []).join(', ')}
-                                onChange={e => handleUpdateOptions(key, e.target.value)}
-                                placeholder="ตัวเลือก (คั่นด้วย ,)"
-                            />
-                        )}
-                    </div>
-                    <div className="fb-field-actions">
-                        <button onClick={() => handleMove(key, 'up')} title="ขึ้น" disabled={idx === 0}>↑</button>
-                        <button onClick={() => handleMove(key, 'down')} title="ลง" disabled={idx === fields.length - 1}>↓</button>
-                        <button onClick={() => handleRemoveField(key)} title="ลบ" style={{ color: '#e74c3c' }}>✕</button>
-                    </div>
-                </div>
-            ))}
-
-            <button className="fb-add-field-btn" onClick={handleAddField}>
-                + เพิ่ม Field
-            </button>
-
-            {errors.length > 0 && (
-                <div style={{ marginTop: 12, padding: 12, borderRadius: 6, background: '#e74c3c15', border: '1px solid #e74c3c40', fontSize: 13 }}>
-                    {errors.map((e, i) => <div key={i} style={{ color: '#e74c3c' }}>{e}</div>)}
-                </div>
-            )}
-
-            <div className="fb-builder-actions">
-                <button
-                    className="fb-mode-btn"
-                    onClick={handleCancel}
-                    disabled={!isDirty}
-                >
-                    ยกเลิก
-                </button>
-                <button
-                    className="fb-mode-btn active"
-                    onClick={handleSave}
-                    disabled={!isDirty || errors.length > 0}
-                >
-                    บันทึก
-                </button>
-            </div>
-        </div>
-    );
-}
-
-/* ─── Schema Name Input (local state + save on blur/enter) ─── */
-function SchemaNameInput({ value, onSave }) {
-    const [draft, setDraft] = useState(value);
-
-    useEffect(() => {
-        setDraft(value);
-    }, [value]);
-
-    const save = () => {
-        if (draft.trim() && draft !== value) {
-            onSave(draft);
-        }
-    };
-
-    return (
-        <input
-            className="fb-schema-name-input"
-            value={draft}
-            onChange={e => setDraft(e.target.value)}
-            onBlur={save}
-            onKeyDown={e => { if (e.key === 'Enter') { e.target.blur(); } }}
-        />
-    );
-}
-
-/* ─── Form Preview Component ─── */
-function FormPreview({ schemaJson, formcfgJson, schemaName }) {
-    const [formData, setFormData] = useState({});
-
-    const formConfig = useMemo(
-        () => schemaToFormConfig(schemaJson, formcfgJson),
-        [schemaJson, formcfgJson]
-    );
-
-    const config = useMemo(() => ({
-        ...formConfig,
-        data: [formData],
-        onChange: (e) => {
-            const val = e?.target?.value;
-            if (val && typeof val === 'object') {
-                setFormData(val);
-            }
-        },
-    }), [formConfig, formData]);
-
-    return (
-        <div className="fb-preview">
-            <h3>{schemaName} — Preview</h3>
-            <FormControl config={config} />
-            <div style={{ marginTop: 20, padding: 12, borderRadius: 6, background: 'var(--bg-primary)', fontSize: 13, fontFamily: 'monospace' }}>
-                <strong>Form Data:</strong>
-                <pre style={{ margin: '8px 0 0', whiteSpace: 'pre-wrap' }}>
-                    {JSON.stringify(formData, null, 2)}
-                </pre>
-            </div>
-        </div>
-    );
-}
-
-/* ─── Form Filler — Google Forms-like fill + submit ─── */
-function FormFiller({ schema, formcfgJson, onSubmit }) {
-    const [formData, setFormData] = useState({});
-    const [submitted, setSubmitted] = useState(false);
-
-    const formConfig = useMemo(
-        () => schemaToFormConfig(schema.json, formcfgJson),
-        [schema.json, formcfgJson]
-    );
-
-    const config = useMemo(() => ({
-        ...formConfig,
-        data: [formData],
-        onChange: (e) => {
-            const val = e?.target?.value;
-            if (val && typeof val === 'object') {
-                setFormData(val);
-            }
-        },
-    }), [formConfig, formData]);
-
-    const handleSubmit = async () => {
-        await createFormData(schema.id, formData);
-        setSubmitted(true);
-        onSubmit?.();
-    };
-
-    const handleReset = () => {
-        setFormData({});
-        setSubmitted(false);
-    };
-
-    if (submitted) {
-        return (
-            <div className="fb-filler">
-                <div className="fb-filler-header">
-                    <h2>{schema.name}</h2>
-                </div>
-                <div className="fb-filler-success">
-                    <span className="fb-filler-success-icon">✓</span>
-                    <h3>บันทึกสำเร็จ!</h3>
-                    <p>ข้อมูลของคุณถูกบันทึกเรียบร้อยแล้ว</p>
-                    <button className="fb-mode-btn active" onClick={handleReset}>
-                        กรอกอีกครั้ง
-                    </button>
-                </div>
-            </div>
-        );
-    }
-
-    return (
-        <div className="fb-filler">
-            <div className="fb-filler-header">
-                <h2>{schema.name}</h2>
-                <p>กรอกข้อมูลแล้วกดบันทึก</p>
-            </div>
-            <div className="fb-filler-body">
-                <FormControl config={config} />
-            </div>
-            <div className="fb-filler-footer">
-                <button className="fb-mode-btn" onClick={handleReset}>
-                    ล้างข้อมูล
-                </button>
-                <button className="fb-mode-btn active" onClick={handleSubmit}>
-                    บันทึก
-                </button>
-            </div>
         </div>
     );
 }
