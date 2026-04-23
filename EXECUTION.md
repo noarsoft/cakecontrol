@@ -1,7 +1,7 @@
 # EXECUTION GUIDE: CakeControl Form Builder
 
 > สำหรับทีมอื่นที่ต้องการเข้าใจว่าระบบทำงานยังไง, รันยังไง, เทสยังไง
-> อัปเดต: 2026-04-16 | Branch: `dev/pee-formbuilder`
+> อัปเดต: 2026-04-23 | Branch: `dev/pee-formbuilder`
 
 ---
 
@@ -30,12 +30,13 @@ CakeControl เป็น React UI Component Library ที่มี **Form Build
                    │ (ถ้า backend พร้อม)
                    ▼
 ┌─────────────────────────────────────────────────────────┐
-│  Backend (Express 5 + better-sqlite3)   port 3002       │
+│  Backend: rootid repo                                   │
+│  (Express 5 + Prisma + PostgreSQL 16)   port 3002       │
 │                                                         │
-│  /api/schemas    → schemaRepo   ─┐                      │
-│  /api/views      → viewRepo     ─┤── database.js        │
-│  /api/formcfgs   → formcfgRepo  ─┤   (SQLite file)      │
-│  /api/forms      → formRepo     ─┘                      │
+│  /api/schemax    → schemax.service   ─┐                 │
+│  /api/viewx      → viewx.service     ─┤── Prisma       │
+│  /api/formcfgx   → formcfgx.service  ─┤   (PostgreSQL) │
+│  /api/formx      → formx.service     ─┘                 │
 │  /api/health     → { status: 'ok' }                     │
 └─────────────────────────────────────────────────────────┘
 ```
@@ -60,85 +61,77 @@ sidebar จะแสดง `🟡 localStorage` เป็นตัวบอกว
 ### 2B: Frontend + Backend (full stack)
 
 ```bash
-# Terminal 1 — Backend
-cd cakecontrol/server
+# Terminal 1 — Backend (rootid repo)
+cd rootid
 npm install
-npm run seed         # สร้าง demo data (พนักงาน + สินค้า)
-npm run dev          # Express server → http://localhost:3002
+npm run prisma:migrate   # สร้าง tables
+npm run dev              # Express server → http://localhost:3002
 
 # Terminal 2 — Frontend
 cd cakecontrol
-npm run dev          # Vite dev server → http://localhost:5173
+npm run dev              # Vite dev server → http://localhost:5173
 ```
 
-เปิดเว็บ → sidebar จะแสดง `🟢 API` — ข้อมูลเก็บใน SQLite file (`server/cakecontrol.db`)
+เปิดเว็บ → sidebar จะแสดง `🟢 API` — ข้อมูลเก็บใน PostgreSQL
 
 ### ตรวจว่า backend พร้อม
 
 ```bash
 curl http://localhost:3002/api/health
-# → {"status":"ok","timestamp":"2026-04-16T..."}
+# → {"success":true,"data":{"status":"ok","timestamp":"2026-04-23T..."}}
 ```
 
 ---
 
 ## 3. Database 4 Tables
 
-ทั้ง mock (localStorage) และ backend (SQLite) ใช้ schema เดียวกัน:
+ทั้ง mock (localStorage) และ backend (PostgreSQL) ใช้ schema เดียวกัน:
 
 ```
 data_schema     — นิยาม fields ของฟอร์ม (name=string, age=number, ...)
     ↓
-data_view       — config สำหรับ table view (columns, width, sortable)
-data_formcfg    — config สำหรับ form layout (label, colno, rowno, colspan)
+view            — config สำหรับ table view (columns, width, sortable)
+form            — config สำหรับ form layout (label, colno, rowno, colspan)
     ↓
-data_form       — ข้อมูลจริงที่กรอก (JSON)
+data            — ข้อมูลจริงที่กรอก (JSON)
 ```
 
 **ทุก table มี columns พื้นฐาน:**
-- `root_id` — UUID, PK ไม่เปลี่ยน
+- `rootid` — UUID, PK ไม่เปลี่ยน
 - `id` — auto-increment, ใช้เป็น FK
-- `previous_id` — versioning (linked list, ยังไม่ใช้ใน MVP)
-- `activate` — soft delete (0 = ลบแล้ว)
-- `modified_date_time` — format `yyyymmdd_hhmmss`
+- `prev_id` — versioning (linked list, ยังไม่ใช้ใน MVP)
+- `activate` — soft delete (false = ลบแล้ว)
+- `modify_datetime` — format `yyyymmdd_hhmmss`
 
-**ตัวอย่าง schema JSON** ของ "พนักงาน":
-```json
-{
-  "name": { "type": "string", "label": "ชื่อ-นามสกุล" },
-  "age": { "type": "number", "label": "อายุ" },
-  "role": { "type": "select", "label": "สิทธิ์", "enum": ["Admin", "User", "Guest"] },
-  "email": { "type": "email", "label": "อีเมล" },
-  "is_active": { "type": "boolean", "label": "สถานะ" }
-}
-```
+ดู `rootid/DB-DESIGN.md` สำหรับ full detail
 
 ---
 
 ## 4. Data Flow — สร้างฟอร์มจนถึงกรอกข้อมูล
 
-### Step 1: สร้าง Schema
+### Step 1: สร้าง Schema (ผ่าน Template Manager)
 
 ```
-ผู้ใช้กด "+ สร้างฟอร์มใหม่" ใน sidebar
-    → FormBuilder.handleAddSchema()
-    → createSchema('ฟอร์มใหม่', { field_1: { type: 'string' } })
-    → createView(schemaId, 'table', generateDefaultView(...))
-    → createFormcfg(schemaId, generateDefaultFormcfg(...))
+ผู้ใช้กด "+ สร้างแม่แบบ" ใน Template Manager
+    → เปิด ControlDesignerModal
+    → กำหนด fields (label, databind, control type)
+    → กด "บันทึก"
+    → controlsToSchema() → createSchema(name, json)
+    → controlsToFormcfg() → createFormcfg(schemaId, config)
+    → auto-generate view → createView(schemaId, viewConfig)
 ```
 
 สร้าง 3 records ทีเดียว: schema + view + formcfg
-view กับ formcfg สร้างอัตโนมัติจาก schema ด้วย `schemaTransform.js`
 
-### Step 2: แก้ไข Fields (mode: builder)
+### Step 2: แก้ไข Fields (ControlDesignerModal)
 
 ```
-ผู้ใช้เพิ่ม/ลบ/ย้าย field ใน SchemaBuilder
-    → ทำงานกับ local draft (ยังไม่ save)
+ผู้ใช้กด "แก้ไข" ที่ row ใน Template Manager
+    → เปิด ControlDesignerModal (edit mode)
+    → schemaToControls() แปลง schema → controls array
+    → แก้ไข label, databind, type, เพิ่ม/ลบ field
     → กด "บันทึก"
-    → handleSchemaJsonChange(newJson)
-    → updateSchema(id, { json: newJson })
-    → auto-update view + formcfg ให้ตรงกับ fields ใหม่
+    → updateSchema + updateFormcfg + updateView
 ```
 
 ### Step 3: กรอกข้อมูล (mode: fill หรือ /form/:schemaId)
@@ -148,7 +141,7 @@ schema.json ──→ schemaToFormConfig() ──→ FormControl config
     ↓
 FormControl แสดงฟอร์ม → ผู้ใช้กรอก → กด "บันทึก"
     → createFormData(schemaId, formData)
-    → เก็บลง data_form table
+    → เก็บลง data table
 ```
 
 ### Step 4: ดูข้อมูล (mode: data)
@@ -188,60 +181,34 @@ initService()
 
 ## 6. Backend API
 
+Backend อยู่ที่ repo `rootid/` — ดู `rootid/backend.md` สำหรับ full detail
+
 ### Endpoints ทั้งหมด
 
 | Method | Path | Body | ทำอะไร |
 |--------|------|------|--------|
-| GET | `/api/schemas` | - | List schemas ที่ activate=1 |
-| GET | `/api/schemas/:id` | - | Get schema by id |
-| POST | `/api/schemas` | `{ name, json }` | สร้าง schema ใหม่ |
-| PUT | `/api/schemas/:id` | `{ name?, json?, flag? }` | แก้ไข schema |
-| DELETE | `/api/schemas/:id` | - | Soft delete (activate=0) |
-| GET | `/api/views?schemaId=X` | - | List views ของ schema |
-| POST | `/api/views` | `{ schemaId, viewType, json, name }` | สร้าง view |
-| PUT | `/api/views/:id` | `{ json?, name? }` | แก้ไข view |
-| GET | `/api/formcfgs?schemaId=X` | - | List formcfgs ของ schema |
-| POST | `/api/formcfgs` | `{ schemaId, json, name }` | สร้าง formcfg |
-| PUT | `/api/formcfgs/:id` | `{ json?, name? }` | แก้ไข formcfg |
-| GET | `/api/forms?schemaId=X` | - | List form data ของ schema |
-| POST | `/api/forms` | `{ schemaId, data }` | สร้าง form record |
-| PUT | `/api/forms/:id` | `{ data }` | แก้ไข form data |
-| DELETE | `/api/forms/:id` | - | Soft delete |
+| GET | `/api/schemax` | - | List schemas ที่ activate=true |
+| GET | `/api/schemax/:rootid` | - | Get schema by rootid (UUID) |
+| POST | `/api/schemax` | `{ name, json }` | สร้าง schema ใหม่ |
+| PUT | `/api/schemax/:rootid` | `{ name?, json?, flag? }` | แก้ไข schema |
+| DELETE | `/api/schemax/:rootid` | - | Soft delete (activate=false) |
+| GET | `/api/viewx?data_schema_id=X` | - | List views ของ schema |
+| POST | `/api/viewx` | `{ data_schema_id, view_type, json_table_config }` | สร้าง view |
+| PUT | `/api/viewx/:rootid` | `{ json_table_config? }` | แก้ไข view |
+| GET | `/api/formcfgx?data_id=X` | - | List formcfgs ของ schema |
+| POST | `/api/formcfgx` | `{ data_id, json_form_config }` | สร้าง formcfg |
+| PUT | `/api/formcfgx/:rootid` | `{ json_form_config? }` | แก้ไข formcfg |
+| GET | `/api/formx?data_schema_id=X` | - | List form data ของ schema |
+| POST | `/api/formx` | `{ data_schema_id, data }` | สร้าง form record |
+| PUT | `/api/formx/:rootid` | `{ data }` | แก้ไข form data |
+| DELETE | `/api/formx/:rootid` | - | Soft delete |
 | GET | `/api/health` | - | Health check |
 
 ### Response Format
 
-ทุก endpoint ตอบ format เดียวกัน:
-
 ```json
-// สำเร็จ
 { "success": true, "data": { ... } }
-
-// ไม่สำเร็จ
-{ "success": false, "error": "Schema not found" }
-```
-
-### ทดสอบ API ด้วย curl
-
-```bash
-# List schemas
-curl http://localhost:3002/api/schemas
-
-# สร้าง schema ใหม่
-curl -X POST http://localhost:3002/api/schemas \
-  -H "Content-Type: application/json" \
-  -d '{"name":"ทดสอบ","json":{"field1":{"type":"string"}}}'
-
-# กรอกข้อมูล
-curl -X POST http://localhost:3002/api/forms \
-  -H "Content-Type: application/json" \
-  -d '{"schemaId":1,"data":{"field1":"hello"}}'
-
-# ดูข้อมูลของ schema 1
-curl "http://localhost:3002/api/forms?schemaId=1"
-
-# ลบ (soft delete)
-curl -X DELETE http://localhost:3002/api/forms/1
+{ "success": false, "error": "Validation failed", "details": [...] }
 ```
 
 ---
@@ -249,8 +216,6 @@ curl -X DELETE http://localhost:3002/api/forms/1
 ## 7. Transform Layer — schema → UI config
 
 ไฟล์: `src/lib/schemaTransform.js`
-
-ทำหน้าที่แปลง schema JSON ไปเป็น config ที่ controls เข้าใจ:
 
 ```
 schemaToFormConfig(schemaJson, formcfgJson)
@@ -293,7 +258,7 @@ npm test
 # รันเฉพาะไฟล์
 npx jest src/lib/__tests__/schema.test.js
 
-# รันแบบ watch (auto-rerun เมื่อไฟล์เปลี่ยน)
+# รันแบบ watch
 npm run test:watch
 
 # รัน + coverage report
@@ -310,39 +275,6 @@ npm run test:coverage
 | benchmarkCalc | `benchmarkCalc.test.js` | ~15 | DB benchmark calculation functions, chart data generation |
 | storageCalc | `storageCalc.test.js` | ~14 | Storage estimation (PG/Mongo), growth projection, formatBytes |
 
-### วิธีเทส — ยิงทีเดียวทั้งหมด
-
-```bash
-npm test
-```
-
-**ผลลัพธ์ที่ควรได้:**
-```
-Test Suites: 5 passed, 5 total
-Tests:       92 passed, 92 total
-```
-
-> หมายเหตุ: จะเห็น 2 suites failed จาก `src/Apis_test/` — เป็นของเดิมที่ config ไม่ตรง ไม่เกี่ยวกับ Form Builder
-
-### วิธีเทส — ยิงทีละตัว
-
-```bash
-# ทดสอบเฉพาะ schema utilities
-npx jest schema.test.js
-
-# ทดสอบเฉพาะ transform
-npx jest schemaTransform.test.js
-
-# ทดสอบเฉพาะ mock service
-npx jest mockSchemaService.test.js
-
-# ทดสอบเฉพาะ benchmark
-npx jest benchmarkCalc.test.js
-
-# ทดสอบเฉพาะ storage
-npx jest storageCalc.test.js
-```
-
 ### Jest Config
 
 - Framework: **Jest 30** + jsdom environment
@@ -350,23 +282,6 @@ npx jest storageCalc.test.js
 - localStorage: mock ด้วย in-memory object (รีเซ็ตทุก test ใน `beforeEach`)
 - fetch: mock ด้วย `whatwg-fetch`
 - Babel: `@babel/preset-env` + `@babel/preset-react`
-
-### Test Pattern
-
-ทุก test ใช้ AAA (Arrange-Act-Assert):
-
-```javascript
-test('addField adds a new field', () => {
-    // Arrange
-    const schema = {};
-
-    // Act
-    const result = addField(schema, 'name', 'string');
-
-    // Assert
-    expect(result.name).toEqual({ type: 'string' });
-});
-```
 
 ---
 
@@ -386,29 +301,32 @@ src/lib/
 └── __tests__/             ← Test files (5 suites, 92 tests)
 
 src/forms/
-├── FormBuilder.jsx        ← Main form builder page (sidebar + 4 modes)
+├── FormBuilder.jsx        ← Main form builder page (sidebar + 5 modes)
 ├── FormBuilder.css        ← Styles
+├── TemplateManager.jsx    ← Template list (default mode)
+├── ControlDesignerModal.jsx ← Modal ออกแบบ fields
+├── SchemaBuilder.jsx      ← Raw schema editor
+├── SchemaNameInput.jsx    ← Schema name input component
 ├── FormFillerPage.jsx     ← Standalone /form/:schemaId page
 ├── Dashboard.jsx          ← Dashboard page with sidebar nav
 └── Dashboard.css
 ```
 
-### Backend
+### Backend — rootid repo
 
 ```
-server/
-├── package.json           ← Express 5 + better-sqlite3
-├── cakecontrol.db         ← SQLite database file (auto-created)
-└── src/
-    ├── index.js           ← Express server entry (port 3002)
-    ├── db/
-    │   ├── database.js    ← DB setup + repository pattern (4 repos)
-    │   └── seed.js        ← Demo data (พนักงาน + สินค้า)
-    └── routes/
-        ├── schemas.js     ← /api/schemas CRUD
-        ├── views.js       ← /api/views CRUD
-        ├── formcfgs.js    ← /api/formcfgs CRUD
-        └── forms.js       ← /api/forms CRUD
+rootid/
+├── prisma/schema.prisma   ← DB schema (4 tables)
+├── src/
+│   ├── app.js             ← Express app setup
+│   ├── server.js          ← Entry point (port 3002)
+│   ├── config/db.prisma.js
+│   ├── controllers/       ← Factory pattern (base + 4 tables)
+│   ├── services/          ← Factory pattern (base + 4 tables)
+│   ├── routes/            ← 4 CRUD route files
+│   ├── validators/        ← Zod schemas
+│   ├── middlewares/       ← error handler, validate
+│   └── __tests__/         ← 95 tests (unit + integration)
 ```
 
 ---
@@ -419,7 +337,7 @@ server/
 |------|-----------|---------|
 | `/` | Login | หน้า login |
 | `/dashboard` | Dashboard | Dashboard + sidebar nav |
-| `/formbuilder` | FormBuilder | สร้าง/จัดการฟอร์ม |
+| `/formbuilder` | FormBuilder | สร้าง/จัดการฟอร์ม (default: Template Manager) |
 | `/form/:schemaId` | FormFillerPage | Standalone fill page (แชร์ link ได้) |
 | `/controls` | ControlsDocs | Documentation ทุก control |
 
@@ -432,5 +350,4 @@ server/
 | ViewConfigControl | Auto-generate ใช้งานได้แล้ว ยังไม่ต้องแก้ manual |
 | Component tests | ใช้ unit tests ของ lib ก่อน |
 | E2E tests (Playwright) | Optional สำหรับ MVP |
-| PostgreSQL migration | ใช้ SQLite local ก่อน, swap ทีหลังแค่เปลี่ยน database.js |
 | Auth | ไม่มี — ใช้ฟรี |

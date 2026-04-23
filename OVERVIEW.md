@@ -15,28 +15,41 @@
 
 ## หน้าเว็บ
 
-**หน้าเดียว** (เหมือน `/controls-docs`) — sidebar ซ้ายเลือก schema, ขวาแสดงตาม mode
+**หน้าเดียว** — sidebar ซ้ายเลือก schema, ขวาแสดงตาม mode
 
 ```
 ┌─────────────┬──────────────────────────────────────────────┐
 │  Sidebar    │  Main Content (เปลี่ยนตาม mode)              │
 │             │                                              │
-│  ฟอร์มทั้งหมด│                                              │
-│  ─────────  │  MODE 1: Data Manager (default)              │
-│  > พนักงาน  │  ┌────────────────────────────────────────┐  │
-│    สินค้า   │  │ ข้อมูล: พนักงาน                         │  │
-│    ใบสมัคร  │  │ [เลือกรายการ] [ค้นหา...] [+ เพิ่มข้อมูล]│  │
+│  จัดการแม่แบบ│  MODE 0: Template Manager (default)          │
+│  ─────────  │  ┌────────────────────────────────────────┐  │
+│  ฟอร์มทั้งหมด│  │ แม่แบบทั้งหมด                           │  │
+│  ─────────  │  │ [ค้นหา...]  [+ สร้างแม่แบบ]             │  │
+│  > พนักงาน  │  │ ┌──────────┬───────┬────────┬────────┐│  │
+│    สินค้า   │  │ │ ชื่อแม่แบบ│ Fields│ วันที่  │ จัดการ  ││  │
+│    ใบสมัคร  │  │ │พนักงาน   │ 5    │22/04/26│จัดการ..││  │
+│             │  │ │สินค้า    │ 3    │22/04/26│จัดการ..││  │
+│             │  │ └──────────┴───────┴────────┴────────┘│  │
+│             │  │           < 1  2  3  4  5 >            │  │
+│             │  └────────────────────────────────────────┘  │
+│             │  ↑ TemplateManager: ใช้ TableviewControl     │
+│             │    "สร้าง/แก้ไข" เปิด ControlDesignerModal    │
+│             │                                              │
+│             │──────────────────────────────────────────────│
+│             │                                              │
+│             │  MODE 1: Data Manager (กด "จัดการฟอร์ม")     │
+│             │  ┌────────────────────────────────────────┐  │
+│             │  │ ข้อมูล: พนักงาน                         │  │
+│             │  │ [เลือกรายการ] [ค้นหา...] [+ เพิ่มข้อมูล]│  │
 │             │  │ ┌──────┬─────┬───────┬────────┬───────┐│  │
-│  ─────────  │  │ │ ชื่อ  │ อายุ│ สิทธิ์ │ สถานะ  │Actions││  │
-│  [+ สร้าง   │  │ │สมชาย│ 28 │Admin  │Active │แก้ ลบ ││  │
-│   ฟอร์มใหม่]│  │ │สมหญิง│ 25 │User  │Active │แก้ ลบ ││  │
+│             │  │ │ ชื่อ  │ อายุ│ สิทธิ์ │ สถานะ  │Actions││  │
+│             │  │ │สมชาย│ 28 │Admin  │Active │แก้ ลบ ││  │
+│             │  │ │สมหญิง│ 25 │User  │Active │แก้ ลบ ││  │
 │             │  │ └──────┴─────┴───────┴────────┴───────┘│  │
 │             │  │           < 1  2  3  4  5 >            │  │
 │             │  └────────────────────────────────────────┘  │
-│             │  ↑ CRUDControl: columns จาก data_view        │
-│             │    form จาก data_formcfg, data จาก data_form  │
-│             │                                              │
-│             │  [แก้ไขฟอร์ม] [Preview]                       │
+│             │  ↑ CRUDControl: columns จาก view              │
+│             │    form จาก form, data จาก data table          │
 │             │                                              │
 │             │──────────────────────────────────────────────│
 │             │                                              │
@@ -50,21 +63,9 @@
 │             │  │ │ label: อายุ                         │ │  │
 │             │  │ │ [- 0 +]                            │ │  │
 │             │  │ └────────────────────────────────────┘ │  │
-│             │  │ ┌─ Select ───────────────── [x ลบ]──┐ │  │
-│             │  │ │ label: สิทธิ์                       │ │  │
-│             │  │ │ options: Admin, User, Guest        │ │  │
-│             │  │ │ [Admin ▼]                          │ │  │
-│             │  │ └────────────────────────────────────┘ │  │
-│             │  │                                        │  │
-│             │  │ [+ เพิ่ม Control]                       │  │
-│             │  │ Textbox|Number|Select|Checkbox|Toggle  │  │
-│             │  │ Date|Password|Badge|Rating|Chart ...   │  │
-│             │  │ (40+ controls)                         │  │
 │             │  │                                        │  │
 │             │  │          [บันทึก] [ยกเลิก]              │  │
 │             │  └────────────────────────────────────────┘  │
-│             │  ↑ แต่ละ control มี json config              │
-│             │    เก็บลง data_schema + data_formcfg         │
 │             │                                              │
 │             │──────────────────────────────────────────────│
 │             │                                              │
@@ -75,12 +76,9 @@
 │             │  │                                        │  │
 │             │  │ อายุ:              สิทธิ์:               │  │
 │             │  │ [- 0 +]           [Admin ▼]            │  │
-│             │  │                                        │  │
-│             │  │ สถานะ:                                  │  │
-│             │  │ [====○]                                │  │
 │             │  │              [บันทึก]                    │  │
 │             │  └────────────────────────────────────────┘  │
-│             │  ↑ render จาก data_formcfg → FormControl     │
+│             │  ↑ render จาก form.json_form_config → FormControl │
 └─────────────┴──────────────────────────────────────────────┘
 ```
 
@@ -89,14 +87,15 @@
 ## Flow การใช้งาน
 
 ```
-1. เลือก schema จาก sidebar (หรือกด + สร้างใหม่)
+1. เปิดหน้า /formbuilder → Mode: Template Manager (default)
+   ดูแม่แบบทั้งหมด / สร้างใหม่ / แก้ไข / ลบ
        ↓
-2. Mode: Data Manager (default)
+2. กด "+ สร้างแม่แบบ" หรือ "แก้ไข" → เปิด ControlDesignerModal
+   เพิ่ม/ลบ field, กำหนด label, databind, control type
+   บันทึก → สร้าง schema + view + formcfg อัตโนมัติ
+       ↓
+3. กด "จัดการฟอร์ม" → Mode: Data Manager
    ดูข้อมูลที่กรอกแล้ว / เพิ่ม / แก้ไข / ลบ ผ่าน CRUDControl
-       ↓
-3. กด "แก้ไขฟอร์ม" → Mode: Form Builder
-   กด + เลือก control (40+ ตัว) ตั้งค่า label, options ฯลฯ
-   แต่ละ control มี json config → บันทึกลง DB
        ↓
 4. กด "Preview" → Mode: Preview
    ดูตัวอย่างฟอร์มที่สร้าง render จาก config จริง
@@ -106,27 +105,31 @@
 
 ## Database (4 tables)
 
+Backend อยู่ที่ repo `rootid/` (Express 5 + Prisma + PostgreSQL 16)
+
 ```
 ┌─────────────┐
 │ data_schema │  "มี field อะไร + type อะไร"
 │             │  { username: {type:string}, age: {type:number} }
 └──────┬──────┘
        │
-       ├──→ data_view      "ตารางโชว์ยังไง" (columns, width, sortable)
+       ├──→ view            "ตารางโชว์ยังไง" (columns, width, sortable)
        │
-       ├──→ data_formcfg   "ฟอร์มหน้าตายังไง" (label, layout, colno, rowno)
+       ├──→ form            "ฟอร์มหน้าตายังไง" (label, layout, colno, rowno)
        │
-       └──→ data_form      "ข้อมูลจริง" { name:"สมชาย", age:28, role:"admin" }
+       └──→ data            "ข้อมูลจริง" { name:"สมชาย", age:28, role:"admin" }
 ```
 
-| Table | เก็บอะไร | ตัวอย่าง |
-|-------|---------|---------|
-| data_schema | โครงสร้าง field (key + type) | `{ "name": {"type":"string"}, "age": {"type":"number"} }` |
-| data_view | config ตาราง (โชว์อย่างเดียว) | `{ "columns": [{"key":"name","header":"ชื่อ","width":"auto"}] }` |
-| data_formcfg | config ฟอร์ม (label, layout) | `{ "colnumbers":6, "controls": [{"key":"name","label":"ชื่อ","colno":1}] }` |
-| data_form | ข้อมูลจริงที่กรอก | `{ "name": "สมชาย", "age": 28 }` |
+| Table | เก็บอะไร | JSON Column |
+|-------|---------|-------------|
+| data_schema | โครงสร้าง field (key + type) | `json` |
+| view | config ตาราง | `json_table_config` |
+| form | config ฟอร์ม (label, layout) | `json_form_config` |
+| data | ข้อมูลจริงที่กรอก | `data` |
 
-ทุก record มี default columns: `root_id`, `id`, `previous_id`, `activate`, `flag`, `modified_date_time`
+ทุก record มี default columns: `rootid` (UUID PK), `id` (SERIAL FK), `prev_id`, `activate`, `flag`, `modify_datetime`
+
+ดู `rootid/DB-DESIGN.md` สำหรับ full detail
 
 ---
 
@@ -139,7 +142,7 @@
 | CRUD | CRUDControl (composite control) |
 | Modal | ModalControl |
 | Theme | Light/Dark ผ่าน CSS variables |
-| Backend | Express + PostgreSQL 16 + Prisma (ยังไม่สร้าง) |
+| Backend | Express 5 + Prisma + PostgreSQL 16 (repo `rootid/`) |
 
 ---
 
@@ -150,18 +153,10 @@
 - ModalControl — modal ใส่ content อะไรก็ได้
 - Theme Light/Dark
 - Controls Documentation + Demo pages
-
----
-
-## สิ่งที่ต้องทำ
-
-| ลำดับ | งาน | รายละเอียด |
-|-------|-----|-----------|
-| 1 | Schema Builder | หน้าสร้าง schema กดเพิ่ม/ลบ field กำหนด type |
-| 2 | Form Preview | preview ฟอร์มจาก schema |
-| 3 | View Config | ตั้งค่าตาราง + ฟอร์ม layout |
-| 4 | Schema Manager | หน้า CRUD จัดการ schemas ทั้งหมด |
-| 5 | Form Filler | หน้ากรอกฟอร์ม (เหมือน Google Forms) |
-| 6 | Data Manager | หน้าดูข้อมูลที่กรอกแล้ว (ใช้ CRUDControl) |
-| 7 | Backend | Express + PostgreSQL + Prisma, API สำหรับ 4 tables |
-| 8 | FE-BE Integration | เชื่อม frontend กับ backend |
+- Template Manager — จัดการแม่แบบทั้งหมด (list, create, edit, delete)
+- Control Designer Modal — ออกแบบ fields ของฟอร์ม (label, databind, control type)
+- Schema Builder — แก้ไข schema fields แบบ raw
+- Form Preview — preview ฟอร์มจาก config
+- Data Manager — CRUD ข้อมูลจริงผ่าน CRUDControl
+- Backend API — Express 5 + Prisma + PostgreSQL (repo `rootid/`)
+- FE-BE Integration — schemaService auto-detect API vs localStorage
