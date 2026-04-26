@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import {
     BarChart, Bar, XAxis, YAxis, CartesianGrid,
     Tooltip, Legend, ResponsiveContainer
@@ -7,27 +7,53 @@ import {
 const BENCH_API = 'http://localhost:3003/api/benchmark';
 
 const COLORS = {
-    postgres: '#336791',
+    pgRel: '#336791',
     mongodb: '#4DB33D',
-    postgresLight: '#5B9BD5',
-    mongoLight: '#6FCF5F',
+    pgJsonb: '#E97F0F',
 };
 
-function BenchmarkPage({ addLog }) {
-    return <LiveBenchmarkTab addLog={addLog} />;
+const OPS = ['insert', 'selectAll', 'selectFilter', 'createIndex', 'selectIndexed', 'update', 'delete'];
+const OP_LABELS = {
+    insert: 'INSERT (bulk)',
+    selectAll: 'SELECT * (JOIN/scan)',
+    selectFilter: 'SELECT filter (no idx)',
+    createIndex: 'CREATE B-Tree',
+    selectIndexed: 'SELECT filter (indexed)',
+    update: 'UPDATE (1 row)',
+    delete: 'DELETE (1 row)',
+};
+
+function formatMs(ms) {
+    if (ms == null) return '-';
+    if (ms < 0.01) return `${(ms * 1000).toFixed(1)}µs`;
+    if (ms < 1) return `${ms.toFixed(3)}ms`;
+    if (ms < 1000) return `${ms.toFixed(1)}ms`;
+    return `${(ms / 1000).toFixed(2)}s`;
 }
 
-/* ───── Live Benchmark Tab ───── */
-function LiveBenchmarkTab({ addLog }) {
+function formatBytes(bytes) {
+    if (bytes == null || bytes === 0) return '0 B';
+    const units = ['B', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(Math.abs(bytes)) / Math.log(1024));
+    return `${(bytes / Math.pow(1024, i)).toFixed(2)} ${units[i]}`;
+}
+
+function winner3(a, b, c) {
+    const min = Math.min(a, b, c);
+    const w = [];
+    if (a === min) w.push('PG-Rel');
+    if (b === min) w.push('Mongo');
+    if (c === min) w.push('PG-JB');
+    return w.join('/');
+}
+
+function BenchmarkPage({ addLog }) {
     const [status, setStatus] = useState(null);
     const [loading, setLoading] = useState(false);
     const [results, setResults] = useState(null);
     const [history, setHistory] = useState([]);
-    const [runs, setRuns] = useState(1);
-    const [liveN, setLiveN] = useState(1000);
-    const [liveK, setLiveK] = useState(5);    // K = จำนวน columns (1-50)
-    const [liveM, setLiveM] = useState(40);   // M = percent ของ index (0-100)
     const [error, setError] = useState(null);
+    const [showSample, setShowSample] = useState(false);
 
     const checkStatus = useCallback(async () => {
         try {
@@ -37,72 +63,64 @@ function LiveBenchmarkTab({ addLog }) {
             setError(null);
         } catch {
             setStatus(null);
-            setError('ต่อ Benchmark API ไม่ได้ — รัน npm run bench ใน server/ ก่อน');
+            setError('ต่อ Benchmark API ไม่ได้ — รัน npm run server ใน benchmark/ ก่อน');
         }
     }, []);
 
     const runBenchmark = useCallback(async () => {
         setLoading(true);
         setError(null);
-        addLog?.(`Running: N=${liveN}, K=${liveK} cols, M=${liveM}% indexed, runs=${runs}...`);
+        addLog?.('Running benchmark (Wikipedia data)...');
         try {
-            const res = await fetch(`${BENCH_API}/run`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ n: liveN, k: liveK, m: liveM, runs }),
-            });
+            const res = await fetch(`${BENCH_API}/run`, { method: 'POST' });
             const data = await res.json();
             if (!data.success) throw new Error(data.error);
             setResults(data.data);
             setHistory(prev => [data.data, ...prev].slice(0, 10));
-            addLog?.(`Done: PG insert=${data.data.postgres.insert}ms, MG insert=${data.data.mongodb.insert}ms`);
+            addLog?.(`Done: insert PG=${data.data.execution_time_ms.insert.pg_relational}ms`);
         } catch (e) {
             setError(e.message);
         } finally {
             setLoading(false);
         }
-    }, [liveN, liveK, liveM, runs, addLog]);
+    }, [addLog]);
 
-    const ops = ['insert', 'selectNoIndex', 'selectIndexed', 'update', 'delete'];
-    const opLabels = {
-        insert: `INSERT ${liveN.toLocaleString()} rows × ${liveK} cols`,
-        selectNoIndex: `SELECT (scan on column${liveK})`,
-        selectIndexed: `SELECT (indexed column1) LIMIT 10`,
-        update: 'UPDATE (by PK)',
-        delete: 'DELETE (by PK)',
-    };
-
-    const numIndexes = Math.round(liveK * liveM / 100);
-    const bigO = calcBigO(liveN, liveK, numIndexes, 10);
-
-    const comparisonData = results ? ops.map(op => ({
-        name: opLabels[op],
-        pg: results.postgres[op] ?? 0,
-        mongo: results.mongodb[op] ?? 0,
+    const chartData = results ? OPS.map(op => ({
+        name: OP_LABELS[op],
+        'PG Relational': results.execution_time_ms[op]?.pg_relational ?? 0,
+        'MongoDB': results.execution_time_ms[op]?.mongodb ?? 0,
+        'PG JSONB': results.execution_time_ms[op]?.pg_jsonb ?? 0,
     })) : [];
 
-    const jsonbData = results ? [{
-        name: `JSONB query (data.category = 'A')`,
-        pgGin: results.postgres.selectJsonGin ?? 0,
-        pgBtree: results.postgres.selectJsonBtree ?? 0,
-        mongo: results.mongodb.selectJsonMongo ?? 0,
-    }] : [];
+    const storageData = results ? ['data', 'index', 'total'].map(key => ({
+        name: key === 'data' ? 'Data' : key === 'index' ? 'Index' : 'Total',
+        'PG Relational': results.storage_bytes.pg_relational?.[key] ?? 0,
+        'MongoDB': results.storage_bytes.mongodb?.[key] ?? 0,
+        'PG JSONB': results.storage_bytes.pg_jsonb?.[key] ?? 0,
+    })) : [];
 
     return (
         <div className="page-content">
-            <h1>Live Benchmark — PostgreSQL vs MongoDB</h1>
+            <h1>DB Benchmark — PG Relational vs MongoDB vs PG JSONB</h1>
             <p className="lead">
-                ยิง DB จริงทั้ง 2 ตัว วัดเวลาด้วย <code>performance.now()</code>
+                เปรียบเทียบ 3 วิธีเก็บข้อมูล Wikipedia revision จริง —
+                PG 3 tables (normalized) vs MongoDB (flat) vs PG JSONB (flat)
             </p>
 
-            {/* Status Check */}
             <section className="content-section">
-                <div style={{ marginBottom: 16 }}>
-                    <button onClick={checkStatus} style={liveBtnStyle}>
-                        Check DB Status
+                {/* Status */}
+                <div style={{ marginBottom: 16, display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>
+                    <button onClick={checkStatus} style={btnStyle}>Check DB Status</button>
+                    <button onClick={runBenchmark} disabled={loading} style={{
+                        ...btnStyle,
+                        background: loading ? 'var(--bg-secondary)' : 'var(--accent-primary)',
+                        color: loading ? 'var(--text-secondary)' : '#fff',
+                        fontSize: 15, padding: '10px 28px',
+                    }}>
+                        {loading ? 'Running...' : 'Run Benchmark'}
                     </button>
                     {status && (
-                        <span style={{ marginLeft: 12, fontSize: 13 }}>
+                        <span style={{ fontSize: 13 }}>
                             PG: {status.postgres ? `v${status.pgVersion}` : 'offline'}
                             {' | '}
                             Mongo: {status.mongodb ? `v${status.mongoVersion}` : 'offline'}
@@ -116,68 +134,28 @@ function LiveBenchmarkTab({ addLog }) {
                     </div>
                 )}
 
-                {/* Controls */}
-                <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', alignItems: 'flex-end', marginBottom: 20 }}>
-                    <div>
-                        <label style={{ display: 'block', fontWeight: 600, marginBottom: 4, fontSize: 13 }}>N (records, 100 - 1,000,000)</label>
-                        <input type="number" value={liveN} onChange={e => setLiveN(Math.max(100, Math.min(1000000, parseInt(e.target.value) || 100)))} min={100} max={1000000} style={inputStyle} />
-                        <div style={{ marginTop: 4, display: 'flex', gap: 4, flexWrap: 'wrap' }}>
-                            {[100, 1000, 10000, 100000, 500000, 1000000].map(p => (
-                                <button key={p} onClick={() => setLiveN(p)} style={{
-                                    ...presetBtnStyle,
-                                    background: liveN === p ? 'var(--accent-primary)' : 'var(--bg-secondary)',
-                                    color: liveN === p ? '#fff' : 'var(--text-primary)',
-                                }}>
-                                    {p >= 1000000 ? `${p / 1000000}M` : p >= 1000 ? `${p / 1000}K` : p}
-                                </button>
-                            ))}
-                        </div>
+                {/* Wiki Data Info */}
+                {status?.wikiData && (
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 12, marginBottom: 20 }}>
+                        <InfoCard label="Categories" value={status.wikiData.categories} />
+                        <InfoCard label="Pages" value={status.wikiData.pages} />
+                        <InfoCard label="Revisions" value={status.wikiData.revisions?.toLocaleString()} />
+                        <InfoCard label="Data Size" value={`${status.wikiData.totalSizeMB} MB`} />
                     </div>
-                    <div>
-                        <label style={{ display: 'block', fontWeight: 600, marginBottom: 4, fontSize: 13 }}>K — Columns (1 - 50)</label>
-                        <input type="number" value={liveK} onChange={e => setLiveK(Math.max(1, Math.min(50, parseInt(e.target.value) || 1)))} min={1} max={50} style={inputStyle} />
-                        <div style={{ marginTop: 4, display: 'flex', gap: 4 }}>
-                            {[1, 5, 10, 25, 50].map(p => (
-                                <button key={p} onClick={() => setLiveK(p)} style={{
-                                    ...presetBtnStyle,
-                                    background: liveK === p ? 'var(--accent-primary)' : 'var(--bg-secondary)',
-                                    color: liveK === p ? '#fff' : 'var(--text-primary)',
-                                }}>
-                                    {p}
-                                </button>
-                            ))}
-                        </div>
+                )}
+
+                {/* Sample Data */}
+                {status?.sampleData && (
+                    <div style={{ marginBottom: 20 }}>
+                        <button
+                            onClick={() => setShowSample(v => !v)}
+                            style={{ ...btnStyle, fontSize: 12, padding: '6px 14px' }}
+                        >
+                            {showSample ? '▼' : '▶'} ตัวอย่างข้อมูล Wikipedia (5 rows แรก)
+                        </button>
+                        {showSample && <SampleDataSection data={status.sampleData} />}
                     </div>
-                    <div>
-                        <label style={{ display: 'block', fontWeight: 600, marginBottom: 4, fontSize: 13 }}>
-                            M — % Indexed ({Math.round(liveK * liveM / 100)} cols มี index)
-                        </label>
-                        <input type="number" value={liveM} onChange={e => setLiveM(Math.max(0, Math.min(100, parseInt(e.target.value) || 0)))} min={0} max={100} style={inputStyle} />
-                        <div style={{ marginTop: 4, display: 'flex', gap: 4 }}>
-                            {[0, 25, 50, 75, 100].map(p => (
-                                <button key={p} onClick={() => setLiveM(p)} style={{
-                                    ...presetBtnStyle,
-                                    background: liveM === p ? 'var(--accent-primary)' : 'var(--bg-secondary)',
-                                    color: liveM === p ? '#fff' : 'var(--text-primary)',
-                                }}>
-                                    {p}%
-                                </button>
-                            ))}
-                        </div>
-                    </div>
-                    <div>
-                        <label style={{ display: 'block', fontWeight: 600, marginBottom: 4, fontSize: 13 }}>Runs (avg)</label>
-                        <input type="number" value={runs} onChange={e => setRuns(Math.max(1, Math.min(5, parseInt(e.target.value) || 1)))} min={1} max={5} style={inputStyle} />
-                    </div>
-                    <button onClick={runBenchmark} disabled={loading} style={{
-                        ...liveBtnStyle,
-                        background: loading ? 'var(--bg-secondary)' : 'var(--accent-primary)',
-                        color: loading ? 'var(--text-secondary)' : '#fff',
-                        fontSize: 15, padding: '10px 28px',
-                    }}>
-                        {loading ? 'Running...' : 'Run Benchmark'}
-                    </button>
-                </div>
+                )}
 
                 {/* Progress */}
                 {loading && (
@@ -185,117 +163,61 @@ function LiveBenchmarkTab({ addLog }) {
                         <div style={{ height: 4, background: 'var(--bg-secondary)', borderRadius: 2, overflow: 'hidden' }}>
                             <div style={{
                                 height: '100%', background: 'var(--accent-primary)', borderRadius: 2,
-                                animation: 'benchProgress 2s ease-in-out infinite',
-                                width: '60%',
+                                animation: 'benchProgress 2s ease-in-out infinite', width: '60%',
                             }} />
                         </div>
                         <style>{`@keyframes benchProgress { 0% { transform: translateX(-100%); } 100% { transform: translateX(200%); } }`}</style>
                         <p style={{ fontSize: 12, opacity: 0.6, marginTop: 4 }}>
-                            กำลังยิง DB จริง... PG ก่อน แล้ว Mongo (sequential เพื่อไม่แย่ง resource)
-                            {liveN >= 500000 && ' — N ใหญ่มาก อาจใช้เวลา 1-3 นาที'}
+                            กำลังรัน benchmark... PG Relational (3 tables) → MongoDB → PG JSONB
                         </p>
                     </div>
                 )}
 
-                {/* Results */}
                 {results && (
                     <>
                         {/* Meta */}
                         <div style={{ ...noteStyle, marginBottom: 16, fontSize: 12 }}>
-                            <strong>Run info:</strong> N={results.meta.n.toLocaleString()} rows, K={results.meta.k} columns,
-                            M={results.meta.m}% → <strong>{results.meta.numIndexes} indexes</strong>,
-                            runs={results.meta.runs}, LIMIT={results.meta.selectLimit}
+                            <strong>Wikipedia data:</strong>{' '}
+                            {results.meta.categories} categories, {results.meta.pages} pages,{' '}
+                            {results.meta.revisions?.toLocaleString()} revisions ({results.meta.totalSizeMB} MB)
                             <br />
-                            <strong>Indexed columns (random):</strong> {
-                                results.meta.indexedColumns?.length
-                                    ? results.meta.indexedColumns.map(c => `column${c}`).join(', ')
-                                    : 'ไม่มี'
-                            }
-                            {' '}— ทั้ง PG และ Mongo ใช้ชุดเดียวกัน
+                            <strong>PG Relational:</strong> 3 normalized tables (bench_category → bench_page → bench_revision)
+                            <br />
+                            <strong>MongoDB & PG JSONB:</strong> flat documents (1 collection/table)
                             <br />
                             <span style={{ opacity: 0.6 }}>
-                                PG v{results.meta.pgVersion}, Mongo v{results.meta.mongoVersion},
-                                {' '}{new Date(results.meta.timestamp).toLocaleString('th-TH')}
+                                {new Date(results.meta.timestamp).toLocaleString('th-TH')}
                             </span>
                         </div>
 
                         {/* Result Cards */}
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 12, marginBottom: 24 }}>
-                            {ops.map(op => (
-                                <ResultCard
-                                    key={op}
-                                    title={opLabels[op]}
-                                    pg={results.postgres[op] ?? 0}
-                                    mg={results.mongodb[op] ?? 0}
-                                    bigO={bigO[op]?.formula}
-                                />
-                            ))}
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 12, marginBottom: 24 }}>
+                            {OPS.map(op => {
+                                const t = results.execution_time_ms[op];
+                                return (
+                                    <ResultCard3
+                                        key={op}
+                                        title={OP_LABELS[op]}
+                                        pgRel={t?.pg_relational ?? 0}
+                                        mongo={t?.mongodb ?? 0}
+                                        pgJsonb={t?.pg_jsonb ?? 0}
+                                    />
+                                );
+                            })}
                         </div>
 
-                        {/* Big O Analysis */}
-                        <h3>Big O Analysis (theoretical)</h3>
-                        <p style={{ fontSize: 13, opacity: 0.7, marginBottom: 8 }}>
-                            คำนวณจาก N={liveN.toLocaleString()}, K={liveK}, M={liveM}% → {numIndexes} indexes, log₂N ≈ {Math.log2(Math.max(liveN, 1)).toFixed(2)}
-                        </p>
-                        <table style={tableStyle}>
-                            <thead>
-                                <tr>
-                                    <th style={thStyle}>Operation</th>
-                                    <th style={thStyle}>Big O</th>
-                                    <th style={thStyle}>Estimated ops</th>
-                                    <th style={{ ...thStyle, color: COLORS.postgres }}>PG (measured)</th>
-                                    <th style={{ ...thStyle, color: COLORS.mongodb }}>MG (measured)</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {ops.map(op => (
-                                    <tr key={op}>
-                                        <td style={tdStyle}>{opLabels[op]}</td>
-                                        <td style={{ ...tdStyle, fontFamily: 'monospace', fontWeight: 600 }}>{bigO[op]?.formula}</td>
-                                        <td style={{ ...tdStyle, fontFamily: 'monospace', opacity: 0.8 }}>{bigO[op]?.estimate}</td>
-                                        <td style={{ ...tdStyle, color: COLORS.postgres }}>{formatMs(results.postgres[op] ?? 0)}</td>
-                                        <td style={{ ...tdStyle, color: COLORS.mongodb }}>{formatMs(results.mongodb[op] ?? 0)}</td>
-                                    </tr>
-                                ))}
-                                <tr>
-                                    <td style={tdStyle}>JSONB GIN</td>
-                                    <td style={{ ...tdStyle, fontFamily: 'monospace', fontWeight: 600 }}>{bigO.selectJsonGin.formula}</td>
-                                    <td style={{ ...tdStyle, fontFamily: 'monospace', opacity: 0.8 }}>{bigO.selectJsonGin.estimate}</td>
-                                    <td style={{ ...tdStyle, color: COLORS.postgres }}>{formatMs(results.postgres.selectJsonGin ?? 0)}</td>
-                                    <td style={{ ...tdStyle, opacity: 0.4 }}>—</td>
-                                </tr>
-                                <tr>
-                                    <td style={tdStyle}>JSONB Expression B-Tree</td>
-                                    <td style={{ ...tdStyle, fontFamily: 'monospace', fontWeight: 600 }}>{bigO.selectJsonBtree.formula}</td>
-                                    <td style={{ ...tdStyle, fontFamily: 'monospace', opacity: 0.8 }}>{bigO.selectJsonBtree.estimate}</td>
-                                    <td style={{ ...tdStyle, color: COLORS.postgres }}>{formatMs(results.postgres.selectJsonBtree ?? 0)}</td>
-                                    <td style={{ ...tdStyle, opacity: 0.4 }}>—</td>
-                                </tr>
-                                <tr>
-                                    <td style={tdStyle}>JSONB Mongo (dotted)</td>
-                                    <td style={{ ...tdStyle, fontFamily: 'monospace', fontWeight: 600 }}>{bigO.selectJsonMongo.formula}</td>
-                                    <td style={{ ...tdStyle, fontFamily: 'monospace', opacity: 0.8 }}>{bigO.selectJsonMongo.estimate}</td>
-                                    <td style={{ ...tdStyle, opacity: 0.4 }}>—</td>
-                                    <td style={{ ...tdStyle, color: COLORS.mongodb }}>{formatMs(results.mongodb.selectJsonMongo ?? 0)}</td>
-                                </tr>
-                            </tbody>
-                        </table>
-                        <div style={{ ...noteStyle, marginTop: 8, marginBottom: 24, fontSize: 12 }}>
-                            <strong>หมายเหตุ:</strong> Big O เป็นทฤษฎี ส่วน ms เป็นการวัดจริง —
-                            ปกติ measured ∝ estimated แต่ scale ต่างกัน (constant factor + I/O + network)
-                        </div>
-
-                        {/* PG vs Mongo Chart */}
-                        <h3>PostgreSQL vs MongoDB (ms)</h3>
-                        <ResponsiveContainer width="100%" height={350}>
-                            <BarChart data={comparisonData} margin={{ top: 5, right: 20, left: 10, bottom: 5 }}>
+                        {/* Execution Time Chart */}
+                        <h3>Execution Time (ms)</h3>
+                        <ResponsiveContainer width="100%" height={380}>
+                            <BarChart data={chartData} margin={{ top: 5, right: 20, left: 10, bottom: 5 }}>
                                 <CartesianGrid strokeDasharray="3 3" stroke="var(--border-primary)" />
-                                <XAxis dataKey="name" stroke="var(--text-secondary)" tick={{ fontSize: 11 }} />
+                                <XAxis dataKey="name" stroke="var(--text-secondary)" tick={{ fontSize: 10 }} />
                                 <YAxis stroke="var(--text-secondary)" />
-                                <Tooltip contentStyle={tooltipStyle} />
+                                <Tooltip contentStyle={tooltipStyle} formatter={v => `${formatMs(v)}`} />
                                 <Legend />
-                                <Bar dataKey="pg" name="PostgreSQL" fill={COLORS.postgres} radius={[4, 4, 0, 0]} />
-                                <Bar dataKey="mongo" name="MongoDB" fill={COLORS.mongodb} radius={[4, 4, 0, 0]} />
+                                <Bar dataKey="PG Relational" fill={COLORS.pgRel} radius={[4, 4, 0, 0]} />
+                                <Bar dataKey="MongoDB" fill={COLORS.mongodb} radius={[4, 4, 0, 0]} />
+                                <Bar dataKey="PG JSONB" fill={COLORS.pgJsonb} radius={[4, 4, 0, 0]} />
                             </BarChart>
                         </ResponsiveContainer>
 
@@ -305,85 +227,123 @@ function LiveBenchmarkTab({ addLog }) {
                             <thead>
                                 <tr>
                                     <th style={thStyle}>Operation</th>
-                                    <th style={{ ...thStyle, color: COLORS.postgres }}>PostgreSQL</th>
+                                    <th style={{ ...thStyle, color: COLORS.pgRel }}>PG Relational</th>
                                     <th style={{ ...thStyle, color: COLORS.mongodb }}>MongoDB</th>
+                                    <th style={{ ...thStyle, color: COLORS.pgJsonb }}>PG JSONB</th>
                                     <th style={thStyle}>Winner</th>
-                                    <th style={thStyle}>Diff</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                {ops.map(op => {
-                                    const pg = results.postgres[op] ?? 0;
-                                    const mg = results.mongodb[op] ?? 0;
-                                    const winner = pg < mg ? 'PostgreSQL' : pg > mg ? 'MongoDB' : 'Tie';
-                                    const winColor = pg < mg ? COLORS.postgres : pg > mg ? COLORS.mongodb : 'var(--text-secondary)';
-                                    const diff = pg > 0 && mg > 0
-                                        ? Math.abs(((pg - mg) / Math.max(pg, mg)) * 100).toFixed(0) + '%'
-                                        : '-';
+                                {OPS.map(op => {
+                                    const t = results.execution_time_ms[op];
+                                    const pg = t?.pg_relational ?? 0;
+                                    const mg = t?.mongodb ?? 0;
+                                    const jb = t?.pg_jsonb ?? 0;
+                                    const w = winner3(pg, mg, jb);
                                     return (
                                         <tr key={op}>
-                                            <td style={tdStyle}>{opLabels[op]}</td>
-                                            <td style={{ ...tdStyle, fontWeight: 600, color: COLORS.postgres }}>{formatMs(pg)}</td>
+                                            <td style={tdStyle}>{OP_LABELS[op]}</td>
+                                            <td style={{ ...tdStyle, fontWeight: 600, color: COLORS.pgRel }}>{formatMs(pg)}</td>
                                             <td style={{ ...tdStyle, fontWeight: 600, color: COLORS.mongodb }}>{formatMs(mg)}</td>
-                                            <td style={{ ...tdStyle, color: winColor, fontWeight: 600 }}>{winner}</td>
-                                            <td style={tdStyle}>{diff}</td>
+                                            <td style={{ ...tdStyle, fontWeight: 600, color: COLORS.pgJsonb }}>{formatMs(jb)}</td>
+                                            <td style={{ ...tdStyle, fontWeight: 600 }}>{w}</td>
                                         </tr>
                                     );
                                 })}
                             </tbody>
                         </table>
 
-                        {/* JSONB 3-way */}
-                        <h3 style={{ marginTop: 32 }}>
-                            JSONB Nested Query — 3-way Comparison
-                        </h3>
-                        <p style={{ opacity: 0.7, fontSize: 13, marginBottom: 12 }}>
-                            Query: <code>data.category = ...</code> บน {results.meta.n.toLocaleString()} records
-                            (ตาราง JSONB แยกต่างหาก มี GIN + Expression index เสมอ)
-                        </p>
+                        {/* Storage */}
+                        <h3 style={{ marginTop: 32 }}>Storage Comparison</h3>
+                        <table style={tableStyle}>
+                            <thead>
+                                <tr>
+                                    <th style={thStyle}>Metric</th>
+                                    <th style={{ ...thStyle, color: COLORS.pgRel }}>PG Relational</th>
+                                    <th style={{ ...thStyle, color: COLORS.mongodb }}>MongoDB</th>
+                                    <th style={{ ...thStyle, color: COLORS.pgJsonb }}>PG JSONB</th>
+                                    <th style={thStyle}>Winner</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {storageData.map(row => (
+                                    <tr key={row.name}>
+                                        <td style={tdStyle}>{row.name}</td>
+                                        <td style={{ ...tdStyle, color: COLORS.pgRel }}>{formatBytes(row['PG Relational'])}</td>
+                                        <td style={{ ...tdStyle, color: COLORS.mongodb }}>{formatBytes(row['MongoDB'])}</td>
+                                        <td style={{ ...tdStyle, color: COLORS.pgJsonb }}>{formatBytes(row['PG JSONB'])}</td>
+                                        <td style={{ ...tdStyle, fontWeight: 600 }}>{winner3(row['PG Relational'], row['MongoDB'], row['PG JSONB'])}</td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
 
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 12, marginBottom: 16 }}>
-                            <div style={cardStyle}>
-                                <div style={{ fontSize: 12, opacity: 0.7 }}>PG GIN Index</div>
-                                <div style={{ fontSize: 24, fontWeight: 700, color: COLORS.postgres }}>
-                                    {formatMs(results.postgres.selectJsonGin ?? 0)}
-                                </div>
-                                <div style={{ fontSize: 11, opacity: 0.5, fontFamily: 'monospace' }}>
-                                    data @&gt; '{`{"category":"A"}`}'
-                                </div>
-                            </div>
-                            <div style={cardStyle}>
-                                <div style={{ fontSize: 12, opacity: 0.7 }}>PG Expression B-Tree</div>
-                                <div style={{ fontSize: 24, fontWeight: 700, color: COLORS.postgresLight }}>
-                                    {formatMs(results.postgres.selectJsonBtree ?? 0)}
-                                </div>
-                                <div style={{ fontSize: 11, opacity: 0.5, fontFamily: 'monospace' }}>
-                                    data-&gt;&gt;'category' = 'A'
-                                </div>
-                            </div>
-                            <div style={cardStyle}>
-                                <div style={{ fontSize: 12, opacity: 0.7 }}>MongoDB (single field index)</div>
-                                <div style={{ fontSize: 24, fontWeight: 700, color: COLORS.mongodb }}>
-                                    {formatMs(results.mongodb.selectJsonMongo ?? 0)}
-                                </div>
-                                <div style={{ fontSize: 11, opacity: 0.5, fontFamily: 'monospace' }}>
-                                    {`{ 'data.category': 'A' }`}
-                                </div>
-                            </div>
-                        </div>
-
-                        <ResponsiveContainer width="100%" height={280}>
-                            <BarChart data={jsonbData} margin={{ top: 5, right: 20, left: 10, bottom: 5 }}>
+                        <ResponsiveContainer width="100%" height={300} style={{ marginTop: 16 }}>
+                            <BarChart data={storageData} margin={{ top: 5, right: 20, left: 10, bottom: 5 }}>
                                 <CartesianGrid strokeDasharray="3 3" stroke="var(--border-primary)" />
                                 <XAxis dataKey="name" stroke="var(--text-secondary)" />
-                                <YAxis stroke="var(--text-secondary)" />
-                                <Tooltip contentStyle={tooltipStyle} formatter={v => `${v} ms`} />
+                                <YAxis stroke="var(--text-secondary)" tickFormatter={v => formatBytes(v)} />
+                                <Tooltip contentStyle={tooltipStyle} formatter={v => formatBytes(v)} />
                                 <Legend />
-                                <Bar dataKey="pgGin" name="PG GIN" fill={COLORS.postgres} radius={[4, 4, 0, 0]} />
-                                <Bar dataKey="pgBtree" name="PG Expression B-Tree" fill={COLORS.postgresLight} radius={[4, 4, 0, 0]} />
-                                <Bar dataKey="mongo" name="MongoDB" fill={COLORS.mongodb} radius={[4, 4, 0, 0]} />
+                                <Bar dataKey="PG Relational" fill={COLORS.pgRel} radius={[4, 4, 0, 0]} />
+                                <Bar dataKey="MongoDB" fill={COLORS.mongodb} radius={[4, 4, 0, 0]} />
+                                <Bar dataKey="PG JSONB" fill={COLORS.pgJsonb} radius={[4, 4, 0, 0]} />
                             </BarChart>
                         </ResponsiveContainer>
+
+                        {/* Bonus: GIN vs B-Tree */}
+                        {results.bonus_jsonb_gin && (
+                            <>
+                                <h3 style={{ marginTop: 32 }}>Bonus: PG JSONB — GIN vs B-Tree</h3>
+                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 12, marginBottom: 16 }}>
+                                    <div style={cardStyle}>
+                                        <div style={{ fontSize: 12, opacity: 0.7 }}>B-Tree CREATE INDEX</div>
+                                        <div style={{ fontSize: 22, fontWeight: 700, color: COLORS.pgJsonb }}>
+                                            {formatMs(results.execution_time_ms.createIndex?.pg_jsonb)}
+                                        </div>
+                                        <div style={{ fontSize: 11, opacity: 0.5, fontFamily: 'monospace' }}>
+                                            (data-&gt;&gt;'category')
+                                        </div>
+                                    </div>
+                                    <div style={cardStyle}>
+                                        <div style={{ fontSize: 12, opacity: 0.7 }}>GIN CREATE INDEX</div>
+                                        <div style={{ fontSize: 22, fontWeight: 700, color: '#9B59B6' }}>
+                                            {formatMs(results.bonus_jsonb_gin.createIndex_ms)}
+                                        </div>
+                                        <div style={{ fontSize: 11, opacity: 0.5, fontFamily: 'monospace' }}>
+                                            USING GIN(data)
+                                        </div>
+                                    </div>
+                                    <div style={cardStyle}>
+                                        <div style={{ fontSize: 12, opacity: 0.7 }}>B-Tree SELECT</div>
+                                        <div style={{ fontSize: 22, fontWeight: 700, color: COLORS.pgJsonb }}>
+                                            {formatMs(results.execution_time_ms.selectIndexed?.pg_jsonb)}
+                                        </div>
+                                    </div>
+                                    <div style={cardStyle}>
+                                        <div style={{ fontSize: 12, opacity: 0.7 }}>GIN SELECT</div>
+                                        <div style={{ fontSize: 22, fontWeight: 700, color: '#9B59B6' }}>
+                                            {formatMs(results.bonus_jsonb_gin.selectIndexed_ms)}
+                                        </div>
+                                        <div style={{ fontSize: 11, opacity: 0.5, fontFamily: 'monospace' }}>
+                                            data @&gt; '{`{"category":"..."}`}'
+                                        </div>
+                                    </div>
+                                    <div style={cardStyle}>
+                                        <div style={{ fontSize: 12, opacity: 0.7 }}>GIN Index Size</div>
+                                        <div style={{ fontSize: 22, fontWeight: 700, color: '#9B59B6' }}>
+                                            {formatBytes(results.bonus_jsonb_gin.storage?.index)}
+                                        </div>
+                                    </div>
+                                    <div style={cardStyle}>
+                                        <div style={{ fontSize: 12, opacity: 0.7 }}>GIN Total Size</div>
+                                        <div style={{ fontSize: 22, fontWeight: 700, color: '#9B59B6' }}>
+                                            {formatBytes(results.bonus_jsonb_gin.storage?.total)}
+                                        </div>
+                                    </div>
+                                </div>
+                            </>
+                        )}
                     </>
                 )}
 
@@ -395,13 +355,13 @@ function LiveBenchmarkTab({ addLog }) {
                             <thead>
                                 <tr>
                                     <th style={thStyle}>#</th>
-                                    <th style={thStyle}>N</th>
-                                    <th style={thStyle}>K</th>
-                                    <th style={thStyle}>M%</th>
-                                    <th style={{ ...thStyle, color: COLORS.postgres }}>PG Insert</th>
+                                    <th style={thStyle}>Revisions</th>
+                                    <th style={{ ...thStyle, color: COLORS.pgRel }}>PG Insert</th>
                                     <th style={{ ...thStyle, color: COLORS.mongodb }}>MG Insert</th>
-                                    <th style={{ ...thStyle, color: COLORS.postgres }}>PG JSON</th>
-                                    <th style={{ ...thStyle, color: COLORS.mongodb }}>MG JSON</th>
+                                    <th style={{ ...thStyle, color: COLORS.pgJsonb }}>JB Insert</th>
+                                    <th style={{ ...thStyle, color: COLORS.pgRel }}>PG Storage</th>
+                                    <th style={{ ...thStyle, color: COLORS.mongodb }}>MG Storage</th>
+                                    <th style={{ ...thStyle, color: COLORS.pgJsonb }}>JB Storage</th>
                                     <th style={thStyle}>Time</th>
                                 </tr>
                             </thead>
@@ -409,13 +369,13 @@ function LiveBenchmarkTab({ addLog }) {
                                 {history.map((h, i) => (
                                     <tr key={i}>
                                         <td style={tdStyle}>{history.length - i}</td>
-                                        <td style={tdStyle}>{h.meta.n.toLocaleString()}</td>
-                                        <td style={tdStyle}>{h.meta.k}</td>
-                                        <td style={tdStyle}>{h.meta.m}%</td>
-                                        <td style={tdStyle}>{formatMs(h.postgres.insert)}</td>
-                                        <td style={tdStyle}>{formatMs(h.mongodb.insert)}</td>
-                                        <td style={tdStyle}>{formatMs(h.postgres.selectJsonGin ?? 0)}</td>
-                                        <td style={tdStyle}>{formatMs(h.mongodb.selectJsonMongo ?? 0)}</td>
+                                        <td style={tdStyle}>{h.meta.revisions?.toLocaleString()}</td>
+                                        <td style={tdStyle}>{formatMs(h.execution_time_ms.insert?.pg_relational)}</td>
+                                        <td style={tdStyle}>{formatMs(h.execution_time_ms.insert?.mongodb)}</td>
+                                        <td style={tdStyle}>{formatMs(h.execution_time_ms.insert?.pg_jsonb)}</td>
+                                        <td style={tdStyle}>{formatBytes(h.storage_bytes.pg_relational?.total)}</td>
+                                        <td style={tdStyle}>{formatBytes(h.storage_bytes.mongodb?.total)}</td>
+                                        <td style={tdStyle}>{formatBytes(h.storage_bytes.pg_jsonb?.total)}</td>
                                         <td style={{ ...tdStyle, fontSize: 11 }}>{new Date(h.meta.timestamp).toLocaleTimeString('th-TH')}</td>
                                     </tr>
                                 ))}
@@ -428,114 +388,217 @@ function LiveBenchmarkTab({ addLog }) {
     );
 }
 
-/* ───── Result Card ───── */
-function ResultCard({ title, pg, mg, bigO }) {
-    const winner = pg < mg ? 'postgres' : pg > mg ? 'mongodb' : 'tie';
-    const diff = pg > 0 && mg > 0 ? Math.abs(((pg - mg) / Math.max(pg, mg)) * 100).toFixed(0) : 0;
+function InfoCard({ label, value }) {
     return (
         <div style={cardStyle}>
-            <div style={{ fontSize: 12, fontWeight: 600, marginBottom: 8, opacity: 0.8 }}>{title}</div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
-                <span style={{ color: COLORS.postgres, fontWeight: winner === 'postgres' ? 700 : 400 }}>
-                    PG: {formatMs(pg)}
-                </span>
-                <span style={{ color: COLORS.mongodb, fontWeight: winner === 'mongodb' ? 700 : 400 }}>
-                    MG: {formatMs(mg)}
-                </span>
-            </div>
-            {bigO && (
-                <div style={{ fontSize: 11, opacity: 0.6, fontFamily: 'monospace', marginTop: 4 }}>
-                    {bigO}
-                </div>
-            )}
-            {winner !== 'tie' && (
-                <div style={{
-                    fontSize: 11, marginTop: 4, padding: '2px 6px', borderRadius: 4,
-                    background: winner === 'postgres' ? '#33679120' : '#4DB33D20',
-                    color: winner === 'postgres' ? COLORS.postgres : COLORS.mongodb,
-                    display: 'inline-block',
-                }}>
-                    {winner === 'postgres' ? 'PostgreSQL' : 'MongoDB'} เร็วกว่า ~{diff}%
-                </div>
-            )}
+            <div style={{ fontSize: 12, opacity: 0.7 }}>{label}</div>
+            <div style={{ fontSize: 22, fontWeight: 700 }}>{value}</div>
         </div>
     );
 }
 
-/**
- * Big O analysis สำหรับแต่ละ operation
- * - N = จำนวน rows
- * - K = จำนวน columns
- * - M = จำนวน indexes (number, ไม่ใช่ percent)
- * - L = LIMIT (default 10)
- */
-function calcBigO(n, k, m, limit = 10) {
-    const logN = Math.log2(Math.max(n, 1));
-    const fmt = (x) => x >= 1000 ? x.toExponential(2) : x.toLocaleString(undefined, { maximumFractionDigits: 1 });
-
-    return {
-        insert: {
-            formula: m > 0 ? 'O(N × (K + M × log N))' : 'O(N × K)',
-            estimate: m > 0
-                ? `${n} × (${k} + ${m} × ${logN.toFixed(1)}) ≈ ${fmt(n * (k + m * logN))} ops`
-                : `${n} × ${k} = ${fmt(n * k)} ops`,
-        },
-        selectNoIndex: {
-            formula: 'O(N)',
-            estimate: `≈ ${fmt(n)} ops (full scan)`,
-        },
-        selectIndexed: {
-            formula: 'O(log N + L)',
-            estimate: `${logN.toFixed(1)} + ${limit} ≈ ${fmt(logN + limit)} ops`,
-        },
-        update: {
-            formula: m > 0 ? 'O((1 + M) × log N)' : 'O(log N)',
-            estimate: `${1 + m} × ${logN.toFixed(1)} ≈ ${fmt((1 + m) * logN)} ops`,
-        },
-        delete: {
-            formula: m > 0 ? 'O((1 + M) × log N)' : 'O(log N)',
-            estimate: `${1 + m} × ${logN.toFixed(1)} ≈ ${fmt((1 + m) * logN)} ops`,
-        },
-        selectJsonGin: {
-            formula: 'O(log N + L)',
-            estimate: `${logN.toFixed(1)} + ${limit} ≈ ${fmt(logN + limit)} ops`,
-        },
-        selectJsonBtree: {
-            formula: 'O(log N + L)',
-            estimate: `${logN.toFixed(1)} + ${limit} ≈ ${fmt(logN + limit)} ops`,
-        },
-        selectJsonMongo: {
-            formula: 'O(log N + L)',
-            estimate: `${logN.toFixed(1)} + ${limit} ≈ ${fmt(logN + limit)} ops`,
-        },
-    };
+function ResultCard3({ title, pgRel, mongo, pgJsonb }) {
+    const min = Math.min(pgRel, mongo, pgJsonb);
+    const w = winner3(pgRel, mongo, pgJsonb);
+    return (
+        <div style={cardStyle}>
+            <div style={{ fontSize: 12, fontWeight: 600, marginBottom: 8, opacity: 0.8 }}>{title}</div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
+                <span style={{ color: COLORS.pgRel, fontWeight: pgRel === min ? 700 : 400 }}>
+                    PG: {formatMs(pgRel)}
+                </span>
+                <span style={{ color: COLORS.mongodb, fontWeight: mongo === min ? 700 : 400 }}>
+                    MG: {formatMs(mongo)}
+                </span>
+                <span style={{ color: COLORS.pgJsonb, fontWeight: pgJsonb === min ? 700 : 400 }}>
+                    JB: {formatMs(pgJsonb)}
+                </span>
+            </div>
+            <div style={{
+                fontSize: 11, marginTop: 4, padding: '2px 6px', borderRadius: 4,
+                background: 'var(--bg-tertiary, var(--bg-secondary))',
+                display: 'inline-block',
+            }}>
+                Winner: {w}
+            </div>
+        </div>
+    );
 }
 
-function formatMs(ms) {
-    if (ms < 0.01) return `${(ms * 1000).toFixed(1)}µs`;
-    if (ms < 1) return `${ms.toFixed(3)}ms`;
-    if (ms < 1000) return `${ms.toFixed(1)}ms`;
-    return `${(ms / 1000).toFixed(2)}s`;
+function SampleDataSection({ data }) {
+    const sectionHead = { margin: '16px 0 8px', fontSize: 14, fontWeight: 600 };
+    const subNote = { fontSize: 11, opacity: 0.6, marginBottom: 6 };
+    const monoTd = { ...tdStyle, fontFamily: 'monospace', fontSize: 12, whiteSpace: 'nowrap' };
+    const scrollWrap = { overflowX: 'auto', marginBottom: 16 };
+
+    return (
+        <div style={{ marginTop: 12, padding: 16, borderRadius: 8, border: '1px solid var(--border-primary)', background: 'var(--bg-primary)' }}>
+            {/* bench_category */}
+            <h4 style={sectionHead}>
+                bench_category <span style={{ fontWeight: 400, opacity: 0.6 }}>({data.categories.length} of 58 rows)</span>
+            </h4>
+            <p style={subNote}>rootid = UUID auto-generated, prev_id = linked list</p>
+            <div style={scrollWrap}>
+                <table style={tableStyle}>
+                    <thead>
+                        <tr>
+                            <th style={thStyle}>id</th>
+                            <th style={thStyle}>name</th>
+                            <th style={thStyle}>date</th>
+                            <th style={thStyle}>time</th>
+                            <th style={thStyle}>date_time</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {data.categories.map(c => (
+                            <tr key={c.id}>
+                                <td style={monoTd}>{c.id}</td>
+                                <td style={tdStyle}>{c.name}</td>
+                                <td style={monoTd}>{c.date}</td>
+                                <td style={monoTd}>{c.time}</td>
+                                <td style={monoTd}>{c.date_time}</td>
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
+            </div>
+
+            {/* bench_page */}
+            <h4 style={sectionHead}>
+                bench_page <span style={{ fontWeight: 400, opacity: 0.6 }}>({data.pages.length} of 399 rows)</span>
+            </h4>
+            <p style={subNote}>rootid = Wikipedia pageid, category_id = FK → bench_category</p>
+            <div style={scrollWrap}>
+                <table style={tableStyle}>
+                    <thead>
+                        <tr>
+                            <th style={thStyle}>id</th>
+                            <th style={thStyle}>rootid (pageid)</th>
+                            <th style={thStyle}>category</th>
+                            <th style={thStyle}>page_title</th>
+                            <th style={thStyle}>date</th>
+                            <th style={thStyle}>date_time</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {data.pages.map(p => (
+                            <tr key={p.id}>
+                                <td style={monoTd}>{p.id}</td>
+                                <td style={monoTd}>{p.rootid}</td>
+                                <td style={tdStyle}>{p.category}</td>
+                                <td style={tdStyle}>{p.page_title}</td>
+                                <td style={monoTd}>{p.date}</td>
+                                <td style={monoTd}>{p.date_time}</td>
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
+            </div>
+
+            {/* bench_revision */}
+            <h4 style={sectionHead}>
+                bench_revision <span style={{ fontWeight: 400, opacity: 0.6 }}>({data.revisions.length} of 3,657 rows)</span>
+            </h4>
+            <p style={subNote}>rootid = revid, prev_id = parentid (linked list ของ edit history)</p>
+            <div style={scrollWrap}>
+                <table style={tableStyle}>
+                    <thead>
+                        <tr>
+                            <th style={thStyle}>id</th>
+                            <th style={thStyle}>rootid (revid)</th>
+                            <th style={thStyle}>prev_id (parentid)</th>
+                            <th style={thStyle}>pageid</th>
+                            <th style={thStyle}>username</th>
+                            <th style={thStyle}>comment</th>
+                            <th style={thStyle}>content</th>
+                            <th style={thStyle}>date</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {data.revisions.map(r => (
+                            <tr key={r.id}>
+                                <td style={monoTd}>{r.id}</td>
+                                <td style={monoTd}>{r.rootid}</td>
+                                <td style={monoTd}>{r.prev_id}</td>
+                                <td style={monoTd}>{r.pageid}</td>
+                                <td style={tdStyle}>{r.username}</td>
+                                <td style={{ ...tdStyle, fontSize: 12, maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                    {r.comment}
+                                </td>
+                                <td style={monoTd}>{r.content_length.toLocaleString()} chars</td>
+                                <td style={monoTd}>{r.date}</td>
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
+            </div>
+
+            {/* flat row (MongoDB / PG JSONB) */}
+            <h4 style={sectionHead}>
+                flatRow (MongoDB / PG JSONB) <span style={{ fontWeight: 400, opacity: 0.6 }}>({data.flatRows.length} of 3,657 docs)</span>
+            </h4>
+            <p style={subNote}>denormalize จาก 3 tables → flat document สำหรับ MongoDB collection + PG JSONB column</p>
+            <div style={scrollWrap}>
+                <table style={tableStyle}>
+                    <thead>
+                        <tr>
+                            <th style={thStyle}>rootid</th>
+                            <th style={thStyle}>prev_id</th>
+                            <th style={thStyle}>page_title</th>
+                            <th style={thStyle}>category</th>
+                            <th style={thStyle}>username</th>
+                            <th style={thStyle}>comment</th>
+                            <th style={thStyle}>content</th>
+                            <th style={thStyle}>date</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {data.flatRows.map(f => (
+                            <tr key={f.rootid}>
+                                <td style={monoTd}>{f.rootid}</td>
+                                <td style={monoTd}>{f.prev_id}</td>
+                                <td style={tdStyle}>{f.page_title}</td>
+                                <td style={tdStyle}>{f.category}</td>
+                                <td style={tdStyle}>{f.username}</td>
+                                <td style={{ ...tdStyle, fontSize: 12, maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                    {f.comment}
+                                </td>
+                                <td style={monoTd}>{f.content_length.toLocaleString()} chars</td>
+                                <td style={monoTd}>{f.date}</td>
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
+            </div>
+
+            {/* Relation diagram */}
+            <h4 style={sectionHead}>Relation</h4>
+            <pre style={{
+                fontSize: 12, fontFamily: 'monospace', padding: 12, borderRadius: 6,
+                background: 'var(--bg-secondary)', border: '1px solid var(--border-primary)',
+                overflowX: 'auto', lineHeight: 1.5,
+            }}>
+{`bench_category (58)       bench_page (399)          bench_revision (3,657)
+┌─────────────────┐       ┌─────────────────┐       ┌──────────────────────┐
+│ id: 1           │──┐    │ id: 1           │──┐    │ id: 1                │
+│ rootid: uuid    │  │    │ rootid: 22395556│  │    │ rootid: 1300578444   │
+│ name:           │  ├───>│ category_id: 1  │  ├───>│ prev_id: 1283297281  │
+│  agricultural_  │  │    │ page_title:     │  │    │ page_id: 1           │
+│  science        │  │    │  Agricultural   │  │    │ username: Wikideas1  │
+│ date: 20250715  │  │    │  engineering    │  │    │ date: 20250715       │
+└─────────────────┘  │    └─────────────────┘  │    └──────────────────────┘
+                     │                         │    ┌──────────────────────┐
+                     │                         └───>│ id: 2                │
+                     │                              │ rootid: 1283297281   │
+                     │                              │ prev_id: 1283296400  │
+                     │                              │ page_id: 1           │
+                     │                              │ username: Entranced98│
+                     └─ (1:N)                       └──────────────────────┘
+                                                         (linked list)`}
+            </pre>
+        </div>
+    );
 }
-
-/* ───── Styles ───── */
-const inputStyle = {
-    padding: '8px 12px',
-    border: '1px solid var(--border-primary)',
-    borderRadius: 6,
-    background: 'var(--bg-primary)',
-    color: 'var(--text-primary)',
-    fontSize: 16,
-    width: 140,
-};
-
-const presetBtnStyle = {
-    padding: '2px 10px',
-    border: '1px solid var(--border-primary)',
-    borderRadius: 4,
-    cursor: 'pointer',
-    fontSize: 12,
-};
 
 const cardStyle = {
     padding: 16,
@@ -577,7 +640,7 @@ const noteStyle = {
     fontSize: 13,
 };
 
-const liveBtnStyle = {
+const btnStyle = {
     padding: '8px 16px',
     border: '1px solid var(--border-primary)',
     borderRadius: 6,
