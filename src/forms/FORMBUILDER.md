@@ -840,10 +840,10 @@ User เปิดแก้ → schema JSON → schemaToControls() → controls[]
 #### กรณี 1: มี Docker
 
 ```bash
-# สร้าง PostgreSQL container (port 5433, ใช้ PG 17+)
+# สร้าง PostgreSQL container (port 5432, ใช้ PG 17+)
 docker run -d --name rootid-postgres \
   -e POSTGRES_PASSWORD=PASSWORD \
-  -p 5433:5432 \
+  -p 5432:5432 \
   postgres:17
 
 # สร้าง user + database
@@ -855,7 +855,7 @@ docker exec -it rootid-postgres psql -U postgres \
 #### กรณี 2: ลง PostgreSQL ตรง (ไม่มี Docker)
 
 1. ดาวน์โหลด PostgreSQL จาก https://www.postgresql.org/download/
-2. ตั้ง port เป็น `5433` (หรือแก้ `.env` ให้ตรงกับ port ที่ใช้)
+2. ตั้ง port เป็น `5432` (default) หรือแก้ `.env` ให้ตรงกับ port ที่ใช้
 3. สร้าง user + database:
 
 ```sql
@@ -898,7 +898,7 @@ curl http://localhost:3002/api/schemax
 
 ```env
 PORT=3002
-DATABASE_URL="postgresql://USER:PASSWORD@localhost:5433/rootid?schema=public"
+DATABASE_URL="postgresql://USER:PASSWORD@localhost:5432/rootid?schema=public"
 ALLOWED_ORIGINS="http://localhost:3000,http://localhost:5173"
 ```
 
