@@ -95,7 +95,7 @@ function TemplateManager({ schemas, onSelectSchema, onCreateSchema, onUpdateSche
                             control={{
                                 value: 'ลบ',
                                 className: 'btn-danger btn-sm',
-                                onClick: () => setDeleteConfirm(rowData.id),
+                                onClick: () => setDeleteConfirm(rowData.rootid),
                             }}
                             rowData={rowData}
                             rowIndex={0}

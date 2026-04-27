@@ -58,7 +58,7 @@ function FormBuilder() {
             setSchemaData({
                 view: views[0] || null,
                 formcfg: formcfgs[0] || null,
-                data: formData.map(f => ({ _formId: f.id, ...f.data })),
+                data: formData.map(f => ({ _formId: f.rootid, ...f.data })),
                 rawData: formData,
             });
         })();
@@ -86,14 +86,15 @@ function FormBuilder() {
     const handleDeleteSchema = async () => {
         if (!deleteConfirm) return;
         await deleteSchema(deleteConfirm);
+        const deleted = schemas.find(s => s.rootid === deleteConfirm);
         setDeleteConfirm(null);
-        if (activeSchemaId === deleteConfirm) setActiveSchemaId(null);
+        if (deleted && activeSchemaId === deleted.id) setActiveSchemaId(null);
         await reloadSchemas();
     };
 
     const handleSchemaNameSave = async (name) => {
         if (!activeSchema || !name.trim()) return;
-        await updateSchema(activeSchema.id, { name: name.trim() });
+        await updateSchema(activeSchema.rootid, { name: name.trim() });
         await reloadSchemas();
     };
 
@@ -198,25 +199,26 @@ function FormBuilder() {
     };
 
     const handleTemplateUpdate = async (schema, name, json, formcfg) => {
-        await updateSchema(schema.id, { name, json });
+        await updateSchema(schema.rootid, { name, json });
         const [views, formcfgs] = await Promise.all([
             getViewsBySchema(schema.id),
             getFormcfgsBySchema(schema.id),
         ]);
         const viewUpdate = views[0]
-            ? updateView(views[0].id, { json_table_config: generateDefaultView(json) })
+            ? updateView(views[0].rootid, { json_table_config: generateDefaultView(json) })
             : createView(schema.id, 'table', generateDefaultView(json), 'Default View');
         const cfgUpdate = formcfgs[0]
-            ? updateFormcfg(formcfgs[0].id, { json_form_config: formcfg })
+            ? updateFormcfg(formcfgs[0].rootid, { json_form_config: formcfg })
             : createFormcfg(schema.id, formcfg, 'Default Form');
         await Promise.all([viewUpdate, cfgUpdate]);
         await reloadSchemas();
         setRefreshKey(k => k + 1);
     };
 
-    const handleTemplateDelete = async (schemaId) => {
-        await deleteSchema(schemaId);
-        if (activeSchemaId === schemaId) setActiveSchemaId(null);
+    const handleTemplateDelete = async (rootid) => {
+        await deleteSchema(rootid);
+        const deleted = schemas.find(s => s.rootid === rootid);
+        if (deleted && activeSchemaId === deleted.id) setActiveSchemaId(null);
         await reloadSchemas();
     };
 
@@ -251,7 +253,7 @@ function FormBuilder() {
                             </button>
                             <button
                                 className="fb-delete-schema-btn"
-                                onClick={e => { e.stopPropagation(); setDeleteConfirm(s.id); }}
+                                onClick={e => { e.stopPropagation(); setDeleteConfirm(s.rootid); }}
                                 title="ลบ schema"
                             >
                                 ✕
