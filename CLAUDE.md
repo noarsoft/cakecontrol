@@ -10,7 +10,8 @@ React 19 + Vite 7 UI Component Library สำหรับ CAMT มช.
 - Jest 30 + Testing Library
 - Chart.js 4 + Recharts 2
 - Axios, CSS variables (ไม่ใช้ CSS-in-JS)
-- Backend API: `http://localhost:3002` (rootid repo)
+- Backend API: `http://localhost:3002` (rootid repo) — FE auto-detect, fallback localStorage
+- PostgreSQL 13+ (ต้องใช้ `gen_random_uuid()`)
 
 ## Project Structure
 ```
@@ -44,6 +45,8 @@ src/
 | Template Manager (จัดการแม่แบบ) | Done |
 | Control Designer Modal | Done |
 | Backend repo (rootid) | Done — Express 5 + Prisma |
+| FE ↔ BE เชื่อมต่อ | Done — API mode ทำงานปกติ, fallback localStorage |
+| FORMBUILDER.md (developer guide) | Done — flow, architecture, FAQ, setup guide |
 
 ## Control Architecture Pattern
 ทุก control ทำตาม pattern เดียวกัน:
@@ -156,6 +159,9 @@ data (เก็บข้อมูลจริง)
 - `apiSchemaService.js` — API CRUD (expects `{ success, data }` response)
 - `mockSchemaService.js` — localStorage fallback
 
+### Developer Guide
+- `src/forms/FORMBUILDER.md` — เอกสารสำหรับทีม: flow, architecture, DB examples, setup guide, FAQ
+
 ## Known Issues
 - **Dashboard route missing**: Login navigate ไป `/dashboard` แต่ไม่มี route
 - **Dashboard.jsx ว่างเปล่า**: ยังไม่ได้ implement
@@ -174,4 +180,4 @@ data (เก็บข้อมูลจริง)
 - UI ใช้ภาษาไทยเป็นหลัก
 
 # currentDate
-Today's date is 2026-04-23.
+Today's date is 2026-04-27.

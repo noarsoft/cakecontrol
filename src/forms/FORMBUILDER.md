@@ -28,6 +28,110 @@ data_schema ──┬──> view    (ตารางโชว์ยังไง
 **ทำไม `view` กับ `form` ไม่รวมอยู่ใน `data_schema`?**
 เพราะ schema คือ "โครงสร้าง" (มี field อะไร, type อะไร) แต่ view คือ "แสดงผลยังไง" (header ชื่ออะไร, กว้างเท่าไหร่) และ form คือ "กรอกยังไง" (label อะไร, อยู่ row ไหน) — แยกกันเพื่อให้เปลี่ยน UI ได้โดยไม่ต้องแก้โครงสร้าง
 
+### ตัวอย่าง data จริงในแต่ละ table
+
+> สมมติสร้างแม่แบบ "พนักงาน" มี 3 fields: ชื่อ, อายุ, สิทธิ์
+
+#### Table 1: `data_schema` — โครงสร้าง field
+
+| Column | ตัวอย่างค่า | อธิบาย |
+|--------|-----------|--------|
+| rootid | `a79ae53a-7b4a-4571-bf21-c7070e0c5d3e` | UUID ถาวร ไม่เปลี่ยน |
+| id | `2` | SERIAL auto-increment ใช้เป็น FK |
+| prev_id | `null` | version ก่อนหน้า (null = ตัวแรก) |
+| name | `"พนักงาน"` | ชื่อแม่แบบ |
+| json | ดูด้านล่าง | field definitions (key + type) |
+| flag | `"draft"` | สถานะ: draft / published / archived |
+| activate | `true` | soft delete (false = ลบแล้ว) |
+| modify_datetime | `"20260427_012925"` | วันที่แก้ไขล่าสุด (yyyymmdd_hhmmss) |
+
+```json
+// data_schema.json — กำหนดว่ามี field อะไร type อะไร
+{
+  "name": { "type": "string", "label": "ชื่อ-นามสกุล" },
+  "age":  { "type": "number", "label": "อายุ" },
+  "role": { "type": "select", "label": "สิทธิ์", "enum": ["Admin", "User", "Guest"] }
+}
+```
+
+#### Table 2: `view` — config ตาราง (โชว์ยังไง)
+
+| Column | ตัวอย่างค่า | อธิบาย |
+|--------|-----------|--------|
+| rootid | `1658c35f-2806-4b06-84f9-04cdf3a1fe03` | UUID ถาวร |
+| id | `1` | SERIAL |
+| prev_id | `null` | version ก่อนหน้า |
+| data_schema_id | `2` | FK → data_schema.id (แม่แบบ "พนักงาน") |
+| view_type | `"table"` | ประเภท view (ตอนนี้มีแค่ table) |
+| name | `"default"` | ชื่อ view |
+| json_table_config | ดูด้านล่าง | columns config สำหรับ TableviewControl |
+| flag | `"draft"` | สถานะ |
+| activate | `true` | soft delete |
+| modify_datetime | `"20260427_012943"` | วันที่แก้ไข |
+
+```json
+// view.json_table_config — บอกว่า table แสดง column อะไรบ้าง
+{
+  "columns": [
+    { "key": "name", "header": "ชื่อ-นามสกุล", "width": "auto", "sortable": true },
+    { "key": "age",  "header": "อายุ",        "width": "80",   "sortable": true },
+    { "key": "role", "header": "สิทธิ์",       "width": "120",  "sortable": true }
+  ]
+}
+```
+
+#### Table 3: `form` — config ฟอร์ม (กรอกยังไง)
+
+| Column | ตัวอย่างค่า | อธิบาย |
+|--------|-----------|--------|
+| rootid | `e8e3e2fc-2c52-491f-99ae-089a1c14c3c2` | UUID ถาวร |
+| id | `1` | SERIAL |
+| prev_id | `null` | version ก่อนหน้า |
+| data_id | `2` | FK → data_schema.id (ชื่อ column ต่างจาก view เพราะ design เดิม) |
+| name | `"default"` | ชื่อ form config |
+| json_form_config | ดูด้านล่าง | layout config สำหรับ FormControl |
+| flag | `"draft"` | สถานะ |
+| activate | `true` | soft delete |
+| modify_datetime | `"20260427_012943"` | วันที่แก้ไข |
+
+```json
+// form.json_form_config — บอกว่า form มี control อะไร อยู่ตำแหน่งไหน
+{
+  "colnumbers": 6,
+  "controls": [
+    { "key": "name", "label": "ชื่อ-นามสกุล", "rowno": 1, "colspan": 6 },
+    { "key": "age",  "label": "อายุ",        "rowno": 2, "colspan": 3 },
+    { "key": "role", "label": "สิทธิ์",       "rowno": 2, "colspan": 3 }
+  ]
+}
+```
+
+#### Table 4: `data` — ข้อมูลจริงที่ user กรอก
+
+| Column | ตัวอย่างค่า | อธิบาย |
+|--------|-----------|--------|
+| rootid | `7c4e8f0e-3e91-4111-b8ec-346bbf7ed8d9` | UUID ถาวร |
+| id | `1` | SERIAL |
+| prev_id | `null` | version ก่อนหน้า |
+| data_schema_id | `2` | FK → data_schema.id (แม่แบบ "พนักงาน") |
+| data | `{"name":"สมชาย ใจดี","age":28,"role":"Admin"}` | ข้อมูลที่ user กรอก (flat JSON) |
+| flag | `"active"` | สถานะ: active / archived |
+| activate | `true` | soft delete |
+| modify_datetime | `"20260427_012943"` | วันที่แก้ไข |
+
+**ตัวอย่าง data 3 rows:**
+
+```json
+// row 1
+{ "name": "สมชาย ใจดี",     "age": 28, "role": "Admin" }
+// row 2
+{ "name": "สมหญิง รักเรียน", "age": 25, "role": "User"  }
+// row 3
+{ "name": "วิชัย สุขใจ",     "age": 32, "role": "Guest" }
+```
+
+> **สังเกต:** `data.data` เก็บเฉพาะข้อมูลที่ user กรอก — key ตรงกับ `data_schema.json` (name, age, role) ไม่มี id ปนใน data object
+
 ---
 
 ## 3. ไฟล์ทั้งหมด — อ่านไฟล์ไหนก่อน?
@@ -715,6 +819,90 @@ User เปิดแก้ → schema JSON → schemaToControls() → controls[]
 เพราะ `controls[]` เป็น UI state (มี id, options array, defaultSelect) — ไม่เหมาะเก็บใน DB
 
 `schema JSON` เป็น **canonical format** ที่ไม่ผูกกับ UI — ใช้ validate data, auto-gen view, auto-gen form ได้ ไม่ว่า UI จะเปลี่ยนยังไง schema ยังใช้ได้
+
+---
+
+---
+
+## 10. Setup Backend สำหรับทีม
+
+### Prerequisites
+
+| สิ่งที่ต้องมี | Version ขั้นต่ำ | ทำไม |
+|-------------|---------------|------|
+| PostgreSQL | **13+** (แนะนำ 17+) | ต้องใช้ `gen_random_uuid()` ที่ built-in ตั้งแต่ PG 13 (ก่อนหน้าต้องลง pgcrypto extension เอง) |
+| Node.js | 18+ | รัน Express 5 backend |
+
+> **PG version สำคัญ:** Prisma schema ใช้ `@default(dbgenerated("gen_random_uuid()"))` สำหรับ rootid (UUID PK) — ถ้าใช้ PG 12 หรือต่ำกว่า จะ error ตอน migrate เพราะไม่มี function นี้
+
+### วิธี Setup
+
+#### กรณี 1: มี Docker
+
+```bash
+# สร้าง PostgreSQL container (port 5433, ใช้ PG 17+)
+docker run -d --name rootid-postgres \
+  -e POSTGRES_PASSWORD=PASSWORD \
+  -p 5433:5432 \
+  postgres:17
+
+# สร้าง user + database
+docker exec -it rootid-postgres psql -U postgres \
+  -c "CREATE USER \"USER\" WITH PASSWORD 'PASSWORD';" \
+  -c "CREATE DATABASE rootid OWNER \"USER\";"
+```
+
+#### กรณี 2: ลง PostgreSQL ตรง (ไม่มี Docker)
+
+1. ดาวน์โหลด PostgreSQL จาก https://www.postgresql.org/download/
+2. ตั้ง port เป็น `5433` (หรือแก้ `.env` ให้ตรงกับ port ที่ใช้)
+3. สร้าง user + database:
+
+```sql
+CREATE USER "USER" WITH PASSWORD 'PASSWORD';
+CREATE DATABASE rootid OWNER "USER";
+```
+
+#### รัน Prisma Migrate + Start Backend
+
+```bash
+cd rootid
+npm install
+npx prisma migrate deploy    # สร้าง 4 tables
+npx prisma generate          # generate Prisma client
+npm start                    # เปิด backend ที่ port 3002
+```
+
+### ตรวจสอบว่าต่อสำเร็จ
+
+```bash
+# เช็ค backend
+curl http://localhost:3002/api/health
+# ควรได้: {"success":true,"data":{"status":"ok",...}}
+
+# เช็ค DB connection
+curl http://localhost:3002/api/schemax
+# ควรได้: {"success":true,"data":[]}  (ว่างเปล่าถ้าเพิ่ง setup)
+```
+
+### FE auto-detect backend
+
+ไม่ต้อง config อะไรที่ฝั่ง cakecontrol — `schemaService.js` จะ:
+1. Fetch `localhost:3002/api/health` (timeout 1.5 วิ)
+2. ถ้าตอบ → ใช้ API mode (แสดง 🟢 API ที่ sidebar)
+3. ถ้าไม่ตอบ → fallback ใช้ localStorage (แสดง 🟡 localStorage)
+
+**กรณีไม่ได้เปิด backend:** ระบบทำงานได้ปกติ ข้อมูลเก็บใน browser localStorage พร้อม demo data
+
+### .env ของ rootid
+
+```env
+PORT=3002
+DATABASE_URL="postgresql://USER:PASSWORD@localhost:5433/rootid?schema=public"
+ALLOWED_ORIGINS="http://localhost:3000,http://localhost:5173"
+```
+
+> **หมายเหตุ:** USER/PASSWORD เป็นค่า default สำหรับ dev — production ต้องเปลี่ยน
 
 ---
 
