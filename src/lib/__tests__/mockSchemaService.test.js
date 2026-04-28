@@ -52,7 +52,7 @@ describe('mockSchemaService.js', () => {
 
         test('updateSchema updates fields but protects id/rootid', () => {
             const s = createSchema('Original', {});
-            const updated = updateSchema(s.id, { name: 'Updated', id: 999, rootid: 'hack' });
+            const updated = updateSchema(s.rootid, { name: 'Updated', id: 999, rootid: 'hack' });
             expect(updated.name).toBe('Updated');
             expect(updated.id).toBe(s.id);
             expect(updated.rootid).toBe(s.rootid);
@@ -61,7 +61,7 @@ describe('mockSchemaService.js', () => {
         test('deleteSchema soft-deletes', () => {
             const s = createSchema('To Delete', {});
             expect(getSchemas()).toHaveLength(1);
-            deleteSchema(s.id);
+            deleteSchema(s.rootid);
             expect(getSchemas()).toHaveLength(0);
         });
     });
@@ -79,7 +79,7 @@ describe('mockSchemaService.js', () => {
         test('updateView protects id/rootid', () => {
             const schema = createSchema('S', {});
             const view = createView(schema.id, 'table', {}, '');
-            const updated = updateView(view.id, { name: 'New Name', id: 999 });
+            const updated = updateView(view.rootid, { name: 'New Name', id: 999 });
             expect(updated.name).toBe('New Name');
             expect(updated.id).toBe(view.id);
         });
@@ -97,7 +97,7 @@ describe('mockSchemaService.js', () => {
         test('updateFormcfg protects id/rootid', () => {
             const schema = createSchema('S', {});
             const cfg = createFormcfg(schema.id, {}, '');
-            const updated = updateFormcfg(cfg.id, { name: 'Updated', rootid: 'hack' });
+            const updated = updateFormcfg(cfg.rootid, { name: 'Updated', rootid: 'hack' });
             expect(updated.name).toBe('Updated');
             expect(updated.rootid).toBe(cfg.rootid);
         });
@@ -116,7 +116,7 @@ describe('mockSchemaService.js', () => {
         test('updateFormData updates data field', () => {
             const schema = createSchema('S', {});
             const record = createFormData(schema.id, { name: 'Old' });
-            updateFormData(record.id, { name: 'New' });
+            updateFormData(record.rootid, { name: 'New' });
             const data = getFormDataBySchema(schema.id);
             expect(data[0].data.name).toBe('New');
         });
@@ -125,7 +125,7 @@ describe('mockSchemaService.js', () => {
             const schema = createSchema('S', {});
             const record = createFormData(schema.id, { x: 1 });
             expect(getFormDataBySchema(schema.id)).toHaveLength(1);
-            deleteFormData(record.id);
+            deleteFormData(record.rootid);
             expect(getFormDataBySchema(schema.id)).toHaveLength(0);
         });
     });

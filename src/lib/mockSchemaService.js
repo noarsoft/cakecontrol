@@ -71,7 +71,7 @@ export function createSchema(name, json = {}) {
 
 export function updateSchema(id, updates) {
     const items = getStore(STORAGE_KEYS.schemas);
-    const idx = items.findIndex(s => s.id === id);
+    const idx = items.findIndex(s => s.rootid === id);
     if (idx < 0) return null;
     const { id: _id, rootid: _root, ...safeUpdates } = updates;
     items[idx] = { ...items[idx], ...safeUpdates, modify_datetime: now() };
@@ -81,7 +81,7 @@ export function updateSchema(id, updates) {
 
 export function deleteSchema(id) {
     const items = getStore(STORAGE_KEYS.schemas);
-    const idx = items.findIndex(s => s.id === id);
+    const idx = items.findIndex(s => s.rootid === id);
     if (idx < 0) return false;
     items[idx].activate = false;
     setStore(STORAGE_KEYS.schemas, items);
@@ -115,7 +115,7 @@ export function createView(schemaId, viewType, json_table_config, name = '') {
 
 export function updateView(id, updates) {
     const items = getStore(STORAGE_KEYS.views);
-    const idx = items.findIndex(v => v.id === id);
+    const idx = items.findIndex(v => v.rootid === id);
     if (idx < 0) return null;
     const { id: _id, rootid: _root, ...safeUpdates } = updates;
     items[idx] = { ...items[idx], ...safeUpdates, modify_datetime: now() };
@@ -149,7 +149,7 @@ export function createFormcfg(schemaId, json_form_config, name = '') {
 
 export function updateFormcfg(id, updates) {
     const items = getStore(STORAGE_KEYS.forms);
-    const idx = items.findIndex(f => f.id === id);
+    const idx = items.findIndex(f => f.rootid === id);
     if (idx < 0) return null;
     const { id: _id, rootid: _root, ...safeUpdates } = updates;
     items[idx] = { ...items[idx], ...safeUpdates, modify_datetime: now() };
@@ -182,7 +182,7 @@ export function createFormData(schemaId, data) {
 
 export function updateFormData(id, data) {
     const items = getStore(STORAGE_KEYS.data);
-    const idx = items.findIndex(f => f.id === id);
+    const idx = items.findIndex(f => f.rootid === id);
     if (idx < 0) return null;
     items[idx] = { ...items[idx], data, modify_datetime: now() };
     setStore(STORAGE_KEYS.data, items);
@@ -191,7 +191,7 @@ export function updateFormData(id, data) {
 
 export function deleteFormData(id) {
     const items = getStore(STORAGE_KEYS.data);
-    const idx = items.findIndex(f => f.id === id);
+    const idx = items.findIndex(f => f.rootid === id);
     if (idx < 0) return false;
     items[idx].activate = false;
     setStore(STORAGE_KEYS.data, items);
