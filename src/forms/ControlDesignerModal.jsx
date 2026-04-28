@@ -3,34 +3,40 @@ import ModalControl from '../components/controls/ModalControl';
 import './ControlDesignerModal.css';
 
 const CONTROL_TYPES = [
-    { value: 'textbox', label: 'Textbox' },
-    { value: 'number', label: 'Number' },
-    { value: 'dropdown', label: 'Dropdown' },
-    { value: 'datepicker', label: 'Datepicker' },
-    { value: 'checkbox', label: 'Checkbox' },
-    { value: 'email', label: 'Email' },
-    { value: 'file', label: 'File' },
+    { value: 'textbox', label: 'Textbox', fieldType: 'string', group: 'input' },
+    { value: 'number', label: 'Number', fieldType: 'number', group: 'input' },
+    { value: 'password', label: 'Password', fieldType: 'string', group: 'input' },
+    { value: 'select', label: 'Dropdown / Select', fieldType: 'select', group: 'input' },
+    { value: 'checkbox', label: 'Checkbox', fieldType: 'boolean', group: 'input' },
+    { value: 'toggle', label: 'Toggle Switch', fieldType: 'boolean', group: 'input' },
+    { value: 'date', label: 'Date', fieldType: 'date', group: 'date' },
+    { value: 'datepicker', label: 'DatePicker', fieldType: 'date', group: 'date' },
+    { value: 'rating', label: 'Rating (Stars)', fieldType: 'number', group: 'input' },
+    { value: 'slider', label: 'Slider', fieldType: 'number', group: 'input' },
+    { value: 'label', label: 'Label (Static)', fieldType: 'string', group: 'display' },
+    { value: 'badge', label: 'Badge', fieldType: 'string', group: 'display' },
+    { value: 'image', label: 'Image', fieldType: 'string', group: 'display' },
+    { value: 'icon', label: 'Icon', fieldType: 'string', group: 'display' },
+    { value: 'progress', label: 'Progress Bar', fieldType: 'number', group: 'display' },
+    { value: 'link', label: 'Link', fieldType: 'string', group: 'display' },
+    { value: 'qrcode', label: 'QR Code', fieldType: 'string', group: 'display' },
 ];
 
-const CONTROL_TO_FIELD_TYPE = {
-    textbox: 'string',
-    number: 'number',
-    dropdown: 'select',
-    datepicker: 'date',
-    checkbox: 'boolean',
-    email: 'email',
-    file: 'file',
-};
+const CONTROL_TO_FIELD_TYPE = Object.fromEntries(
+    CONTROL_TYPES.map(ct => [ct.value, ct.fieldType])
+);
 
 const FIELD_TO_CONTROL_TYPE = {
     string: 'textbox',
     number: 'number',
-    select: 'dropdown',
+    select: 'select',
     date: 'datepicker',
     boolean: 'checkbox',
-    email: 'email',
-    file: 'file',
+    email: 'textbox',
+    file: 'textbox',
 };
+
+const NEEDS_OPTIONS = new Set(['select']);
 
 function createEmptyControl() {
     return {
@@ -49,12 +55,13 @@ function schemaToControls(schemaJson, formcfgJson) {
     const formControls = formcfgJson?.controls || [];
     return Object.entries(schemaJson).map(([key, def]) => {
         const fc = formControls.find(c => c.key === key);
+        const controlType = def.controlType || FIELD_TO_CONTROL_TYPE[def.type] || 'textbox';
         return {
             id: Date.now() + Math.random(),
             label: fc?.label || def.label || key,
             databind: key,
-            controlType: FIELD_TO_CONTROL_TYPE[def.type] || 'textbox',
-            options: def.type === 'select' && def.enum
+            controlType,
+            options: def.enum
                 ? def.enum.map(v => ({ key: v, value: v }))
                 : [],
             defaultSelect: '',
@@ -67,9 +74,9 @@ function controlsToSchema(controls) {
     for (const ctrl of controls) {
         if (!ctrl.databind.trim()) continue;
         const fieldType = CONTROL_TO_FIELD_TYPE[ctrl.controlType] || 'string';
-        const def = { type: fieldType };
+        const def = { type: fieldType, controlType: ctrl.controlType };
         if (ctrl.label.trim()) def.label = ctrl.label.trim();
-        if (ctrl.controlType === 'dropdown' && ctrl.options.length > 0) {
+        if (NEEDS_OPTIONS.has(ctrl.controlType) && ctrl.options.length > 0) {
             def.enum = ctrl.options.map(o => o.value || o.key).filter(Boolean);
         }
         json[ctrl.databind.trim()] = def;
@@ -214,13 +221,15 @@ function ControlDesignerModal({ isOpen, onClose, onSave, schemaName, schemaJson,
                                 value={ctrl.controlType}
                                 onChange={e => {
                                     updateControl(idx, 'controlType', e.target.value);
-                                    if (e.target.value === 'dropdown' && ctrl.options.length === 0) {
+                                    if (NEEDS_OPTIONS.has(e.target.value) && ctrl.options.length === 0) {
                                         addOption(idx);
                                     }
                                 }}
                             >
                                 {CONTROL_TYPES.map(t => (
-                                    <option key={t.value} value={t.value}>{t.label}</option>
+                                    <option key={t.value} value={t.value}>
+                                        {t.group === 'display' ? `[Display] ${t.label}` : t.label}
+                                    </option>
                                 ))}
                             </select>
                             <div className="cd-row-actions">
@@ -230,9 +239,9 @@ function ControlDesignerModal({ isOpen, onClose, onSave, schemaName, schemaJson,
                             </div>
                         </div>
 
-                        {ctrl.controlType === 'dropdown' && (
+                        {NEEDS_OPTIONS.has(ctrl.controlType) && (
                             <div className="cd-options-panel">
-                                <div className="cd-options-title">ตัวเลือก Dropdown</div>
+                                <div className="cd-options-title">ตัวเลือก</div>
                                 {ctrl.options.map((opt, optIdx) => (
                                     <div key={optIdx} className="cd-option-row">
                                         <input

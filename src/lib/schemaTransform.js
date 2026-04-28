@@ -4,19 +4,22 @@
  */
 
 /**
- * แปลง schema field type → control type ที่ genControl รู้จัก
+ * แปลง schema field def → control type ที่ genControl รู้จัก
+ * ใช้ controlType ตรง ๆ ถ้ามี, fallback ไปเดาจาก type
  */
-function fieldTypeToControlType(fieldType) {
-    const map = {
-        string: 'textbox',
-        number: 'number',
-        boolean: 'toggle',
-        date: 'date',
-        email: 'textbox',
-        file: 'textbox',
-        select: 'select',
-    };
-    return map[fieldType] || 'textbox';
+const FIELD_TYPE_FALLBACK = {
+    string: 'textbox',
+    number: 'number',
+    boolean: 'toggle',
+    date: 'date',
+    email: 'textbox',
+    file: 'textbox',
+    select: 'select',
+};
+
+function fieldTypeToControlType(fieldType, fieldDef) {
+    if (fieldDef?.controlType) return fieldDef.controlType;
+    return FIELD_TYPE_FALLBACK[fieldType] || 'textbox';
 }
 
 /**
@@ -27,13 +30,15 @@ export function schemaToColumnsConfig(schemaJson, viewJson = null) {
     if (viewJson && viewJson.columns && viewJson.columns.length > 0) {
         return viewJson.columns;
     }
-    // Auto-generate จาก schema
     return Object.entries(schemaJson || {}).map(([key, def]) => ({
         key,
-        header: key,
+        header: def.label || key,
         sortable: true,
         width: 'auto',
-        type: def.type === 'boolean' ? 'badge' : undefined,
+        type: def.controlType === 'badge' ? 'badge'
+            : def.controlType === 'toggle' ? 'badge'
+            : def.type === 'boolean' ? 'badge'
+            : undefined,
     }));
 }
 
@@ -45,20 +50,19 @@ export function schemaToFormConfig(schemaJson, formcfgJson = null) {
     const colnumbers = formcfgJson?.colnumbers || 6;
 
     if (formcfgJson && formcfgJson.controls && formcfgJson.controls.length > 0) {
-        // Map formcfg controls → FormControl controls with correct type
         return {
             colnumbers,
             controls: formcfgJson.controls.map(ctrl => {
                 const fieldDef = schemaJson[ctrl.key] || { type: 'string' };
                 return {
-                    type: fieldTypeToControlType(fieldDef.type),
+                    type: fieldTypeToControlType(fieldDef.type, fieldDef),
                     databind: ctrl.key,
                     label: ctrl.label || ctrl.key,
                     colno: ctrl.colno || 1,
                     rowno: ctrl.rowno,
                     colspan: ctrl.colspan || colnumbers,
                     placeholder: ctrl.placeholder || '',
-                    ...(fieldDef.type === 'select' && fieldDef.enum ? {
+                    ...(fieldDef.enum ? {
                         options: fieldDef.enum.map(v => ({ label: v, value: v })),
                     } : {}),
                     ...(fieldDef.type === 'email' ? { inputType: 'email' } : {}),
@@ -67,15 +71,14 @@ export function schemaToFormConfig(schemaJson, formcfgJson = null) {
         };
     }
 
-    // Auto-generate: 1 field ต่อ 1 row, full width
     const controls = Object.entries(schemaJson || {}).map(([key, def], idx) => ({
-        type: fieldTypeToControlType(def.type),
+        type: fieldTypeToControlType(def.type, def),
         databind: key,
         label: def.label || key,
         colno: 1,
         rowno: idx + 1,
         colspan: colnumbers,
-        ...(def.type === 'select' && def.enum ? {
+        ...(def.enum ? {
             options: def.enum.map(v => ({ label: v, value: v })),
         } : {}),
         ...(def.type === 'email' ? { inputType: 'email' } : {}),

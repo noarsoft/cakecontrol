@@ -17,7 +17,7 @@ describe('schemaTransform.js', () => {
             const cols = schemaToColumnsConfig(sampleSchema);
             expect(cols).toHaveLength(5);
             expect(cols[0].key).toBe('name');
-            expect(cols[0].header).toBe('name');
+            expect(cols[0].header).toBe('ชื่อ');
             expect(cols[0].sortable).toBe(true);
         });
 
