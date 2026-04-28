@@ -10,6 +10,7 @@ lerna-debug.log*
 node_modules
 dist
 dist-ssr
+coverage
 *.local
 
 # Editor directories and files
@@ -23,3 +24,20 @@ dist-ssr
 *.sln
 *.sw?
 .claude/settings.local.json
+
+# Env files (contain secrets)
+.env
+.env.local
+
+# Playwright artifacts
+.playwright-mcp/
+*.png
+
+# SQLite
+*.db
+*.db-shm
+*.db-wal
+
+# Old server (replaced by rootid repo)
+server/
+

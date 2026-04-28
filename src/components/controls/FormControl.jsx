@@ -1,6 +1,6 @@
 // FormControl.jsx
 import React, { useState } from 'react';
-import { genControl } from './TableviewControl';
+import { genControl } from './registry';
 import './FormControl.css';
 
 function FormControl({ config }) {

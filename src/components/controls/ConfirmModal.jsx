@@ -8,8 +8,8 @@ function ConfirmModal({
     message, 
     onConfirm,
     onCancel,
-    confirmLabel = 'Confirm',
-    cancelLabel = 'Cancel',
+    confirmLabel = 'ยืนยัน',
+    cancelLabel = 'ยกเลิก',
     confirmVariant = 'danger',  // primary, success, warning, danger
     cancelVariant = 'secondary',
     isDangerous = false,         // Shows warning styling if true

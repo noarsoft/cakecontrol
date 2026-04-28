@@ -1,0 +1,53 @@
+/* TemplateManager.css */
+
+.tm-container {
+    max-width: 900px;
+    margin: 0 auto;
+}
+
+.tm-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 16px;
+}
+
+.tm-search {
+    flex: 1;
+    padding: 8px 12px;
+    border: 1px solid var(--border-primary);
+    border-radius: 4px;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    font-size: 14px;
+    outline: none;
+    transition: border-color 0.15s;
+}
+
+.tm-search:focus {
+    border-color: var(--accent-primary);
+}
+
+.tm-row-actions {
+    display: flex;
+    gap: 6px;
+}
+
+.tm-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 60px 20px;
+    opacity: 0.5;
+    gap: 8px;
+}
+
+.tm-empty-icon {
+    font-size: 48px;
+}
+
+.tm-empty p {
+    font-size: 15px;
+    margin: 0;
+}
