@@ -51,10 +51,11 @@ function TemplateManager({ schemas, onSelectSchema, onCreateSchema, onUpdateSche
 
     const formatDate = (dt) => {
         if (!dt) return '-';
-        if (dt.length >= 15) {
-            return `${dt.slice(6, 8)}/${dt.slice(4, 6)}/${dt.slice(0, 4)} ${dt.slice(9, 11)}:${dt.slice(11, 13)}`;
+        const s = String(dt);
+        if (s.length >= 14) {
+            return `${s.slice(6, 8)}/${s.slice(4, 6)}/${s.slice(0, 4)} ${s.slice(8, 10)}:${s.slice(10, 12)}`;
         }
-        return dt;
+        return s;
     };
 
     const tableConfig = useMemo(() => ({

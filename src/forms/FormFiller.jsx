@@ -6,6 +6,7 @@ import { createFormData } from '../lib/schemaService';
 function FormFiller({ schema, formcfgJson, onSubmit }) {
     const [formData, setFormData] = useState({});
     const [submitted, setSubmitted] = useState(false);
+    const [resetKey, setResetKey] = useState(0);
 
     const formConfig = useMemo(
         () => schemaToFormConfig(schema.json, formcfgJson),
@@ -21,13 +22,16 @@ function FormFiller({ schema, formcfgJson, onSubmit }) {
         },
     }), [formConfig, formData]);
 
+    const hasData = Object.values(formData).some(v => v !== '' && v !== null && v !== undefined);
+
     const handleSubmit = async () => {
+        if (!hasData) return;
         await createFormData(schema.id, formData);
         setSubmitted(true);
         onSubmit?.();
     };
 
-    const handleReset = () => { setFormData({}); setSubmitted(false); };
+    const handleReset = () => { setFormData({}); setSubmitted(false); setResetKey(k => k + 1); };
 
     if (submitted) {
         return (
@@ -50,11 +54,11 @@ function FormFiller({ schema, formcfgJson, onSubmit }) {
                 <p>กรอกข้อมูลแล้วกดบันทึก</p>
             </div>
             <div className="fb-filler-body">
-                <FormControl config={config} />
+                <FormControl key={resetKey} config={config} />
             </div>
             <div className="fb-filler-footer">
                 <button className="fb-mode-btn" onClick={handleReset}>ล้างข้อมูล</button>
-                <button className="fb-mode-btn active" onClick={handleSubmit}>บันทึก</button>
+                <button className="fb-mode-btn active" onClick={handleSubmit} disabled={!hasData}>บันทึก</button>
             </div>
         </div>
     );

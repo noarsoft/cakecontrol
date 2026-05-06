@@ -1,5 +1,17 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { FIELD_TYPES, addField, removeField, updateField, moveField, getFieldEntries, validateSchema } from '../lib/schema';
+
+function KeyInput({ value, onCommit }) {
+    const [draft, setDraft] = useState(value);
+    const prev = useRef(value);
+    useEffect(() => { if (value !== prev.current) { setDraft(value); prev.current = value; } }, [value]);
+    const commit = () => {
+        const trimmed = draft.trim();
+        if (trimmed && trimmed !== value) onCommit(trimmed);
+        else setDraft(value);
+    };
+    return <input className="field-key-input" value={draft} onChange={e => setDraft(e.target.value)} onBlur={commit} placeholder="key" />;
+}
 
 function SchemaBuilder({ schemaJson, onChange }) {
     const [draft, setDraft] = useState(schemaJson);
@@ -60,7 +72,7 @@ function SchemaBuilder({ schemaJson, onChange }) {
                 <div key={idx} className="fb-field-card">
                     <span className="field-drag">⠿</span>
                     <div className="field-info">
-                        <input className="field-key-input" value={key} onChange={e => handleUpdateKey(key, e.target.value)} placeholder="key" />
+                        <KeyInput value={key} onCommit={newKey => handleUpdateKey(key, newKey)} />
                         <input className="field-label-input" value={def.label || ''} onChange={e => handleUpdateLabel(key, e.target.value)} placeholder="label (ชื่อแสดง)" />
                         <select className="field-type-select" value={def.type} onChange={e => handleUpdateType(key, e.target.value)}>
                             {FIELD_TYPES.map(t => <option key={t.value} value={t.value}>{t.icon} {t.label}</option>)}

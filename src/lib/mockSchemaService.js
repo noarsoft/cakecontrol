@@ -1,6 +1,7 @@
 /**
  * mockSchemaService.js — localStorage-based CRUD สำหรับ 4 tables
  * ใช้แทน backend API ตอน dev
+ * append-only versioning + tombstone soft delete
  */
 
 const STORAGE_KEYS = {
@@ -17,7 +18,8 @@ function genId() {
 function now() {
     const d = new Date();
     const pad = (n) => String(n).padStart(2, '0');
-    return `${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}_${pad(d.getHours())}${pad(d.getMinutes())}${pad(d.getSeconds())}`;
+    const s = `${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}${pad(d.getHours())}${pad(d.getMinutes())}${pad(d.getSeconds())}`;
+    return Number(s);
 }
 
 function getStore(key) {
@@ -48,10 +50,6 @@ export function getSchemaById(id) {
     return getStore(STORAGE_KEYS.schemas).find(s => s.id === id && s.activate !== false);
 }
 
-export function getSchemaByRootId(rootid) {
-    return getStore(STORAGE_KEYS.schemas).find(s => s.rootid === rootid && s.activate !== false);
-}
-
 export function createSchema(name, json = {}) {
     const items = getStore(STORAGE_KEYS.schemas);
     const item = {
@@ -69,21 +67,68 @@ export function createSchema(name, json = {}) {
     return item;
 }
 
-export function updateSchema(id, updates) {
+export function updateSchema(rootid, updates) {
     const items = getStore(STORAGE_KEYS.schemas);
-    const idx = items.findIndex(s => s.rootid === id);
+    const idx = items.findIndex(s => s.rootid === rootid && s.activate !== false);
     if (idx < 0) return null;
+
+    const current = items[idx];
+    const oldId = current.id;
+    items[idx] = { ...current, activate: false, modify_datetime: now() };
+
     const { id: _id, rootid: _root, ...safeUpdates } = updates;
-    items[idx] = { ...items[idx], ...safeUpdates, modify_datetime: now() };
+    const newItem = {
+        rootid: genId(),
+        id: nextId(STORAGE_KEYS.schemas),
+        prev_id: oldId,
+        name: current.name,
+        json: current.json,
+        flag: current.flag,
+        activate: true,
+        modify_datetime: now(),
+        ...safeUpdates,
+    };
+    items.push(newItem);
     setStore(STORAGE_KEYS.schemas, items);
-    return items[idx];
+
+    // Cascade FK: update child tables to point to new schema id
+    const cascadeFk = (storeKey, field) => {
+        const children = getStore(storeKey);
+        let changed = false;
+        children.forEach(c => {
+            if (c[field] === oldId && c.activate !== false) {
+                c[field] = newItem.id;
+                changed = true;
+            }
+        });
+        if (changed) setStore(storeKey, children);
+    };
+    cascadeFk(STORAGE_KEYS.views, 'data_schema_id');
+    cascadeFk(STORAGE_KEYS.forms, 'data_id');
+    cascadeFk(STORAGE_KEYS.data, 'data_schema_id');
+
+    return newItem;
 }
 
-export function deleteSchema(id) {
+export function deleteSchema(rootid) {
     const items = getStore(STORAGE_KEYS.schemas);
-    const idx = items.findIndex(s => s.rootid === id);
+    const idx = items.findIndex(s => s.rootid === rootid && s.activate !== false);
     if (idx < 0) return false;
-    items[idx].activate = false;
+
+    const current = items[idx];
+    items[idx] = { ...current, activate: false, modify_datetime: now() };
+
+    // tombstone record
+    items.push({
+        rootid: genId(),
+        id: nextId(STORAGE_KEYS.schemas),
+        prev_id: current.id,
+        name: current.name,
+        json: current.json,
+        flag: 'deleted',
+        activate: false,
+        modify_datetime: now(),
+    });
     setStore(STORAGE_KEYS.schemas, items);
     return true;
 }
@@ -113,14 +158,31 @@ export function createView(schemaId, viewType, json_table_config, name = '') {
     return item;
 }
 
-export function updateView(id, updates) {
+export function updateView(rootid, updates) {
     const items = getStore(STORAGE_KEYS.views);
-    const idx = items.findIndex(v => v.rootid === id);
+    const idx = items.findIndex(v => v.rootid === rootid && v.activate !== false);
     if (idx < 0) return null;
+
+    const current = items[idx];
+    items[idx] = { ...current, activate: false, modify_datetime: now() };
+
     const { id: _id, rootid: _root, ...safeUpdates } = updates;
-    items[idx] = { ...items[idx], ...safeUpdates, modify_datetime: now() };
+    const newItem = {
+        rootid: genId(),
+        id: nextId(STORAGE_KEYS.views),
+        prev_id: current.id,
+        data_schema_id: current.data_schema_id,
+        view_type: current.view_type,
+        name: current.name,
+        json_table_config: current.json_table_config,
+        flag: current.flag,
+        activate: true,
+        modify_datetime: now(),
+        ...safeUpdates,
+    };
+    items.push(newItem);
     setStore(STORAGE_KEYS.views, items);
-    return items[idx];
+    return newItem;
 }
 
 // ─── form (config) ───
@@ -147,14 +209,30 @@ export function createFormcfg(schemaId, json_form_config, name = '') {
     return item;
 }
 
-export function updateFormcfg(id, updates) {
+export function updateFormcfg(rootid, updates) {
     const items = getStore(STORAGE_KEYS.forms);
-    const idx = items.findIndex(f => f.rootid === id);
+    const idx = items.findIndex(f => f.rootid === rootid && f.activate !== false);
     if (idx < 0) return null;
+
+    const current = items[idx];
+    items[idx] = { ...current, activate: false, modify_datetime: now() };
+
     const { id: _id, rootid: _root, ...safeUpdates } = updates;
-    items[idx] = { ...items[idx], ...safeUpdates, modify_datetime: now() };
+    const newItem = {
+        rootid: genId(),
+        id: nextId(STORAGE_KEYS.forms),
+        prev_id: current.id,
+        data_id: current.data_id,
+        name: current.name,
+        json_form_config: current.json_form_config,
+        flag: current.flag,
+        activate: true,
+        modify_datetime: now(),
+        ...safeUpdates,
+    };
+    items.push(newItem);
     setStore(STORAGE_KEYS.forms, items);
-    return items[idx];
+    return newItem;
 }
 
 // ─── data (ข้อมูลจริง) ───
@@ -180,20 +258,47 @@ export function createFormData(schemaId, data) {
     return item;
 }
 
-export function updateFormData(id, data) {
+export function updateFormData(rootid, data) {
     const items = getStore(STORAGE_KEYS.data);
-    const idx = items.findIndex(f => f.rootid === id);
+    const idx = items.findIndex(f => f.rootid === rootid && f.activate !== false);
     if (idx < 0) return null;
-    items[idx] = { ...items[idx], data, modify_datetime: now() };
+
+    const current = items[idx];
+    items[idx] = { ...current, activate: false, modify_datetime: now() };
+
+    const newItem = {
+        rootid: genId(),
+        id: nextId(STORAGE_KEYS.data),
+        prev_id: current.id,
+        data_schema_id: current.data_schema_id,
+        data,
+        flag: current.flag,
+        activate: true,
+        modify_datetime: now(),
+    };
+    items.push(newItem);
     setStore(STORAGE_KEYS.data, items);
-    return items[idx];
+    return newItem;
 }
 
-export function deleteFormData(id) {
+export function deleteFormData(rootid) {
     const items = getStore(STORAGE_KEYS.data);
-    const idx = items.findIndex(f => f.rootid === id);
+    const idx = items.findIndex(f => f.rootid === rootid && f.activate !== false);
     if (idx < 0) return false;
-    items[idx].activate = false;
+
+    const current = items[idx];
+    items[idx] = { ...current, activate: false, modify_datetime: now() };
+
+    items.push({
+        rootid: genId(),
+        id: nextId(STORAGE_KEYS.data),
+        prev_id: current.id,
+        data_schema_id: current.data_schema_id,
+        data: current.data,
+        flag: 'deleted',
+        activate: false,
+        modify_datetime: now(),
+    });
     setStore(STORAGE_KEYS.data, items);
     return true;
 }

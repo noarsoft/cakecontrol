@@ -20,6 +20,7 @@ function FormFillerPage() {
     const [formData, setFormData] = useState({});
     const [submitted, setSubmitted] = useState(false);
     const [notFound, setNotFound] = useState(false);
+    const [resetKey, setResetKey] = useState(0);
 
     useEffect(() => {
         (async () => {
@@ -55,7 +56,10 @@ function FormFillerPage() {
         };
     }, [formConfig, formData]);
 
+    const hasData = Object.values(formData).some(v => v !== '' && v !== null && v !== undefined);
+
     const handleSubmit = async () => {
+        if (!hasData) return;
         await createFormData(parseInt(schemaId, 10), formData);
         setSubmitted(true);
     };
@@ -63,6 +67,7 @@ function FormFillerPage() {
     const handleReset = () => {
         setFormData({});
         setSubmitted(false);
+        setResetKey(k => k + 1);
     };
 
     if (notFound) {
@@ -135,13 +140,13 @@ function FormFillerPage() {
                     <p>กรอกข้อมูลให้ครบแล้วกดบันทึก</p>
                 </div>
                 <div className="fb-filler-body">
-                    <FormControl config={config} />
+                    <FormControl key={resetKey} config={config} />
                 </div>
                 <div className="fb-filler-footer">
                     <button className="fb-mode-btn" onClick={handleReset}>
                         ล้างข้อมูล
                     </button>
-                    <button className="fb-mode-btn active" onClick={handleSubmit}>
+                    <button className="fb-mode-btn active" onClick={handleSubmit} disabled={!hasData}>
                         บันทึก
                     </button>
                 </div>

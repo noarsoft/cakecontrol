@@ -6,7 +6,9 @@ function SchemaNameInput({ value, onSave }) {
     useEffect(() => { setDraft(value); }, [value]);
 
     const save = () => {
-        if (draft.trim() && draft !== value) onSave(draft);
+        const trimmed = draft.trim();
+        if (trimmed && trimmed !== value) onSave(trimmed);
+        else setDraft(value);
     };
 
     return (

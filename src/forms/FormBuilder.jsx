@@ -94,8 +94,9 @@ function FormBuilder() {
 
     const handleSchemaNameSave = async (name) => {
         if (!activeSchema || !name.trim()) return;
-        await updateSchema(activeSchema.rootid, { name: name.trim() });
+        const updated = await updateSchema(activeSchema.rootid, { name: name.trim() });
         await reloadSchemas();
+        if (updated?.id) setActiveSchemaId(updated.id);
     };
 
     // ─── Data Manager: CRUDControl callbacks ───
@@ -142,22 +143,23 @@ function FormBuilder() {
     // ─── Form Builder: Schema editing ───
     const handleSchemaJsonChange = async (newJson) => {
         if (!activeSchema) return;
-        await updateSchema(activeSchema.id, { json: newJson });
+        const updated = await updateSchema(activeSchema.rootid, { json: newJson });
+        const newSchemaId = updated?.id ?? activeSchema.id;
 
-        // Auto-update view + formcfg
         const [views, formcfgs] = await Promise.all([
-            getViewsBySchema(activeSchema.id),
-            getFormcfgsBySchema(activeSchema.id),
+            getViewsBySchema(newSchemaId),
+            getFormcfgsBySchema(newSchemaId),
         ]);
         const viewUpdate = views[0]
-            ? updateView(views[0].id, { json_table_config: generateDefaultView(newJson) })
-            : createView(activeSchema.id, 'table', generateDefaultView(newJson), 'Default View');
+            ? updateView(views[0].rootid, { json_table_config: generateDefaultView(newJson) })
+            : createView(newSchemaId, 'table', generateDefaultView(newJson), 'Default View');
         const cfgUpdate = formcfgs[0]
-            ? updateFormcfg(formcfgs[0].id, { json_form_config: generateDefaultFormcfg(newJson) })
-            : createFormcfg(activeSchema.id, generateDefaultFormcfg(newJson), 'Default Form');
+            ? updateFormcfg(formcfgs[0].rootid, { json_form_config: generateDefaultFormcfg(newJson) })
+            : createFormcfg(newSchemaId, generateDefaultFormcfg(newJson), 'Default Form');
         await Promise.all([viewUpdate, cfgUpdate]);
 
         await reloadSchemas();
+        setActiveSchemaId(newSchemaId);
         setRefreshKey(k => k + 1);
     };
 
@@ -199,17 +201,18 @@ function FormBuilder() {
     };
 
     const handleTemplateUpdate = async (schema, name, json, formcfg) => {
-        await updateSchema(schema.rootid, { name, json });
+        const updated = await updateSchema(schema.rootid, { name, json });
+        const newSchemaId = updated?.id ?? schema.id;
         const [views, formcfgs] = await Promise.all([
-            getViewsBySchema(schema.id),
-            getFormcfgsBySchema(schema.id),
+            getViewsBySchema(newSchemaId),
+            getFormcfgsBySchema(newSchemaId),
         ]);
         const viewUpdate = views[0]
             ? updateView(views[0].rootid, { json_table_config: generateDefaultView(json) })
-            : createView(schema.id, 'table', generateDefaultView(json), 'Default View');
+            : createView(newSchemaId, 'table', generateDefaultView(json), 'Default View');
         const cfgUpdate = formcfgs[0]
             ? updateFormcfg(formcfgs[0].rootid, { json_form_config: formcfg })
-            : createFormcfg(schema.id, formcfg, 'Default Form');
+            : createFormcfg(newSchemaId, formcfg, 'Default Form');
         await Promise.all([viewUpdate, cfgUpdate]);
         await reloadSchemas();
         setRefreshKey(k => k + 1);

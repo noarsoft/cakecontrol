@@ -47,6 +47,3 @@ export const deleteFormData = delegate('deleteFormData');
 
 export const seedDemoData = delegate('seedDemoData');
 
-export function isApiMode() {
-    return useApi;
-}
