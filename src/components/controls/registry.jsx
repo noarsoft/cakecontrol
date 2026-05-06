@@ -1,4 +1,3 @@
-import React from 'react';
 import CheckboxControl from './CheckboxControl';
 import LabelControl from './LabelControl';
 import ButtonControl from './ButtonControl';

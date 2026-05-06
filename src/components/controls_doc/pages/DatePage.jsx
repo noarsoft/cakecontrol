@@ -1,4 +1,3 @@
-import React from 'react';
 import { DatePickerControl } from '../../controls';
 
 function DatePage({ addLog }) {

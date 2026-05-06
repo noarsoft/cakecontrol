@@ -1,5 +1,4 @@
 // ProgressControl.jsx
-import React from 'react';
 import './ProgressControl.css';
 
 function ProgressControl({ control, rowData, rowIndex }) {

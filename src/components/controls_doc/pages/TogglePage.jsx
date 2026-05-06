@@ -1,4 +1,3 @@
-import React from 'react';
 import { ToggleControl } from '../../controls';
 
 function TogglePage({ addLog }) {

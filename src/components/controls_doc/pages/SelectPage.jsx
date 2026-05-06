@@ -1,5 +1,4 @@
 // SelectPage, CheckboxPage, TogglePage, DatePage, ButtonPage
-import React from 'react';
 import { SelectControl } from '../../controls';
 
 function SelectPage({ addLog }) {

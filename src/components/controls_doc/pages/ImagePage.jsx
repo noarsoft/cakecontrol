@@ -1,4 +1,3 @@
-import React from 'react';
 import { ImageControl, TableviewControl } from '../../controls';
 
 function ImagePage({ addLog }) {

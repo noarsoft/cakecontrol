@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { SliderControl } from '../../controls';
 import { useTheme } from '../../../ThemeContext';
 

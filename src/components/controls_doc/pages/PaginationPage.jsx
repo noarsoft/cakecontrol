@@ -1,4 +1,3 @@
-import React from 'react';
 import { PaginationControl, TableviewControl } from '../../controls';
 
 function PaginationPage({ addLog }) {

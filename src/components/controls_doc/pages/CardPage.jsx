@@ -1,4 +1,3 @@
-import React from 'react';
 import { CardControl } from '../../controls';
 
 function CardPage({ addLog }) {

@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import { useMemo } from 'react';
 import TableviewControl from './TableviewControl';
 import FormControl from './FormControl';
 import ConfirmModal from './ConfirmModal';

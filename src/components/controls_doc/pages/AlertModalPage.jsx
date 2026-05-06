@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import AlertModal from '../../controls/AlertModal';
 import { useTheme } from '../../../ThemeContext';
 

@@ -1,5 +1,5 @@
 // MultipleUploadControl.jsx
-import React, { useState, useRef } from 'react';
+import { useState, useRef } from 'react';
 import ProgressControl from './ProgressControl';
 import './MultipleUploadControl.css';
 

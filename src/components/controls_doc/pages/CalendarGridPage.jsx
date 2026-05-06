@@ -1,4 +1,3 @@
-import React from 'react';
 import { CalendarGridControl } from '../../controls';
 
 function CalendarGridPage({ addLog }) {

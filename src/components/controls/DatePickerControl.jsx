@@ -1,5 +1,5 @@
 // DatePickerControl.jsx
-import React, { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import CalendarGridControl from './CalendarGridControl';
 import './DatePickerControl.css';
 

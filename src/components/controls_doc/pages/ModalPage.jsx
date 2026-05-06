@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { ModalControl, ButtonControl } from '../../controls';
 
 function ModalPage({ addLog }) {

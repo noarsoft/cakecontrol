@@ -1,4 +1,3 @@
-import React from 'react';
 import { FormControl } from '../../controls';
 
 function FormPage({ addLog }) {

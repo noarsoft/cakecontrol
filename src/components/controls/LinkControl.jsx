@@ -1,5 +1,4 @@
 // LinkControl.jsx
-import React from 'react';
 
 /**
  * LinkControl Component

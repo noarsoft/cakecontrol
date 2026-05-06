@@ -1,5 +1,4 @@
 // LabelControl.jsx
-import React from 'react';
 
 function LabelControl({ control, rowData, rowIndex }) {
     const labelValue = control.databind ? rowData[control.databind] : control.value;

@@ -1,4 +1,3 @@
-import React from 'react';
 import './TableviewControl.css';
 import { genControl } from './registry';
 import PaginationControl from './PaginationControl';

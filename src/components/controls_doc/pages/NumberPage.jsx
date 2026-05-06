@@ -1,5 +1,4 @@
 // NumberPage.jsx - Number Control Documentation
-import React from 'react';
 import { NumberControl, FormControl } from '../../controls';
 
 function NumberPage({ addLog }) {

@@ -1,5 +1,5 @@
 // ChartPage.jsx - Chart Control Documentation
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { ChartControl } from '../../controls';
 
 function ChartPage({ addLog }) {

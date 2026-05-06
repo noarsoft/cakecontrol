@@ -1,5 +1,4 @@
 // BadgeControl.jsx
-import React from 'react';
 
 function BadgeControl({ control, rowData, rowIndex }) {
     const badgeValue = control.databind ? rowData[control.databind] : control.value;

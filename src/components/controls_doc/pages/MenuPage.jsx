@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { MenuControl } from '../../controls';
 
 function MenuPage({ addLog }) {

@@ -1,5 +1,4 @@
 // PieChartJSPage.jsx
-import React from 'react';
 import { PieChartJSControl } from '../../controls';
 
 function PieChartJSPage({ addLog }) {

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import GridviewControl from '../../controls/GridviewControl';
 
 function GridPage({ addLog }) {

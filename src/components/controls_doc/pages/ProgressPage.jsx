@@ -1,4 +1,3 @@
-import React from 'react';
 import { ProgressControl, TableviewControl } from '../../controls';
 
 function ProgressPage({ addLog }) {

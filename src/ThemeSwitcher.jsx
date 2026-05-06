@@ -1,5 +1,4 @@
 // ThemeSwitcher.jsx
-import React from 'react';
 import { useTheme } from './ThemeContext';
 import './ThemeSwitcher.css';
 

@@ -325,7 +325,6 @@ npm run test:coverage # coverage report
 | schemaTransform | ~15 | columns config, form config, buildCrudConfig |
 | mockSchemaService | ~20 | CRUD 4 tables, seedDemoData, soft delete |
 | benchmarkCalc | ~15 | benchmark calculations, chart data |
-| storageCalc | ~14 | storage estimation, formatBytes |
 
 Jest 30 + jsdom, CSS mock: identity-obj-proxy, localStorage: in-memory
 

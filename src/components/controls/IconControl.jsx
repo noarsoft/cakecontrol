@@ -1,5 +1,4 @@
 // IconControl.jsx
-import React from 'react';
 import './IconControl.css';
 
 function IconControl({ control = {}, rowData = {}, rowIndex }) {
