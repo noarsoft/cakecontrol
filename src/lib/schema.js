@@ -4,13 +4,55 @@
  */
 
 export const FIELD_TYPES = [
-    { value: 'string', label: 'ข้อความ (String)', icon: '✏️' },
+    // --- Input ---
+    { value: 'string', label: 'ข้อความ (Textbox)', icon: '✏️' },
     { value: 'number', label: 'ตัวเลข (Number)', icon: '🔢' },
-    { value: 'boolean', label: 'ใช่/ไม่ใช่ (Boolean)', icon: '🔘' },
-    { value: 'date', label: 'วันที่ (Date)', icon: '📅' },
+    { value: 'password', label: 'รหัสผ่าน (Password)', icon: '🔒' },
     { value: 'email', label: 'อีเมล (Email)', icon: '📧' },
-    { value: 'file', label: 'ไฟล์ (File)', icon: '📁' },
     { value: 'select', label: 'ตัวเลือก (Select)', icon: '📋' },
+    { value: 'boolean', label: 'ใช่/ไม่ใช่ (Checkbox)', icon: '🔘' },
+    { value: 'toggle', label: 'เปิด/ปิด (Toggle)', icon: '🔀' },
+    { value: 'date', label: 'วันที่ (Date)', icon: '📅' },
+    { value: 'datepicker', label: 'เลือกวันที่ (DatePicker)', icon: '📆' },
+    { value: 'slider', label: 'ตัวเลื่อน (Slider)', icon: '🎚️' },
+    { value: 'rating', label: 'ให้คะแนน (Rating)', icon: '⭐' },
+    { value: 'file', label: 'ไฟล์ (File)', icon: '📁' },
+    { value: 'searchbox', label: 'ค้นหา (SearchBox)', icon: '🔍' },
+    { value: 'multipleupload', label: 'อัปโหลดหลายไฟล์ (MultiUpload)', icon: '📤' },
+    // --- Display ---
+    { value: 'label', label: 'ข้อความแสดง (Label)', icon: '🏷️' },
+    { value: 'link', label: 'ลิงก์ (Link)', icon: '🔗' },
+    { value: 'image', label: 'รูปภาพ (Image)', icon: '🖼️' },
+    { value: 'badge', label: 'ป้ายสถานะ (Badge)', icon: '🏅' },
+    { value: 'icon', label: 'ไอคอน (Icon)', icon: '🎨' },
+    { value: 'progress', label: 'แถบความคืบหน้า (Progress)', icon: '📊' },
+    { value: 'qrcode', label: 'คิวอาร์โค้ด (QR Code)', icon: '📱' },
+    { value: 'calendar', label: 'ปฏิทิน (Calendar)', icon: '🗓️' },
+    { value: 'calendargrid', label: 'ตารางปฏิทิน (CalendarGrid)', icon: '📅' },
+    { value: 'button', label: 'ปุ่มกด (Button)', icon: '🖱️' },
+    { value: 'buttongroup', label: 'กลุ่มปุ่ม (ButtonGroup)', icon: '🔲' },
+    // --- Layout ---
+    { value: 'accordion', label: 'พับเก็บ (Accordion)', icon: '📂' },
+    { value: 'tab', label: 'แท็บ (Tab)', icon: '📑' },
+    { value: 'card', label: 'การ์ด (Card)', icon: '🃏' },
+    { value: 'tree', label: 'โครงสร้างต้นไม้ (Tree)', icon: '🌳' },
+    { value: 'menu', label: 'เมนู (Menu)', icon: '☰' },
+    { value: 'gridview', label: 'ตารางกริด (GridView)', icon: '⊞' },
+    { value: 'tableview', label: 'ตาราง (TableView)', icon: '📋' },
+    { value: 'form', label: 'ฟอร์ม (Form)', icon: '📝' },
+    { value: 'crud', label: 'จัดการข้อมูล (CRUD)', icon: '🗃️' },
+    { value: 'modal', label: 'ป๊อปอัป (Modal)', icon: '🪟' },
+    { value: 'pagination', label: 'แบ่งหน้า (Pagination)', icon: '📄' },
+    // --- Charts ---
+    { value: 'chart', label: 'กราฟ (Chart)', icon: '📈' },
+    { value: 'barchart', label: 'กราฟแท่ง (Bar Chart)', icon: '📊' },
+    { value: 'linechart', label: 'กราฟเส้น (Line Chart)', icon: '📉' },
+    { value: 'piechart', label: 'กราฟวงกลม (Pie Chart)', icon: '🥧' },
+    { value: 'doughnutchart', label: 'กราฟโดนัท (Doughnut)', icon: '🍩' },
+    { value: 'radarchart', label: 'กราฟเรดาร์ (Radar)', icon: '🕸️' },
+    { value: 'areachart', label: 'กราฟพื้นที่ (Area)', icon: '🏔️' },
+    { value: 'bubblechart', label: 'กราฟฟองสบู่ (Bubble)', icon: '🫧' },
+    { value: 'mixedchart', label: 'กราฟผสม (Mixed)', icon: '📊' },
 ];
 
 export function createEmptySchema(name = 'ฟอร์มใหม่') {
@@ -77,6 +119,14 @@ export function validateSchema(schemaJson) {
         if (!validTypes.includes(def.type)) errors.push(`field "${key}": type "${def.type}" ไม่ถูกต้อง`);
         if (def.type === 'select' && (!def.enum || def.enum.length === 0)) {
             errors.push(`field "${key}": select ต้องมี options`);
+        }
+        if (def.type === 'select' && def.enum) {
+            for (const item of def.enum) {
+                if (typeof item === 'object' && (item.label == null || item.value == null)) {
+                    errors.push(`field "${key}": enum object ต้องมี label และ value`);
+                    break;
+                }
+            }
         }
     }
     return errors;

@@ -44,13 +44,21 @@ function SchemaBuilder({ schemaJson, onChange }) {
 
     const handleUpdateType = (key, type) => {
         const def = { ...draft[key], type };
-        if (type === 'select' && !def.enum) def.enum = ['ตัวเลือก 1', 'ตัวเลือก 2'];
+        if (type === 'select' && !def.enum) def.enum = [{ label: 'ตัวเลือก 1', value: 0 }, { label: 'ตัวเลือก 2', value: 1 }];
         if (type !== 'select') delete def.enum;
         updateDraft(updateField(draft, key, key, def));
     };
 
     const handleUpdateOptions = (key, optionsStr) => {
-        const opts = optionsStr.split(',').map(s => s.trim()).filter(Boolean);
+        const opts = optionsStr.split(',').map(s => s.trim()).filter(Boolean)
+            .map((s, i) => {
+                const parts = s.split(':');
+                if (parts.length === 2) {
+                    const val = isNaN(Number(parts[0].trim())) ? parts[0].trim() : Number(parts[0].trim());
+                    return { value: val, label: parts[1].trim() };
+                }
+                return { label: s, value: i };
+            });
         updateDraft(updateField(draft, key, key, { ...draft[key], enum: opts }));
     };
 
@@ -78,7 +86,7 @@ function SchemaBuilder({ schemaJson, onChange }) {
                             {FIELD_TYPES.map(t => <option key={t.value} value={t.value}>{t.icon} {t.label}</option>)}
                         </select>
                         {def.type === 'select' && (
-                            <input className="field-options-input" value={(def.enum || []).join(', ')} onChange={e => handleUpdateOptions(key, e.target.value)} placeholder="ตัวเลือก (คั่นด้วย ,)" />
+                            <input className="field-options-input" value={(def.enum || []).map(v => typeof v === 'object' ? `${v.value}:${v.label}` : v).join(', ')} onChange={e => handleUpdateOptions(key, e.target.value)} placeholder="ตัวเลือก (value:label, คั่นด้วย ,)" />
                         )}
                     </div>
                     <div className="fb-field-actions">

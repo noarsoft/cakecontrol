@@ -6,15 +6,62 @@
 /**
  * แปลง schema field type → control type ที่ genControl รู้จัก
  */
+function normalizeEnumOptions(enumArr) {
+    if (!enumArr) return [];
+    return enumArr.map(v => typeof v === 'object' ? { label: v.label, value: v.value } : { label: v, value: v });
+}
+
 function fieldTypeToControlType(fieldType) {
     const map = {
+        // Input
         string: 'textbox',
         number: 'number',
-        boolean: 'toggle',
-        date: 'date',
+        password: 'password',
         email: 'textbox',
-        file: 'textbox',
         select: 'select',
+        boolean: 'toggle',
+        toggle: 'toggle',
+        date: 'date',
+        datepicker: 'datepicker',
+        slider: 'slider',
+        rating: 'rating',
+        file: 'textbox',
+        searchbox: 'searchbox',
+        multipleupload: 'multipleupload',
+        // Display
+        label: 'label',
+        link: 'link',
+        image: 'image',
+        badge: 'badge',
+        icon: 'icon',
+        progress: 'progress',
+        qrcode: 'qrcode',
+        calendar: 'calendar',
+        calendargrid: 'calendargrid',
+        button: 'button',
+        buttongroup: 'buttongroup',
+        // Layout
+        accordion: 'accordion',
+        tab: 'tab',
+        card: 'card',
+        tree: 'tree',
+        menu: 'menu',
+        gridview: 'gridview',
+        tableview: 'tableview',
+        form: 'form',
+        crud: 'crud',
+        modal: 'modal',
+        pagination: 'pagination',
+        // Charts
+        chart: 'chart',
+        barchart: 'bar',
+        linechart: 'line',
+        piechart: 'pie',
+        doughnutchart: 'doughnut',
+        radarchart: 'radar',
+        areachart: 'area',
+        bubblechart: 'bubble',
+        mixedchart: 'mixed',
     };
     return map[fieldType] || 'textbox';
 }
@@ -24,17 +71,35 @@ function fieldTypeToControlType(fieldType) {
  * ถ้าไม่มี data_view ก็ auto-generate จาก schema
  */
 export function schemaToColumnsConfig(schemaJson, viewJson = null) {
+    let columns;
     if (viewJson && viewJson.columns && viewJson.columns.length > 0) {
-        return viewJson.columns;
+        columns = viewJson.columns;
+    } else {
+        columns = Object.entries(schemaJson || {}).map(([key, def]) => {
+            const col = { key, header: def.label || key, sortable: true, width: 'auto' };
+            if (def.type === 'boolean') col.type = 'badge';
+            return col;
+        });
     }
-    // Auto-generate จาก schema
-    return Object.entries(schemaJson || {}).map(([key, def]) => ({
-        key,
-        header: key,
-        sortable: true,
-        width: 'auto',
-        type: def.type === 'boolean' ? 'badge' : undefined,
-    }));
+
+    return columns.map(col => {
+        const fieldDef = (schemaJson || {})[col.key];
+        if (fieldDef && fieldDef.type === 'select' && fieldDef.enum) {
+            const opts = normalizeEnumOptions(fieldDef.enum);
+            const enumMap = Object.fromEntries(opts.map(o => [String(o.value), o.label]));
+            return {
+                ...col,
+                type: 'custom',
+                controlProps: {
+                    render: (rowData) => {
+                        const val = rowData[col.key];
+                        return enumMap[String(val)] ?? val;
+                    },
+                },
+            };
+        }
+        return col;
+    });
 }
 
 /**
@@ -59,7 +124,7 @@ export function schemaToFormConfig(schemaJson, formcfgJson = null) {
                     colspan: ctrl.colspan || colnumbers,
                     placeholder: ctrl.placeholder || '',
                     ...(fieldDef.type === 'select' && fieldDef.enum ? {
-                        options: fieldDef.enum.map(v => ({ label: v, value: v })),
+                        options: normalizeEnumOptions(fieldDef.enum),
                     } : {}),
                     ...(fieldDef.type === 'email' ? { inputType: 'email' } : {}),
                 };
@@ -108,13 +173,11 @@ export function buildCrudConfig({ schemaJson, viewJson, formcfgJson, data, keyFi
  */
 export function generateDefaultView(schemaJson) {
     return {
-        columns: Object.entries(schemaJson || {}).map(([key, def]) => ({
-            key,
-            header: key,
-            width: 'auto',
-            sortable: true,
-            type: def.type === 'boolean' ? 'badge' : undefined,
-        })),
+        columns: Object.entries(schemaJson || {}).map(([key, def]) => {
+            const col = { key, header: def.label || key, width: 'auto', sortable: true };
+            if (def.type === 'boolean') col.type = 'badge';
+            return col;
+        }),
     };
 }
 

@@ -14,6 +14,7 @@ import {
     getFormcfgsBySchema, createFormcfg, updateFormcfg,
     getFormDataBySchema, createFormData, updateFormData, deleteFormData,
 } from '../lib/schemaService';
+import ThemeSwitcher from '../ThemeSwitcher';
 import './FormBuilder.css';
 
 function FormBuilder() {
@@ -233,6 +234,10 @@ function FormBuilder() {
 
     return (
         <div className="formbuilder-container">
+            {/* Theme Toggle */}
+            <div style={{ position: 'fixed', top: 16, right: 16, zIndex: 100 }}>
+                <ThemeSwitcher />
+            </div>
             {/* Sidebar */}
             <aside className="fb-sidebar">
                 <div className="fb-sidebar-header">
