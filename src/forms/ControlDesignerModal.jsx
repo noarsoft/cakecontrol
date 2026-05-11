@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import ModalControl from '../components/controls/ModalControl';
+import { useToast } from '../contexts/ToastContext';
 import './ControlDesignerModal.css';
 
 const CONTROL_TYPES = [
@@ -163,7 +164,7 @@ function schemaToControls(schemaJson, formcfgJson) {
     if (!schemaJson || Object.keys(schemaJson).length === 0) return [createEmptyControl()];
 
     const formControls = formcfgJson?.controls || [];
-    return Object.entries(schemaJson).map(([key, def]) => {
+    const controls = Object.entries(schemaJson).map(([key, def]) => {
         const fc = formControls.find(c => c.key === key);
         return {
             id: Date.now() + Math.random(),
@@ -176,6 +177,22 @@ function schemaToControls(schemaJson, formcfgJson) {
             defaultSelect: '',
         };
     });
+
+    const schemaKeys = new Set(Object.keys(schemaJson));
+    formControls.forEach(fc => {
+        if (!schemaKeys.has(fc.key)) {
+            controls.push({
+                id: Date.now() + Math.random(),
+                label: fc.label || fc.key,
+                databind: fc.key,
+                controlType: fc.type || 'textbox',
+                options: [],
+                defaultSelect: '',
+            });
+        }
+    });
+
+    return controls.length > 0 ? controls : [createEmptyControl()];
 }
 
 function controlsToSchema(controls) {
@@ -211,23 +228,41 @@ function controlsToFormcfg(controls, colnumbers = 6) {
     };
 }
 
-function ControlDesignerModal({ isOpen, onClose, onSave, schemaName, schemaJson, formcfgJson }) {
+function ControlDesignerModal({ isOpen, onClose, onSave, schemaName, schemaJson, formcfgJson, availableKeys = null }) {
+    const { showToast } = useToast();
     const [name, setName] = useState('');
+    const [nameTouched, setNameTouched] = useState(false);
     const [controls, setControls] = useState([createEmptyControl()]);
+    const [touchedFields, setTouchedControls] = useState({}); // { ctrlId: { label: bool, databind: bool } }
+    
+    const isLayoutMode = availableKeys !== null;
 
     useEffect(() => {
         if (isOpen) {
             setName(schemaName || '');
+            setNameTouched(false);
             setControls(schemaToControls(schemaJson, formcfgJson));
+            setTouchedControls({});
         }
     }, [isOpen, schemaName, schemaJson, formcfgJson]);
+
+    const markTouched = (ctrlId, field) => {
+        setTouchedControls(prev => ({
+            ...prev,
+            [ctrlId]: { ...(prev[ctrlId] || {}), [field]: true }
+        }));
+    };
 
     const updateControl = (idx, field, value) => {
         setControls(prev => prev.map((c, i) => i === idx ? { ...c, [field]: value } : c));
     };
 
     const addControl = () => {
-        setControls(prev => [...prev, createEmptyControl()]);
+        const newCtrl = createEmptyControl();
+        setControls(prev => [...prev, {
+            ...newCtrl,
+            databind: isLayoutMode && availableKeys.length > 0 ? availableKeys[0] : ''
+        }]);
     };
 
     const removeControl = (idx) => {
@@ -270,122 +305,173 @@ function ControlDesignerModal({ isOpen, onClose, onSave, schemaName, schemaJson,
     };
 
     const handleSave = () => {
+        setNameTouched(true);
+        // Mark all as touched
+        const allTouched = {};
+        controls.forEach(c => {
+            allTouched[c.id] = { label: true, databind: true };
+        });
+        setTouchedControls(allTouched);
+
+        if (!name.trim()) {
+            showToast('กรุณาระบุชื่อแม่แบบ', 'error');
+            return;
+        }
+
         const validControls = controls.filter(c => c.databind.trim());
-        if (validControls.length === 0) return;
-        const json = controlsToSchema(validControls);
-        const formcfg = controlsToFormcfg(validControls);
+        if (validControls.length === 0) {
+            showToast('กรุณาเพิ่มอย่างน้อย 1 Control และระบุ Key ให้ถูกต้อง', 'error');
+            return;
+        }
+
+        if (controls.some(c => !c.label.trim())) {
+            showToast('กรุณาระบุชื่อ Label ให้ครบทุกช่อง', 'error');
+            return;
+        }
+
+        if (controls.some(c => !c.databind.trim())) {
+            showToast('กรุณาระบุ Key ให้ครบทุกช่อง', 'error');
+            return;
+        }
+        
+        const json = isLayoutMode ? schemaJson : controlsToSchema(validControls);
+        const formcfg = controlsToFormcfg(validControls, formcfgJson?.colnumbers || 6);
+        
         onSave({ name: name.trim() || 'ฟอร์มใหม่', json, formcfg });
     };
-
-    const hasErrors = controls.every(c => !c.databind.trim());
 
     return (
         <ModalControl
             isOpen={isOpen}
-            title={schemaJson ? 'แก้ไขแม่แบบฟอร์ม' : 'สร้างแม่แบบฟอร์มใหม่'}
+            title={isLayoutMode ? `ตั้งค่า Layout: ${name}` : (schemaJson ? 'แก้ไขแม่แบบฟอร์ม' : 'สร้างแม่แบบฟอร์มใหม่')}
             onClose={onClose}
             size="lg"
             className="cd-modal"
             footer={
                 <div className="cd-footer">
                     <button className="fb-mode-btn" onClick={onClose}>ยกเลิก</button>
-                    <button className="fb-mode-btn active" onClick={handleSave} disabled={hasErrors}>บันทึก</button>
+                    <button className="fb-mode-btn active" onClick={handleSave}>บันทึก</button>
                 </div>
             }
         >
             <div className="cd-body">
-                <div className="cd-name-row">
-                    <label className="cd-label">ชื่อแม่แบบ</label>
-                    <input
-                        className="cd-input cd-name-input"
-                        value={name}
-                        onChange={e => setName(e.target.value)}
-                        placeholder="เช่น แบบสำรวจความพึงพอใจ"
-                    />
-                </div>
+                {!isLayoutMode && (
+                    <div className="cd-name-row">
+                        <label className="cd-label">ชื่อแม่แบบ</label>
+                        <input
+                            className={`cd-input cd-name-input ${nameTouched && !name.trim() ? 'error' : ''}`}
+                            style={nameTouched && !name.trim() ? { borderColor: 'var(--error)' } : {}}
+                            value={name}
+                            onChange={e => setName(e.target.value)}
+                            onBlur={() => setNameTouched(true)}
+                            placeholder="เช่น แบบสำรวจความพึงพอใจ"
+                        />
+                        {nameTouched && !name.trim() && <div className="error-msg">กรุณาระบุชื่อแม่แบบ</div>}
+                    </div>
+                )}
 
                 <div className="cd-controls-header">
-                    <span className="cd-col-label">ชื่อช่องกรอก</span>
-                    <span className="cd-col-databind">Databind</span>
+                    <span className="cd-col-label">ชื่อช่องกรอก (Label)</span>
+                    <span className="cd-col-databind">ผูกข้อมูล (Key)</span>
                     <span className="cd-col-type">ชนิด Control</span>
                     <span className="cd-col-actions"></span>
                 </div>
 
-                {controls.map((ctrl, idx) => (
-                    <div key={ctrl.id} className="cd-control-row">
-                        <div className="cd-control-main">
-                            <span className="cd-row-num">{idx + 1}</span>
-                            <input
-                                className="cd-input cd-col-label"
-                                value={ctrl.label}
-                                onChange={e => updateControl(idx, 'label', e.target.value)}
-                                placeholder="ชื่อที่แสดง"
-                            />
-                            <input
-                                className="cd-input cd-col-databind"
-                                value={ctrl.databind}
-                                onChange={e => updateControl(idx, 'databind', e.target.value)}
-                                placeholder="field_key"
-                            />
-                            <select
-                                className="cd-select cd-col-type"
-                                value={ctrl.controlType}
-                                onChange={e => {
-                                    updateControl(idx, 'controlType', e.target.value);
-                                    if (e.target.value === 'dropdown' && ctrl.options.length === 0) {
-                                        addOption(idx);
-                                    }
-                                }}
-                            >
-                                {CONTROL_TYPES.map(t => (
-                                    <option key={t.value} value={t.value}>{t.label}</option>
-                                ))}
-                            </select>
-                            <div className="cd-row-actions">
-                                <button onClick={() => moveControl(idx, 'up')} disabled={idx === 0} title="ขึ้น">&#8593;</button>
-                                <button onClick={() => moveControl(idx, 'down')} disabled={idx === controls.length - 1} title="ลง">&#8595;</button>
-                                <button onClick={() => removeControl(idx)} disabled={controls.length <= 1} className="cd-btn-remove" title="ลบ">&#10005;</button>
-                            </div>
-                        </div>
+                {controls.map((ctrl, idx) => {
+                    const touched = touchedFields[ctrl.id] || {};
+                    const labelError = touched.label && !ctrl.label.trim();
+                    const keyError = touched.databind && !ctrl.databind.trim();
 
-                        {ctrl.controlType === 'dropdown' && (
-                            <div className="cd-options-panel">
-                                <div className="cd-options-title">ตัวเลือก Dropdown</div>
-                                {ctrl.options.map((opt, optIdx) => (
-                                    <div key={optIdx} className="cd-option-row">
+                    return (
+                        <div key={ctrl.id} className="cd-control-row">
+                            <div className="cd-control-main">
+                                <span className="cd-row-num">{idx + 1}</span>
+                                <div className="cd-field-wrapper cd-col-label">
+                                    <input
+                                        className={`cd-input ${labelError ? 'error' : ''}`}
+                                        style={labelError ? { borderColor: 'var(--error)', backgroundColor: 'var(--error-light)' } : {}}
+                                        value={ctrl.label}
+                                        onChange={e => updateControl(idx, 'label', e.target.value)}
+                                        onBlur={() => markTouched(ctrl.id, 'label')}
+                                        placeholder="ชื่อที่แสดงให้คนกรอกเห็น"
+                                    />
+                                    {labelError && <div className="error-msg">กรุณากรอก</div>}
+                                </div>
+                                
+                                <div className="cd-field-wrapper cd-col-databind">
+                                    {isLayoutMode ? (
+                                        <select 
+                                            className={`cd-select ${keyError ? 'error' : ''}`}
+                                            style={keyError ? { borderColor: 'var(--error)', backgroundColor: 'var(--error-light)' } : {}}
+                                            value={ctrl.databind}
+                                            onChange={e => updateControl(idx, 'databind', e.target.value)}
+                                            onBlur={() => markTouched(ctrl.id, 'databind')}
+                                        >
+                                            <option value="">-- เลือก Key --</option>
+                                            {availableKeys.map(k => (
+                                                <option key={k} value={k}>{k}</option>
+                                            ))}
+                                        </select>
+                                    ) : (
                                         <input
-                                            className="cd-input cd-opt-key"
-                                            value={opt.key}
-                                            onChange={e => updateOption(idx, optIdx, 'key', e.target.value)}
-                                            placeholder="key"
+                                            className={`cd-input ${keyError ? 'error' : ''}`}
+                                            style={keyError ? { borderColor: 'var(--error)', backgroundColor: 'var(--error-light)' } : {}}
+                                            value={ctrl.databind}
+                                            onChange={e => updateControl(idx, 'databind', e.target.value)}
+                                            onBlur={() => markTouched(ctrl.id, 'databind')}
+                                            placeholder="field_key"
                                         />
-                                        <input
-                                            className="cd-input cd-opt-value"
-                                            value={opt.value}
-                                            onChange={e => updateOption(idx, optIdx, 'value', e.target.value)}
-                                            placeholder="value (แสดง)"
-                                        />
-                                        <button className="cd-btn-remove-opt" onClick={() => removeOption(idx, optIdx)}>&#10005;</button>
-                                    </div>
-                                ))}
-                                <button className="cd-btn-add-opt" onClick={() => addOption(idx)}>+ เพิ่มตัวเลือก</button>
-                                <div className="cd-default-row">
-                                    <label>Default:</label>
-                                    <select
-                                        className="cd-select cd-default-select"
-                                        value={ctrl.defaultSelect}
-                                        onChange={e => updateControl(idx, 'defaultSelect', e.target.value)}
-                                    >
-                                        <option value="">-- ไม่มี --</option>
-                                        {ctrl.options.filter(o => o.key).map((o, i) => (
-                                            <option key={i} value={o.key}>{o.value || o.key}</option>
-                                        ))}
-                                    </select>
+                                    )}
+                                    {keyError && <div className="error-msg">กรุณากรอก</div>}
+                                </div>
+
+                                <select
+                                    className="cd-select cd-col-type"
+                                    value={ctrl.controlType}
+                                    onChange={e => {
+                                        updateControl(idx, 'controlType', e.target.value);
+                                        if (e.target.value === 'dropdown' && ctrl.options.length === 0) {
+                                            addOption(idx);
+                                        }
+                                    }}
+                                >
+                                    {CONTROL_TYPES.map(t => (
+                                        <option key={t.value} value={t.value}>{t.label}</option>
+                                    ))}
+                                </select>
+                                <div className="cd-row-actions">
+                                    <button onClick={() => moveControl(idx, 'up')} disabled={idx === 0} title="ขึ้น">&#8593;</button>
+                                    <button onClick={() => moveControl(idx, 'down')} disabled={idx === controls.length - 1} title="ลง">&#8595;</button>
+                                    <button onClick={() => removeControl(idx)} disabled={controls.length <= 1} className="cd-btn-remove" title="ลบ">&#10005;</button>
                                 </div>
                             </div>
-                        )}
-                    </div>
-                ))}
+
+                            {ctrl.controlType === 'dropdown' && (
+                                <div className="cd-options-panel">
+                                    <div className="cd-options-title">ตัวเลือก Dropdown</div>
+                                    {ctrl.options.map((opt, optIdx) => (
+                                        <div key={optIdx} className="cd-option-row">
+                                            <input
+                                                className="cd-input cd-opt-key"
+                                                value={opt.key}
+                                                onChange={e => updateOption(idx, optIdx, 'key', e.target.value)}
+                                                placeholder="key"
+                                            />
+                                            <input
+                                                className="cd-input cd-opt-value"
+                                                value={opt.value}
+                                                onChange={e => updateOption(idx, optIdx, 'value', e.target.value)}
+                                                placeholder="value (แสดง)"
+                                            />
+                                            <button className="cd-btn-remove-opt" onClick={() => removeOption(idx, optIdx)}>&#10005;</button>
+                                        </div>
+                                    ))}
+                                    <button className="cd-btn-add-opt" onClick={() => addOption(idx)}>+ เพิ่มตัวเลือก</button>
+                                </div>
+                            )}
+                        </div>
+                    );
+                })}
 
                 <button className="cd-btn-add-control" onClick={addControl}>+ เพิ่ม Control</button>
             </div>

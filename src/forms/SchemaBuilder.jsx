@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
 import { FIELD_TYPES, addField, removeField, updateField, moveField, getFieldEntries, validateSchema } from '../lib/schema';
+import { useToast } from '../contexts/ToastContext';
 
-function KeyInput({ value, onCommit }) {
+function KeyInput({ value, onCommit, hasError, onBlur }) {
     const [draft, setDraft] = useState(value);
     const prev = useRef(value);
     useEffect(() => { if (value !== prev.current) { setDraft(value); prev.current = value; } }, [value]);
@@ -9,23 +10,78 @@ function KeyInput({ value, onCommit }) {
         const trimmed = draft.trim();
         if (trimmed && trimmed !== value) onCommit(trimmed);
         else setDraft(value);
+        if (onBlur) onBlur();
     };
-    return <input className="field-key-input" value={draft} onChange={e => setDraft(e.target.value)} onBlur={commit} placeholder="key" />;
+    return (
+        <div className="cd-field-wrapper">
+            <input 
+                className={`field-key-input ${hasError ? 'error' : ''}`} 
+                style={hasError ? { borderColor: 'var(--error)', backgroundColor: 'var(--error-light)' } : {}}
+                value={draft} 
+                onChange={e => setDraft(e.target.value)} 
+                onBlur={commit} 
+                placeholder="key" 
+            />
+            {hasError && <div className="error-msg">กรุณากรอก</div>}
+        </div>
+    );
 }
 
 function SchemaBuilder({ schemaJson, onChange }) {
+    const { showToast } = useToast();
     const [draft, setDraft] = useState(schemaJson);
     const [isDirty, setIsDirty] = useState(false);
+    const [touchedFields, setTouchedFields] = useState({}); // { index: { key: bool, label: bool } }
 
     useEffect(() => {
         setDraft(schemaJson);
         setIsDirty(false);
+        setTouchedFields({});
     }, [schemaJson]);
 
     const fields = getFieldEntries(draft);
 
+    const markTouched = (idx, field) => {
+        setTouchedFields(prev => ({
+            ...prev,
+            [idx]: { ...(prev[idx] || {}), [field]: true }
+        }));
+    };
+
     const updateDraft = (newJson) => { setDraft(newJson); setIsDirty(true); };
-    const handleSave = () => { onChange(draft); setIsDirty(false); };
+    
+    const handleSave = () => {
+        // Mark all as touched for final check
+        const allTouched = {};
+        fields.forEach((_, i) => {
+            allTouched[i] = { key: true, label: true };
+        });
+        setTouchedFields(allTouched);
+
+        const entries = getFieldEntries(draft);
+        const emptyKey = entries.some(([k]) => !k.trim());
+        const emptyLabel = entries.some(([_, def]) => !def.label?.trim());
+
+        if (emptyKey) {
+            showToast('กรุณาระบุชื่อ Key ให้ครบทุกฟิลด์', 'error');
+            return;
+        }
+        if (emptyLabel) {
+            showToast('กรุณาระบุชื่อ Label ให้ครบทุกฟิลด์', 'error');
+            return;
+        }
+
+        const internalErrors = validateSchema(draft);
+        if (internalErrors.length > 0) {
+            showToast(internalErrors[0], 'error');
+            return;
+        }
+
+        onChange(draft); 
+        setIsDirty(false);
+        showToast('บันทึกโครงสร้างแม่แบบเรียบร้อยแล้ว', 'success');
+    };
+
     const handleCancel = () => { setDraft(schemaJson); setIsDirty(false); };
 
     const handleAddField = () => {
@@ -38,7 +94,11 @@ function SchemaBuilder({ schemaJson, onChange }) {
     const handleRemoveField = (key) => updateDraft(removeField(draft, key));
 
     const handleUpdateKey = (oldKey, newKey) => {
-        if (!newKey.trim() || (newKey !== oldKey && draft[newKey])) return;
+        if (!newKey.trim()) return; // Handled by visual error
+        if (newKey !== oldKey && draft[newKey]) {
+            showToast(`ชื่อ Key "${newKey}" มีอยู่แล้ว`, 'warning');
+            return;
+        }
         updateDraft(updateField(draft, oldKey, newKey, draft[oldKey]));
     };
 
@@ -76,26 +136,47 @@ function SchemaBuilder({ schemaJson, onChange }) {
                 {isDirty && <span style={{ fontSize: 12, color: 'var(--accent-primary)' }}>* มีการเปลี่ยนแปลง</span>}
             </div>
 
-            {fields.map(([key, def], idx) => (
-                <div key={idx} className="fb-field-card">
-                    <span className="field-drag">⠿</span>
-                    <div className="field-info">
-                        <KeyInput value={key} onCommit={newKey => handleUpdateKey(key, newKey)} />
-                        <input className="field-label-input" value={def.label || ''} onChange={e => handleUpdateLabel(key, e.target.value)} placeholder="label (ชื่อแสดง)" />
-                        <select className="field-type-select" value={def.type} onChange={e => handleUpdateType(key, e.target.value)}>
-                            {FIELD_TYPES.map(t => <option key={t.value} value={t.value}>{t.icon} {t.label}</option>)}
-                        </select>
-                        {def.type === 'select' && (
-                            <input className="field-options-input" value={(def.enum || []).map(v => typeof v === 'object' ? `${v.value}:${v.label}` : v).join(', ')} onChange={e => handleUpdateOptions(key, e.target.value)} placeholder="ตัวเลือก (value:label, คั่นด้วย ,)" />
-                        )}
+            {fields.map(([key, def], idx) => {
+                const touched = touchedFields[idx] || {};
+                const hasLabelError = touched.label && !def.label?.trim();
+                const hasKeyError = touched.key && !key.trim();
+
+                return (
+                    <div key={idx} className="fb-field-card">
+                        <span className="field-drag">⠿</span>
+                        <div className="field-info">
+                            <KeyInput 
+                                value={key} 
+                                onCommit={newKey => handleUpdateKey(key, newKey)} 
+                                hasError={hasKeyError}
+                                onBlur={() => markTouched(idx, 'key')}
+                            />
+                            <div className="cd-field-wrapper">
+                                <input 
+                                    className={`field-label-input ${hasLabelError ? 'error' : ''}`} 
+                                    style={hasLabelError ? { borderColor: 'var(--error)', backgroundColor: 'var(--error-light)' } : {}}
+                                    value={def.label || ''} 
+                                    onChange={e => handleUpdateLabel(key, e.target.value)} 
+                                    onBlur={() => markTouched(idx, 'label')}
+                                    placeholder="label (ชื่อแสดง)" 
+                                />
+                                {hasLabelError && <div className="error-msg">กรุณากรอก</div>}
+                            </div>
+                            <select className="field-type-select" value={def.type} onChange={e => handleUpdateType(key, e.target.value)}>
+                                {FIELD_TYPES.map(t => <option key={t.value} value={t.value}>{t.icon} {t.label}</option>)}
+                            </select>
+                            {def.type === 'select' && (
+                                <input className="field-options-input" value={(def.enum || []).map(v => typeof v === 'object' ? `${v.value}:${v.label}` : v).join(', ')} onChange={e => handleUpdateOptions(key, e.target.value)} placeholder="ตัวเลือก (value:label, คั่นด้วย ,)" />
+                            )}
+                        </div>
+                        <div className="fb-field-actions">
+                            <button onClick={() => handleMove(key, 'up')} title="ขึ้น" disabled={idx === 0}>↑</button>
+                            <button onClick={() => handleMove(key, 'down')} title="ลง" disabled={idx === fields.length - 1}>↓</button>
+                            <button onClick={() => handleRemoveField(key)} title="ลบ" style={{ color: '#e74c3c' }}>✕</button>
+                        </div>
                     </div>
-                    <div className="fb-field-actions">
-                        <button onClick={() => handleMove(key, 'up')} title="ขึ้น" disabled={idx === 0}>↑</button>
-                        <button onClick={() => handleMove(key, 'down')} title="ลง" disabled={idx === fields.length - 1}>↓</button>
-                        <button onClick={() => handleRemoveField(key)} title="ลบ" style={{ color: '#e74c3c' }}>✕</button>
-                    </div>
-                </div>
-            ))}
+                );
+            })}
 
             <button className="fb-add-field-btn" onClick={handleAddField}>+ เพิ่ม Field</button>
 

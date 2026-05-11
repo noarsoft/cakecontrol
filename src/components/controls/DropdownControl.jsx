@@ -142,7 +142,7 @@ function DropdownControl({ control, rowData, rowIndex }) {
                             setShowDropdown(true);
                         }
                     }}
-                    placeholder={control.placeholder || 'เลือกรายการ...'}
+                    placeholder={control.placeholder || 'เลือกข้อมูล...'}
                     readOnly={!control.searchable}
                 />
                 <div className="dropdown-buttons">

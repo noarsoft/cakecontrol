@@ -14,20 +14,49 @@ async function request(path, options = {}) {
     return json.data;
 }
 
+// ─── business ───
+
+export async function getBusinesses() {
+    return request('/businessx');
+}
+
+export async function getBusinessById(rootid) {
+    return request(`/businessx/${rootid}`);
+}
+
+export async function createBusiness(name, icon = null) {
+    return request('/businessx', {
+        method: 'POST',
+        body: JSON.stringify({ name, icon }),
+    });
+}
+
+export async function updateBusiness(rootid, updates) {
+    return request(`/businessx/${rootid}`, {
+        method: 'PUT',
+        body: JSON.stringify(updates),
+    });
+}
+
+export async function deleteBusiness(rootid) {
+    return request(`/businessx/${rootid}`, { method: 'DELETE' });
+}
+
 // ─── data_schema ───
 
-export async function getSchemas() {
-    return request('/schemax');
+export async function getSchemas(businessId = null) {
+    const url = businessId ? `/schemax?business_id=${businessId}` : '/schemax';
+    return request(url);
 }
 
 export async function getSchemaById(rootid) {
     return request(`/schemax/${rootid}`);
 }
 
-export async function createSchema(name, json = {}) {
+export async function createSchema(name, json = {}, business_id = null) {
     return request('/schemax', {
         method: 'POST',
-        body: JSON.stringify({ name, json }),
+        body: JSON.stringify({ name, json, business_id: business_id ? Number(business_id) : null }),
     });
 }
 

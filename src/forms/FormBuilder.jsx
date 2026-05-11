@@ -6,6 +6,7 @@ import SchemaNameInput from './SchemaNameInput';
 import FormPreview from './FormPreview';
 import FormFiller from './FormFiller';
 import TemplateManager from './TemplateManager';
+import ControlDesignerModal from './ControlDesignerModal';
 import { buildCrudConfig, generateDefaultView, generateDefaultFormcfg } from '../lib/schemaTransform';
 import {
     initService,
@@ -15,9 +16,11 @@ import {
     getFormDataBySchema, createFormData, updateFormData, deleteFormData,
 } from '../lib/schemaService';
 import ThemeSwitcher from '../ThemeSwitcher';
+import { useToast } from '../contexts/ToastContext';
 import './FormBuilder.css';
 
 function FormBuilder() {
+    const { showToast } = useToast();
     const [schemas, setSchemas] = useState([]);
     const [activeSchemaId, setActiveSchemaId] = useState(null);
     const [mode, setMode] = useState('templates'); // 'templates' | 'data' | 'builder' | 'preview' | 'fill'
@@ -25,18 +28,25 @@ function FormBuilder() {
     const [deleteConfirm, setDeleteConfirm] = useState(null);
     const [schemaData, setSchemaData] = useState(null);
     const [serviceMode, setServiceMode] = useState(null);
+    const [designerOpen, setDesignerOpen] = useState(false);
 
     // Init: detect backend + load schemas
     useEffect(() => {
-        initService().then(mode => {
-            setServiceMode(mode);
-            reloadSchemas();
-        });
+        initService()
+            .then(() => {
+                setServiceMode('api');
+                reloadSchemas();
+            })
+            .catch(err => {
+                setServiceMode('error');
+                showToast(err.message, 'error');
+            });
     }, []);
 
     const reloadSchemas = async () => {
-        const list = await getSchemas();
-        setSchemas(list);
+        const businessId = localStorage.getItem('activeBusinessId');
+        const list = await getSchemas(businessId);
+        setSchemas(list || []);
         return list;
     };
 
@@ -68,14 +78,20 @@ function FormBuilder() {
 
     // ─── Sidebar Actions ───
     const handleAddSchema = async () => {
-        const schema = await createSchema('ฟอร์มใหม่', {
-            field_1: { type: 'string' },
-        });
-        await createView(schema.id, 'table', generateDefaultView(schema.json), 'Default View');
-        await createFormcfg(schema.id, generateDefaultFormcfg(schema.json), 'Default Form');
-        await reloadSchemas();
-        setActiveSchemaId(schema.id);
-        setMode('builder');
+        const businessId = localStorage.getItem('activeBusinessId');
+        try {
+            const schema = await createSchema('ฟอร์มใหม่', {
+                field_1: { type: 'string' },
+            }, businessId);
+            await createView(schema.id, 'table', generateDefaultView(schema.json), 'Default View');
+            await createFormcfg(schema.id, generateDefaultFormcfg(schema.json), 'Default Form');
+            await reloadSchemas();
+            setActiveSchemaId(schema.id);
+            setMode('builder');
+            showToast('สร้างแม่แบบใหม่สำเร็จ', 'success');
+        } catch (err) {
+            showToast('สร้างแม่แบบไม่สำเร็จ: ' + err.message, 'error');
+        }
     };
 
     const handleSelectSchema = (id) => {
@@ -86,18 +102,28 @@ function FormBuilder() {
 
     const handleDeleteSchema = async () => {
         if (!deleteConfirm) return;
-        await deleteSchema(deleteConfirm);
-        const deleted = schemas.find(s => s.rootid === deleteConfirm);
-        setDeleteConfirm(null);
-        if (deleted && activeSchemaId === deleted.id) setActiveSchemaId(null);
-        await reloadSchemas();
+        try {
+            await deleteSchema(deleteConfirm);
+            const deleted = schemas.find(s => s.rootid === deleteConfirm);
+            setDeleteConfirm(null);
+            if (deleted && activeSchemaId === deleted.id) setActiveSchemaId(null);
+            await reloadSchemas();
+            showToast('ลบแม่แบบเรียบร้อยแล้ว', 'success');
+        } catch (err) {
+            showToast('ลบแม่แบบไม่สำเร็จ', 'error');
+        }
     };
 
     const handleSchemaNameSave = async (name) => {
         if (!activeSchema || !name.trim()) return;
-        const updated = await updateSchema(activeSchema.rootid, { name: name.trim() });
-        await reloadSchemas();
-        if (updated?.id) setActiveSchemaId(updated.id);
+        try {
+            const updated = await updateSchema(activeSchema.rootid, { name: name.trim() });
+            await reloadSchemas();
+            if (updated?.id) setActiveSchemaId(updated.id);
+            showToast('อัปเดตชื่อแม่แบบสำเร็จ', 'success');
+        } catch (err) {
+            showToast('อัปเดตชื่อไม่สำเร็จ', 'error');
+        }
     };
 
     // ─── Data Manager: CRUDControl callbacks ───
@@ -107,7 +133,8 @@ function FormBuilder() {
         delete clean._formId;
         await createFormData(activeSchema.id, clean);
         setRefreshKey(k => k + 1);
-    }, [activeSchema]);
+        showToast('บันทึกข้อมูลสำเร็จ', 'success');
+    }, [activeSchema, showToast]);
 
     const handleDataEdit = useCallback(async (formData, oldData) => {
         if (!oldData?._formId) return;
@@ -115,13 +142,15 @@ function FormBuilder() {
         delete clean._formId;
         await updateFormData(oldData._formId, clean);
         setRefreshKey(k => k + 1);
-    }, []);
+        showToast('แก้ไขข้อมูลสำเร็จ', 'success');
+    }, [showToast]);
 
     const handleDataDelete = useCallback(async (rowData) => {
         if (!rowData?._formId) return;
         await deleteFormData(rowData._formId);
         setRefreshKey(k => k + 1);
-    }, []);
+        showToast('ลบข้อมูลสำเร็จ', 'success');
+    }, [showToast]);
 
     // Build CRUDControl config
     const crudConfig = useMemo(() => {
@@ -144,24 +173,42 @@ function FormBuilder() {
     // ─── Form Builder: Schema editing ───
     const handleSchemaJsonChange = async (newJson) => {
         if (!activeSchema) return;
-        const updated = await updateSchema(activeSchema.rootid, { json: newJson });
-        const newSchemaId = updated?.id ?? activeSchema.id;
+        try {
+            const updated = await updateSchema(activeSchema.rootid, { json: newJson });
+            const newSchemaId = updated?.id ?? activeSchema.id;
 
-        const [views, formcfgs] = await Promise.all([
-            getViewsBySchema(newSchemaId),
-            getFormcfgsBySchema(newSchemaId),
-        ]);
-        const viewUpdate = views[0]
-            ? updateView(views[0].rootid, { json_table_config: generateDefaultView(newJson) })
-            : createView(newSchemaId, 'table', generateDefaultView(newJson), 'Default View');
-        const cfgUpdate = formcfgs[0]
-            ? updateFormcfg(formcfgs[0].rootid, { json_form_config: generateDefaultFormcfg(newJson) })
-            : createFormcfg(newSchemaId, generateDefaultFormcfg(newJson), 'Default Form');
-        await Promise.all([viewUpdate, cfgUpdate]);
+            const [views, formcfgs] = await Promise.all([
+                getViewsBySchema(newSchemaId),
+                getFormcfgsBySchema(newSchemaId),
+            ]);
+            
+            const viewUpdate = views[0]
+                ? updateView(views[0].rootid, { json_table_config: generateDefaultView(newJson) })
+                : createView(newSchemaId, 'table', generateDefaultView(newJson), 'Default View');
+            const cfgUpdate = formcfgs[0]
+                ? updateFormcfg(formcfgs[0].rootid, { json_form_config: generateDefaultFormcfg(newJson) })
+                : createFormcfg(newSchemaId, generateDefaultFormcfg(newJson), 'Default Form');
+            
+            await Promise.all([viewUpdate, cfgUpdate]);
 
-        await reloadSchemas();
-        setActiveSchemaId(newSchemaId);
-        setRefreshKey(k => k + 1);
+            await reloadSchemas();
+            setActiveSchemaId(newSchemaId);
+            setRefreshKey(k => k + 1);
+        } catch (err) {
+            showToast('ไม่สามารถบันทึกโครงสร้างได้', 'error');
+        }
+    };
+
+    const handleLayoutSave = async ({ formcfg }) => {
+        if (!activeSchema || !schemaData?.formcfg) return;
+        try {
+            await updateFormcfg(schemaData.formcfg.rootid, { json_form_config: formcfg });
+            setDesignerOpen(false);
+            setRefreshKey(k => k + 1);
+            showToast('บันทึกเลย์เอาต์สำเร็จ', 'success');
+        } catch (err) {
+            showToast('ไม่สามารถบันทึกเลย์เอาต์ได้', 'error');
+        }
     };
 
     // Form data counts per schema
@@ -192,38 +239,54 @@ function FormBuilder() {
 
     // ─── Template Manager Callbacks ───
     const handleTemplateCreate = async (name, json, formcfg) => {
-        const schema = await createSchema(name, json);
-        await createView(schema.id, 'table', generateDefaultView(json), 'Default View');
-        await createFormcfg(schema.id, formcfg, 'Default Form');
-        await reloadSchemas();
-        setActiveSchemaId(schema.id);
-        setMode('data');
-        setRefreshKey(k => k + 1);
+        const businessId = localStorage.getItem('activeBusinessId');
+        try {
+            const schema = await createSchema(name, json, businessId);
+            await createView(schema.id, 'table', generateDefaultView(json), 'Default View');
+            await createFormcfg(schema.id, formcfg, 'Default Form');
+            await reloadSchemas();
+            setActiveSchemaId(schema.id);
+            setMode('data');
+            setRefreshKey(k => k + 1);
+            showToast('สร้างแม่แบบสำเร็จ', 'success');
+        } catch (err) {
+            showToast('สร้างแม่แบบไม่สำเร็จ', 'error');
+        }
     };
 
     const handleTemplateUpdate = async (schema, name, json, formcfg) => {
-        const updated = await updateSchema(schema.rootid, { name, json });
-        const newSchemaId = updated?.id ?? schema.id;
-        const [views, formcfgs] = await Promise.all([
-            getViewsBySchema(newSchemaId),
-            getFormcfgsBySchema(newSchemaId),
-        ]);
-        const viewUpdate = views[0]
-            ? updateView(views[0].rootid, { json_table_config: generateDefaultView(json) })
-            : createView(newSchemaId, 'table', generateDefaultView(json), 'Default View');
-        const cfgUpdate = formcfgs[0]
-            ? updateFormcfg(formcfgs[0].rootid, { json_form_config: formcfg })
-            : createFormcfg(newSchemaId, formcfg, 'Default Form');
-        await Promise.all([viewUpdate, cfgUpdate]);
-        await reloadSchemas();
-        setRefreshKey(k => k + 1);
+        try {
+            const updated = await updateSchema(schema.rootid, { name, json });
+            const newSchemaId = updated?.id ?? schema.id;
+            const [views, formcfgs] = await Promise.all([
+                getViewsBySchema(newSchemaId),
+                getFormcfgsBySchema(newSchemaId),
+            ]);
+            const viewUpdate = views[0]
+                ? updateView(views[0].rootid, { json_table_config: generateDefaultView(json) })
+                : createView(newSchemaId, 'table', generateDefaultView(json), 'Default View');
+            const cfgUpdate = formcfgs[0]
+                ? updateFormcfg(formcfgs[0].rootid, { json_form_config: formcfg })
+                : createFormcfg(newSchemaId, formcfg, 'Default Form');
+            await Promise.all([viewUpdate, cfgUpdate]);
+            await reloadSchemas();
+            setRefreshKey(k => k + 1);
+            showToast('อัปเดตแม่แบบสำเร็จ', 'success');
+        } catch (err) {
+            showToast('อัปเดตแม่แบบไม่สำเร็จ', 'error');
+        }
     };
 
     const handleTemplateDelete = async (rootid) => {
-        await deleteSchema(rootid);
-        const deleted = schemas.find(s => s.rootid === rootid);
-        if (deleted && activeSchemaId === deleted.id) setActiveSchemaId(null);
-        await reloadSchemas();
+        try {
+            await deleteSchema(rootid);
+            const deleted = schemas.find(s => s.rootid === rootid);
+            if (deleted && activeSchemaId === deleted.id) setActiveSchemaId(null);
+            await reloadSchemas();
+            showToast('ลบแม่แบบสำเร็จ', 'success');
+        } catch (err) {
+            showToast('ลบแม่แบบไม่สำเร็จ', 'error');
+        }
     };
 
     const handleTemplateSelect = (schemaId) => {
@@ -234,20 +297,14 @@ function FormBuilder() {
 
     return (
         <div className="formbuilder-container">
-            {/* Theme Toggle */}
-            <div style={{ position: 'fixed', top: 16, right: 16, zIndex: 100 }}>
-                <ThemeSwitcher />
-            </div>
             {/* Sidebar */}
             <aside className="fb-sidebar">
                 <div className="fb-sidebar-header">
                     <h2>Form Builder</h2>
                     <p>สร้างและจัดการฟอร์ม</p>
-                    {serviceMode && (
-                        <span style={{ fontSize: 11, opacity: 0.5, display: 'block', marginTop: 4 }}>
-                            {serviceMode === 'api' ? '🟢 API' : '🟡 localStorage'}
-                        </span>
-                    )}
+                    <span style={{ fontSize: 11, opacity: 0.5, display: 'block', marginTop: 4 }}>
+                        {serviceMode === 'api' ? '🟢 API Online' : '🔴 API Offline'}
+                    </span>
                 </div>
                 <div className="fb-sidebar-list">
                     {schemas.map(s => (
@@ -257,14 +314,18 @@ function FormBuilder() {
                                 onClick={() => handleSelectSchema(s.id)}
                             >
                                 <span className="schema-name">{s.name}</span>
-                                <span className="schema-count">{dataCounts[s.id] || 0} รายการ</span>
+                                <span className="schema-count">{dataCounts[s.id] || 0} ข้อมูล</span>
                             </button>
                             <button
                                 className="fb-delete-schema-btn"
                                 onClick={e => { e.stopPropagation(); setDeleteConfirm(s.rootid); }}
-                                title="ลบ schema"
+                                title="ลบแม่แบบ"
                             >
-                                ✕
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                    <path d="M3 6h18"></path>
+                                    <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path>
+                                    <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path>
+                                </svg>
                             </button>
                         </div>
                     ))}
@@ -311,7 +372,13 @@ function FormBuilder() {
                                 className={`fb-mode-btn ${mode === 'builder' ? 'active' : ''}`}
                                 onClick={() => setMode('builder')}
                             >
-                                แก้ไขฟอร์ม
+                                แก้ไขแม่แบบ
+                            </button>
+                            <button
+                                className="fb-mode-btn"
+                                onClick={() => setDesignerOpen(true)}
+                            >
+                                🎨 แก้ไขเลย์เอาต์
                             </button>
                             <button
                                 className={`fb-mode-btn ${mode === 'fill' ? 'active' : ''}`}
@@ -363,6 +430,16 @@ function FormBuilder() {
                                 />
                             )}
                         </div>
+
+                        <ControlDesignerModal
+                            isOpen={designerOpen}
+                            onClose={() => setDesignerOpen(false)}
+                            onSave={handleLayoutSave}
+                            schemaName={activeSchema.name}
+                            schemaJson={activeSchema.json}
+                            formcfgJson={schemaData?.formcfg?.json_form_config}
+                            availableKeys={Object.keys(activeSchema.json || {})}
+                        />
                     </>
                 ) : (
                     <div className="fb-empty">
@@ -375,8 +452,9 @@ function FormBuilder() {
             {/* Delete Confirm */}
             <ConfirmModal
                 isOpen={deleteConfirm !== null}
-                title="ยืนยันการลบ"
-                message="ลบ schema นี้จะลบข้อมูลทั้งหมดที่เกี่ยวข้อง ต้องการลบหรือไม่?"
+                title="ยืนยันการลบแม่แบบ"
+                message="การลบแม่แบบนี้จะทำให้ข้อมูลทั้งหมดที่เคยกรอกผ่านแม่แบบนี้ถูกลบออกไปด้วย คุณแน่ใจหรือไม่?"
+                variant="dangerous"
                 onConfirm={handleDeleteSchema}
                 onCancel={() => setDeleteConfirm(null)}
             />

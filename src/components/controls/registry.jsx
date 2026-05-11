@@ -33,105 +33,125 @@ import AreaChartJSControl from './AreaChartJSControl';
 import BubbleChartJSControl from './BubbleChartJSControl';
 import MixedChartJSControl from './MixedChartJSControl';
 
-// Lazy imports — these controls import registry (circular dependency)
-let _FormControl, _GridviewControl, _TableviewControl;
-let _AccordionControl, _TabControl, _CardControl, _TreeControl;
-let _CRUDControl, _SearchBoxControl, _DropdownControl;
+// Circular dependencies
+import FormControl from './FormControl';
+import GridviewControl from './GridviewControl';
+import TableviewControl from './TableviewControl';
+import AccordionControl from './AccordionControl';
+import TabControl from './TabControl';
+import CardControl from './CardControl';
+import TreeControl from './TreeControl';
+import CRUDControl from './CRUDControl';
+import SearchBoxControl from './SearchBoxControl';
+import DropdownControl from './DropdownControl';
 
-function lazyLoad(type) {
-    switch (type) {
-        case 'form': return _FormControl || (_FormControl = require('./FormControl').default);
-        case 'gridview': return _GridviewControl || (_GridviewControl = require('./GridviewControl').default);
-        case 'tableview': return _TableviewControl || (_TableviewControl = require('./TableviewControl').default);
-        case 'accordion': return _AccordionControl || (_AccordionControl = require('./AccordionControl').default);
-        case 'tab': return _TabControl || (_TabControl = require('./TabControl').default);
-        case 'card': return _CardControl || (_CardControl = require('./CardControl').default);
-        case 'tree': return _TreeControl || (_TreeControl = require('./TreeControl').default);
-        case 'crud': return _CRUDControl || (_CRUDControl = require('./CRUDControl').default);
-        case 'searchbox': return _SearchBoxControl || (_SearchBoxControl = require('./SearchBoxControl').default);
-        case 'tabledropdown': return _DropdownControl || (_DropdownControl = require('./DropdownControl').default);
-        default: return null;
+var _CONTROL_MAP;
+var _CORE_POPULATED = false;
+
+function ensureMap() {
+    if (!_CONTROL_MAP) {
+        _CONTROL_MAP = {};
     }
+    return _CONTROL_MAP;
 }
 
-const LAZY_TYPES = new Set([
-    'form', 'gridview', 'tableview', 'accordion', 'tab',
-    'card', 'tree', 'crud', 'searchbox', 'tabledropdown',
-]);
-
-const CONTROL_MAP = {
-    // Input
-    checkbox: CheckboxControl,
-    textbox: TextboxControl,
-    input: TextboxControl,
-    number: NumberControl,
-    password: PasswordControl,
-    select: SelectControl,
-    dropdown: SelectControl,
-    toggle: ToggleControl,
-    switch: ToggleControl,
-    date: DateControl,
-    datepicker: DatePickerControl,
-    slider: SliderControl,
-    range: SliderControl,
-    rating: RatingControl,
-    star: RatingControl,
-    multipleupload: MultipleUploadControl,
-    // Display
-    label: LabelControl,
-    link: LinkControl,
-    image: ImageControl,
-    badge: BadgeControl,
-    tag: BadgeControl,
-    icon: IconControl,
-    progress: ProgressControl,
-    progressbar: ProgressControl,
-    calendar: CalendarControl,
-    calendargrid: CalendarGridControl,
-    qrcode: QRCodeControl,
-    qr: QRCodeControl,
-    button: ButtonControl,
-    buttongroup: ButtonGroupControl,
-    // Layout (non-circular)
-    menu: MenuControl,
-    modal: ModalControl,
-    pagination: PaginationControl,
-    pager: PaginationControl,
-    // Charts
-    chart: ChartControl,
-    barchartjs: BarChartJSControl,
-    bar: BarChartJSControl,
-    linechartjs: LineChartJSControl,
-    line: LineChartJSControl,
-    piechartjs: PieChartJSControl,
-    pie: PieChartJSControl,
-    doughnenchartjs: DoughnutChartJSControl,
-    doughnut: DoughnutChartJSControl,
-    radarchartjs: RadarChartJSControl,
-    radar: RadarChartJSControl,
-    areachartjs: AreaChartJSControl,
-    area: AreaChartJSControl,
-    bubblechartjs: BubbleChartJSControl,
-    bubble: BubbleChartJSControl,
-    mixedchartjs: MixedChartJSControl,
-    mixed: MixedChartJSControl,
-};
+function getControlMap() {
+    const map = ensureMap();
+    if (!_CORE_POPULATED) {
+        const core = {
+            // Input
+            checkbox: CheckboxControl,
+            textbox: TextboxControl,
+            input: TextboxControl,
+            number: NumberControl,
+            password: PasswordControl,
+            select: SelectControl,
+            dropdown: SelectControl,
+            toggle: ToggleControl,
+            switch: ToggleControl,
+            date: DateControl,
+            datepicker: DatePickerControl,
+            slider: SliderControl,
+            range: SliderControl,
+            rating: RatingControl,
+            star: RatingControl,
+            multipleupload: MultipleUploadControl,
+            // Display
+            label: LabelControl,
+            link: LinkControl,
+            image: ImageControl,
+            badge: BadgeControl,
+            tag: BadgeControl,
+            icon: IconControl,
+            progress: ProgressControl,
+            progressbar: ProgressControl,
+            calendar: CalendarControl,
+            calendargrid: CalendarGridControl,
+            qrcode: QRCodeControl,
+            qr: QRCodeControl,
+            button: ButtonControl,
+            buttongroup: ButtonGroupControl,
+            // Layout
+            menu: MenuControl,
+            modal: ModalControl,
+            pagination: PaginationControl,
+            pager: PaginationControl,
+            form: FormControl,
+            gridview: GridviewControl,
+            tableview: TableviewControl,
+            accordion: AccordionControl,
+            tab: TabControl,
+            card: CardControl,
+            tree: TreeControl,
+            crud: CRUDControl,
+            searchbox: SearchBoxControl,
+            tabledropdown: DropdownControl,
+            // Charts
+            chart: ChartControl,
+            barchartjs: BarChartJSControl,
+            bar: BarChartJSControl,
+            linechartjs: LineChartJSControl,
+            line: LineChartJSControl,
+            piechartjs: PieChartJSControl,
+            pie: PieChartJSControl,
+            doughnenchartjs: DoughnutChartJSControl,
+            doughnut: DoughnutChartJSControl,
+            radarchartjs: RadarChartJSControl,
+            radar: RadarChartJSControl,
+            areachartjs: AreaChartJSControl,
+            area: AreaChartJSControl,
+            bubblechartjs: BubbleChartJSControl,
+            bubble: BubbleChartJSControl,
+            mixedchartjs: MixedChartJSControl,
+            mixed: MixedChartJSControl,
+        };
+        // Merge core into existing map
+        for (const key in core) {
+            if (!map[key]) {
+                map[key] = core[key];
+            }
+        }
+        _CORE_POPULATED = true;
+    }
+    return map;
+}
 
 function genControl(control, rowData, rowIndex) {
-    const key = `${rowIndex}-${control.type}-${control.databind || Math.random()}`;
-    const props = { control, rowData, rowIndex };
+    const key = `${rowIndex}-${control.type}-${control.databind || 'default'}`;
+    const props = { control, config: control, rowData, rowIndex };
 
     if (control.type === 'custom') {
         return control.render ? control.render(rowData, rowIndex) : null;
     }
 
-    let Component = CONTROL_MAP[control.type];
-    if (!Component && LAZY_TYPES.has(control.type)) {
-        Component = lazyLoad(control.type);
-    }
+    const Component = getControlMap()[control.type];
     if (!Component) return null;
 
     return <Component key={key} {...props} />;
 }
 
-export { genControl, CONTROL_MAP };
+function registerControl(type, Component) {
+    ensureMap()[type] = Component;
+}
+
+export { genControl, getControlMap, registerControl };

@@ -2,19 +2,25 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import ControlsDocs from './components/controls_doc/ControlsDocs';
 import FormBuilder from './forms/FormBuilder';
 import FormFillerPage from './forms/FormFillerPage';
+import BusinessSelector from './forms/BusinessSelector';
+import ThemeSwitcher from './ThemeSwitcher';
 
 import './App.css';
 
 function App() {
   return (
     <Router>
-      <Routes>
-        <Route path="/" element={<Navigate to="/controls-docs" replace />} />
-
+      <div className="app-global-container">
+        <div className="global-theme-switcher">
+          <ThemeSwitcher />
+        </div>
+        <Routes>
+        <Route path="/" element={<BusinessSelector />} />
         <Route path="/controls-docs" element={<ControlsDocs />} />
         <Route path="/formbuilder" element={<FormBuilder />} />
         <Route path="/form/:schemaId" element={<FormFillerPage />} />
       </Routes>
+      </div>
     </Router>
   )
 }
