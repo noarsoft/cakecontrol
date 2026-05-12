@@ -3,13 +3,12 @@ import CRUDControl from '../components/controls/CRUDControl';
 import ConfirmModal from '../components/controls/ConfirmModal';
 import SchemaBuilder from './SchemaBuilder';
 import SchemaNameInput from './SchemaNameInput';
-import FormPreview from './FormPreview';
 import FormFiller from './FormFiller';
 import TemplateManager from './TemplateManager';
-import ControlDesignerModal from './ControlDesignerModal';
 import { buildCrudConfig, generateDefaultView, generateDefaultFormcfg } from '../lib/schemaTransform';
 import {
     initService,
+    getBusinessById,
     getSchemas, createSchema, updateSchema, deleteSchema,
     getViewsBySchema, createView, updateView,
     getFormcfgsBySchema, createFormcfg, updateFormcfg,
@@ -17,34 +16,44 @@ import {
 } from '../lib/schemaService';
 import ThemeSwitcher from '../ThemeSwitcher';
 import { useToast } from '../contexts/ToastContext';
+import { useNavigate } from 'react-router-dom';
 import './FormBuilder.css';
 
 function FormBuilder() {
+    const navigate = useNavigate();
     const { showToast } = useToast();
     const [schemas, setSchemas] = useState([]);
     const [activeSchemaId, setActiveSchemaId] = useState(null);
-    const [mode, setMode] = useState('templates'); // 'templates' | 'data' | 'builder' | 'preview' | 'fill'
+    const [mode, setMode] = useState('templates'); // 'templates' | 'data' | 'builder' | 'fill'
     const [refreshKey, setRefreshKey] = useState(0);
     const [deleteConfirm, setDeleteConfirm] = useState(null);
     const [schemaData, setSchemaData] = useState(null);
     const [serviceMode, setServiceMode] = useState(null);
-    const [designerOpen, setDesignerOpen] = useState(false);
 
     // Init: detect backend + load schemas
     useEffect(() => {
         initService()
-            .then(() => {
-                setServiceMode('api');
+            .then(mode => {
+                setServiceMode(mode);
                 reloadSchemas();
-            })
-            .catch(err => {
-                setServiceMode('error');
-                showToast(err.message, 'error');
             });
     }, []);
 
+    const resolveBusinessId = async () => {
+        const rootid = localStorage.getItem('activeBusinessRootId');
+        if (!rootid) return localStorage.getItem('activeBusinessId');
+        try {
+            const biz = await getBusinessById(rootid);
+            if (biz) {
+                localStorage.setItem('activeBusinessId', biz.id);
+                return biz.id;
+            }
+        } catch (_) { /* fallback */ }
+        return localStorage.getItem('activeBusinessId');
+    };
+
     const reloadSchemas = async () => {
-        const businessId = localStorage.getItem('activeBusinessId');
+        const businessId = await resolveBusinessId();
         const list = await getSchemas(businessId);
         setSchemas(list || []);
         return list;
@@ -78,7 +87,7 @@ function FormBuilder() {
 
     // ─── Sidebar Actions ───
     const handleAddSchema = async () => {
-        const businessId = localStorage.getItem('activeBusinessId');
+        const businessId = await resolveBusinessId();
         try {
             const schema = await createSchema('ฟอร์มใหม่', {
                 field_1: { type: 'string' },
@@ -199,17 +208,6 @@ function FormBuilder() {
         }
     };
 
-    const handleLayoutSave = async ({ formcfg }) => {
-        if (!activeSchema || !schemaData?.formcfg) return;
-        try {
-            await updateFormcfg(schemaData.formcfg.rootid, { json_form_config: formcfg });
-            setDesignerOpen(false);
-            setRefreshKey(k => k + 1);
-            showToast('บันทึกเลย์เอาต์สำเร็จ', 'success');
-        } catch (err) {
-            showToast('ไม่สามารถบันทึกเลย์เอาต์ได้', 'error');
-        }
-    };
 
     // Form data counts per schema
     const [dataCounts, setDataCounts] = useState({});
@@ -239,7 +237,7 @@ function FormBuilder() {
 
     // ─── Template Manager Callbacks ───
     const handleTemplateCreate = async (name, json, formcfg) => {
-        const businessId = localStorage.getItem('activeBusinessId');
+        const businessId = await resolveBusinessId();
         try {
             const schema = await createSchema(name, json, businessId);
             await createView(schema.id, 'table', generateDefaultView(json), 'Default View');
@@ -300,6 +298,10 @@ function FormBuilder() {
             {/* Sidebar */}
             <aside className="fb-sidebar">
                 <div className="fb-sidebar-header">
+                    <button className="fb-back-btn" onClick={() => navigate('/')} title="กลับหน้า Business">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></svg>
+                        <span>Business</span>
+                    </button>
                     <h2>Form Builder</h2>
                     <p>สร้างและจัดการฟอร์ม</p>
                     <span style={{ fontSize: 11, opacity: 0.5, display: 'block', marginTop: 4 }}>
@@ -308,7 +310,7 @@ function FormBuilder() {
                 </div>
                 <div className="fb-sidebar-list">
                     {schemas.map(s => (
-                        <div key={s.id} style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                        <div key={s.id} className="fb-schema-row">
                             <button
                                 className={`fb-schema-item ${activeSchemaId === s.id ? 'active' : ''}`}
                                 onClick={() => handleSelectSchema(s.id)}
@@ -362,48 +364,38 @@ function FormBuilder() {
                                 onSave={handleSchemaNameSave}
                             />
                             <div style={{ flex: 1 }} />
-                            <button
-                                className={`fb-mode-btn ${mode === 'data' ? 'active' : ''}`}
-                                onClick={() => { setMode('data'); setRefreshKey(k => k + 1); }}
-                            >
-                                ข้อมูล
-                            </button>
-                            <button
-                                className={`fb-mode-btn ${mode === 'builder' ? 'active' : ''}`}
-                                onClick={() => setMode('builder')}
-                            >
-                                แก้ไขแม่แบบ
-                            </button>
-                            <button
-                                className="fb-mode-btn"
-                                onClick={() => setDesignerOpen(true)}
-                            >
-                                🎨 แก้ไขเลย์เอาต์
-                            </button>
-                            <button
-                                className={`fb-mode-btn ${mode === 'fill' ? 'active' : ''}`}
-                                onClick={() => setMode('fill')}
-                            >
-                                กรอกฟอร์ม
-                            </button>
-                            <button
-                                className="fb-mode-btn"
-                                onClick={() => {
-                                    const url = `${window.location.origin}/form/${activeSchema.id}`;
-                                    navigator.clipboard.writeText(url).then(() => {
-                                        alert(`คัดลอก link แล้ว:\n${url}`);
-                                    });
-                                }}
-                                title="คัดลอก link สำหรับแชร์"
-                            >
-                                🔗 แชร์
-                            </button>
-                            <button
-                                className={`fb-mode-btn ${mode === 'preview' ? 'active' : ''}`}
-                                onClick={() => setMode('preview')}
-                            >
-                                Preview
-                            </button>
+                            <div className="fb-mode-group">
+                                <button
+                                    className={`fb-mode-btn ${mode === 'data' ? 'active' : ''}`}
+                                    onClick={() => { setMode('data'); setRefreshKey(k => k + 1); }}
+                                >
+                                    ข้อมูล
+                                </button>
+                                <button
+                                    className={`fb-mode-btn ${mode === 'builder' ? 'active' : ''}`}
+                                    onClick={() => setMode('builder')}
+                                >
+                                    แก้ไขฟอร์ม
+                                </button>
+                                <button
+                                    className={`fb-mode-btn ${mode === 'fill' ? 'active' : ''}`}
+                                    onClick={() => setMode('fill')}
+                                >
+                                    กรอกฟอร์ม
+                                </button>
+                                <button
+                                    className="fb-mode-btn"
+                                    onClick={() => {
+                                        const url = `${window.location.origin}/form/${activeSchema.id}`;
+                                        navigator.clipboard.writeText(url).then(() => {
+                                            showToast('คัดลอก link แล้ว', 'success');
+                                        });
+                                    }}
+                                    title="คัดลอก link สำหรับแชร์"
+                                >
+                                    แชร์
+                                </button>
+                            </div>
                         </div>
                         <div className="fb-content">
                             {mode === 'data' && crudConfig && (
@@ -422,24 +414,8 @@ function FormBuilder() {
                                     onSubmit={() => setRefreshKey(k => k + 1)}
                                 />
                             )}
-                            {mode === 'preview' && (
-                                <FormPreview
-                                    schemaJson={activeSchema.json}
-                                    formcfgJson={schemaData?.formcfg?.json_form_config}
-                                    schemaName={activeSchema.name}
-                                />
-                            )}
                         </div>
 
-                        <ControlDesignerModal
-                            isOpen={designerOpen}
-                            onClose={() => setDesignerOpen(false)}
-                            onSave={handleLayoutSave}
-                            schemaName={activeSchema.name}
-                            schemaJson={activeSchema.json}
-                            formcfgJson={schemaData?.formcfg?.json_form_config}
-                            availableKeys={Object.keys(activeSchema.json || {})}
-                        />
                     </>
                 ) : (
                     <div className="fb-empty">

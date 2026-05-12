@@ -93,7 +93,17 @@ export function deleteBusiness(rootid) {
     const items = getStore(STORAGE_KEYS.business);
     const idx = items.findIndex(b => b.rootid === rootid && b.activate !== false);
     if (idx < 0) return false;
-    items[idx] = { ...items[idx], activate: false, modify_datetime: now() };
+    const current = items[idx];
+    items[idx] = { ...current, activate: false, modify_datetime: now() };
+    items.push({
+        ...current,
+        rootid: genId(),
+        id: nextId(STORAGE_KEYS.business),
+        prev_id: current.id,
+        activate: false,
+        flag: 'deleted',
+        modify_datetime: now(),
+    });
     setStore(STORAGE_KEYS.business, items);
     return true;
 }
@@ -128,6 +138,56 @@ export function createSchema(name, json = {}, business_id = null) {
     return item;
 }
 
+function detectKeyRenames(oldJson, newJson) {
+    if (!oldJson || !newJson) return {};
+    const renames = {};
+    const oldByOrder = {};
+    const hasOrder = Object.values(oldJson).some(d => d._order) && Object.values(newJson).some(d => d._order);
+
+    if (hasOrder) {
+        for (const [key, def] of Object.entries(oldJson)) {
+            if (def._order) oldByOrder[def._order] = key;
+        }
+        for (const [key, def] of Object.entries(newJson)) {
+            if (!def._order) continue;
+            const oldKey = oldByOrder[def._order];
+            if (oldKey && oldKey !== key) renames[oldKey] = key;
+        }
+    } else {
+        const oldKeys = new Set(Object.keys(oldJson));
+        const newKeys = new Set(Object.keys(newJson));
+        const removed = [...oldKeys].filter(k => !newKeys.has(k));
+        const added = [...newKeys].filter(k => !oldKeys.has(k));
+        if (removed.length === added.length) {
+            for (let i = 0; i < removed.length; i++) {
+                if (oldJson[removed[i]].type === newJson[added[i]].type) {
+                    renames[removed[i]] = added[i];
+                }
+            }
+        }
+    }
+    return renames;
+}
+
+function migrateDataKeys(schemaId, renames) {
+    const renameEntries = Object.entries(renames);
+    if (renameEntries.length === 0) return;
+    const dataItems = getStore(STORAGE_KEYS.data);
+    let changed = false;
+    dataItems.forEach(record => {
+        if (record.data_schema_id !== schemaId || record.activate === false) return;
+        const d = record.data;
+        if (!d || typeof d !== 'object') return;
+        const migrated = {};
+        for (const [k, v] of Object.entries(d)) {
+            migrated[renames[k] || k] = v;
+        }
+        record.data = migrated;
+        changed = true;
+    });
+    if (changed) setStore(STORAGE_KEYS.data, dataItems);
+}
+
 export function updateSchema(rootid, updates) {
     const items = getStore(STORAGE_KEYS.schemas);
     const idx = items.findIndex(s => s.rootid === rootid && s.activate !== false);
@@ -135,6 +195,9 @@ export function updateSchema(rootid, updates) {
 
     const current = items[idx];
     const oldId = current.id;
+
+    const renames = updates.json ? detectKeyRenames(current.json, updates.json) : {};
+
     items[idx] = { ...current, activate: false, modify_datetime: now() };
 
     const { id: _id, rootid: _root, ...safeUpdates } = updates;
@@ -168,6 +231,10 @@ export function updateSchema(rootid, updates) {
     cascadeFk(STORAGE_KEYS.views, 'data_schema_id');
     cascadeFk(STORAGE_KEYS.forms, 'data_id');
     cascadeFk(STORAGE_KEYS.data, 'data_schema_id');
+
+    if (Object.keys(renames).length > 0) {
+        migrateDataKeys(newItem.id, renames);
+    }
 
     return newItem;
 }
@@ -372,12 +439,33 @@ export function seedDemoData() {
 
     const b = createBusiness('Demo Business', 'DB');
 
-    const schema1 = createSchema('พนักงาน', {
-        name: { type: 'string', label: 'ชื่อ' },
-        age: { type: 'number', label: 'อายุ' },
-        role: { type: 'select', enum: [{label: 'Admin', value: 'Admin'}, {label: 'User', value: 'User'}], label: 'สิทธิ์' },
-        email: { type: 'string', label: 'อีเมล' },
-    }, b.id);
+    const schemaJson = {
+        name: { type: 'string', label: 'ชื่อ', _order: 1 },
+        age: { type: 'number', label: 'อายุ', _order: 2 },
+        role: { type: 'select', enum: [{label: 'Admin', value: 'Admin'}, {label: 'User', value: 'User'}], label: 'สิทธิ์', _order: 3 },
+        email: { type: 'string', label: 'อีเมล', _order: 4 },
+    };
+    const schema1 = createSchema('พนักงาน', schemaJson, b.id);
 
-    // Initial setups for views/forms can be added here if needed
+    createView(schema1.id, 'table', {
+        columns: [
+            { key: 'name', header: 'ชื่อ', width: 'auto', sortable: true },
+            { key: 'age', header: 'อายุ', width: '80', sortable: true },
+            { key: 'role', header: 'สิทธิ์', width: '100', sortable: true },
+            { key: 'email', header: 'อีเมล', width: 'auto', sortable: true },
+        ],
+    }, 'Default View');
+
+    createFormcfg(schema1.id, {
+        colnumbers: 6,
+        controls: [
+            { key: 'name', label: 'ชื่อ', colno: 1, rowno: 1, colspan: 6, placeholder: 'กรอกชื่อ' },
+            { key: 'email', label: 'อีเมล', colno: 1, rowno: 2, colspan: 6, placeholder: 'กรอกอีเมล' },
+            { key: 'age', label: 'อายุ', colno: 1, rowno: 3, colspan: 3 },
+            { key: 'role', label: 'สิทธิ์', colno: 4, rowno: 3, colspan: 3 },
+        ],
+    }, 'Default Form');
+
+    createFormData(schema1.id, { name: 'สมชาย ใจดี', age: 28, role: 'Admin', email: 'somchai@example.com' });
+    createFormData(schema1.id, { name: 'สมหญิง รักงาน', age: 25, role: 'User', email: 'somying@example.com' });
 }

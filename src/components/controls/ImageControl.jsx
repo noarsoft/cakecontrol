@@ -34,19 +34,12 @@ function ImageControl({ control = {}, rowData = {}, rowIndex = 0 }) {
         disabled = false
     } = control;
 
-    const imgSrc = databind ? rowData[databind] : value;
-    const [isLoading, setIsLoading] = useState(true);
+    const imgSrc = (databind && rowData[databind] !== undefined) ? rowData[databind] : value;
     const [hasError, setHasError] = useState(false);
     const [isEnlarged, setIsEnlarged] = useState(false);
 
-    const handleLoad = () => {
-        setIsLoading(false);
-        setHasError(false);
-    };
-
     const handleError = () => {
-        setIsLoading(false);
-        setHasError(true);
+        if (!hasError) setHasError(true);
     };
 
     const handleClick = (e) => {
@@ -79,7 +72,7 @@ function ImageControl({ control = {}, rowData = {}, rowIndex = 0 }) {
         ...style
     };
 
-    const displaySrc = hasError ? fallback : (isLoading ? placeholder : imgSrc);
+    const displaySrc = hasError ? fallback : (imgSrc || fallback);
 
     return (
         <>
@@ -90,7 +83,6 @@ function ImageControl({ control = {}, rowData = {}, rowIndex = 0 }) {
                 style={imageStyle}
                 className={`image-control ${className} ${disabled ? 'disabled' : ''}`}
                 onClick={handleClick}
-                onLoad={handleLoad}
                 onError={handleError}
             />
 

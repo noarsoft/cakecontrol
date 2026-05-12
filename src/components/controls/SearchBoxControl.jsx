@@ -2,6 +2,8 @@ import { useState, useRef, useEffect } from 'react';
 import TableviewControl from './TableviewControl';
 import './SearchBoxControl.css';
 
+const EMPTY_ARRAY = [];
+
 function SearchBoxControl({ control = {}, rowData = {}, rowIndex }) {
     const data = Array.isArray(control.data)
         ? control.data
@@ -9,7 +11,7 @@ function SearchBoxControl({ control = {}, rowData = {}, rowIndex }) {
             ? control.options
             : Array.isArray(control.tableConfig?.data)
                 ? control.tableConfig.data
-                : [];
+                : EMPTY_ARRAY;
     const keyField = control.keyField || 'id';
     const displayField = control.displayField;
     const displayFields = control.displayFields;

@@ -5,54 +5,54 @@
 
 export const FIELD_TYPES = [
     // --- Input ---
-    { value: 'string', label: 'ข้อความ (Textbox)', icon: '✏️' },
-    { value: 'number', label: 'ตัวเลข (Number)', icon: '🔢' },
-    { value: 'password', label: 'รหัสผ่าน (Password)', icon: '🔒' },
-    { value: 'email', label: 'อีเมล (Email)', icon: '📧' },
-    { value: 'select', label: 'ตัวเลือก (Select)', icon: '📋' },
-    { value: 'boolean', label: 'ใช่/ไม่ใช่ (Checkbox)', icon: '🔘' },
-    { value: 'toggle', label: 'เปิด/ปิด (Toggle)', icon: '🔀' },
-    { value: 'date', label: 'วันที่ (Date)', icon: '📅' },
-    { value: 'datepicker', label: 'เลือกวันที่ (DatePicker)', icon: '📆' },
-    { value: 'slider', label: 'ตัวเลื่อน (Slider)', icon: '🎚️' },
-    { value: 'rating', label: 'ให้คะแนน (Rating)', icon: '⭐' },
-    { value: 'file', label: 'ไฟล์ (File)', icon: '📁' },
-    { value: 'searchbox', label: 'ค้นหา (SearchBox)', icon: '🔍' },
-    { value: 'multipleupload', label: 'อัปโหลดหลายไฟล์ (MultiUpload)', icon: '📤' },
+    { value: 'string', label: 'Textbox Control', icon: '✏️' },
+    { value: 'number', label: 'Number Control', icon: '🔢' },
+    { value: 'password', label: 'Password Control', icon: '🔒' },
+    { value: 'email', label: 'Email Control', icon: '📧' },
+    { value: 'select', label: 'Select Control', icon: '📋' },
+    { value: 'boolean', label: 'Checkbox Control', icon: '☑️' },
+    { value: 'toggle', label: 'Toggle Control', icon: '🔘' },
+    { value: 'date', label: 'Date Control', icon: '📅' },
+    { value: 'datepicker', label: 'DatePicker', icon: '📅' },
+    { value: 'slider', label: 'Slider Control', icon: '🎚️' },
+    { value: 'rating', label: 'Rating Control', icon: '⭐' },
+    { value: 'file', label: 'File Upload', icon: '📁' },
+    { value: 'searchbox', label: 'SearchBox Control', icon: '🔍' },
+    { value: 'multipleupload', label: 'Multiple Upload', icon: '📤' },
     // --- Display ---
-    { value: 'label', label: 'ข้อความแสดง (Label)', icon: '🏷️' },
-    { value: 'link', label: 'ลิงก์ (Link)', icon: '🔗' },
-    { value: 'image', label: 'รูปภาพ (Image)', icon: '🖼️' },
-    { value: 'badge', label: 'ป้ายสถานะ (Badge)', icon: '🏅' },
-    { value: 'icon', label: 'ไอคอน (Icon)', icon: '🎨' },
-    { value: 'progress', label: 'แถบความคืบหน้า (Progress)', icon: '📊' },
-    { value: 'qrcode', label: 'คิวอาร์โค้ด (QR Code)', icon: '📱' },
-    { value: 'calendar', label: 'ปฏิทิน (Calendar)', icon: '🗓️' },
-    { value: 'calendargrid', label: 'ตารางปฏิทิน (CalendarGrid)', icon: '📅' },
-    { value: 'button', label: 'ปุ่มกด (Button)', icon: '🖱️' },
-    { value: 'buttongroup', label: 'กลุ่มปุ่ม (ButtonGroup)', icon: '🔲' },
+    { value: 'label', label: 'Label Control', icon: '🏷️' },
+    { value: 'link', label: 'Link Control', icon: '🔗' },
+    { value: 'image', label: 'Image Control', icon: '🖼️' },
+    { value: 'badge', label: 'Badge Control', icon: '🏅' },
+    { value: 'icon', label: 'Icon Control', icon: '⭐' },
+    { value: 'progress', label: 'Progress Bar', icon: '📊' },
+    { value: 'qrcode', label: 'QR Code', icon: '📱' },
+    { value: 'calendar', label: 'Calendar Control', icon: '🗓️' },
+    { value: 'calendargrid', label: 'Calendar Grid', icon: '📆' },
+    { value: 'button', label: 'Button Control', icon: '🔲' },
+    { value: 'buttongroup', label: 'Button Group', icon: '🔲' },
     // --- Layout ---
-    { value: 'accordion', label: 'พับเก็บ (Accordion)', icon: '📂' },
-    { value: 'tab', label: 'แท็บ (Tab)', icon: '📑' },
-    { value: 'card', label: 'การ์ด (Card)', icon: '🃏' },
-    { value: 'tree', label: 'โครงสร้างต้นไม้ (Tree)', icon: '🌳' },
-    { value: 'menu', label: 'เมนู (Menu)', icon: '☰' },
-    { value: 'gridview', label: 'ตารางกริด (GridView)', icon: '⊞' },
-    { value: 'tableview', label: 'ตาราง (TableView)', icon: '📋' },
-    { value: 'form', label: 'ฟอร์ม (Form)', icon: '📝' },
-    { value: 'crud', label: 'จัดการข้อมูล (CRUD)', icon: '🗃️' },
-    { value: 'modal', label: 'ป๊อปอัป (Modal)', icon: '🪟' },
-    { value: 'pagination', label: 'แบ่งหน้า (Pagination)', icon: '📄' },
+    { value: 'accordion', label: 'Accordion Control', icon: '📂' },
+    { value: 'tab', label: 'Tab Control', icon: '📑' },
+    { value: 'card', label: 'Card Control', icon: '🃏' },
+    { value: 'tree', label: 'Tree Control', icon: '🌳' },
+    { value: 'menu', label: 'Menu Control', icon: '📋' },
+    { value: 'gridview', label: 'Grid Control', icon: '▦' },
+    { value: 'tableview', label: 'Table Control', icon: '📊' },
+    { value: 'form', label: 'Form Control', icon: '📝' },
+    { value: 'crud', label: 'CRUD Control', icon: '🗂️' },
+    { value: 'modal', label: 'Modal Control', icon: '🪟' },
+    { value: 'pagination', label: 'Pagination', icon: '📄' },
     // --- Charts ---
-    { value: 'chart', label: 'กราฟ (Chart)', icon: '📈' },
-    { value: 'barchart', label: 'กราฟแท่ง (Bar Chart)', icon: '📊' },
-    { value: 'linechart', label: 'กราฟเส้น (Line Chart)', icon: '📉' },
-    { value: 'piechart', label: 'กราฟวงกลม (Pie Chart)', icon: '🥧' },
-    { value: 'doughnutchart', label: 'กราฟโดนัท (Doughnut)', icon: '🍩' },
-    { value: 'radarchart', label: 'กราฟเรดาร์ (Radar)', icon: '🕸️' },
-    { value: 'areachart', label: 'กราฟพื้นที่ (Area)', icon: '🏔️' },
-    { value: 'bubblechart', label: 'กราฟฟองสบู่ (Bubble)', icon: '🫧' },
-    { value: 'mixedchart', label: 'กราฟผสม (Mixed)', icon: '📊' },
+    { value: 'chart', label: 'Chart', icon: '📈' },
+    { value: 'barchart', label: 'Bar Chart JS', icon: '📊' },
+    { value: 'linechart', label: 'Line Chart JS', icon: '📈' },
+    { value: 'piechart', label: 'Pie Chart JS', icon: '🥧' },
+    { value: 'doughnutchart', label: 'Doughnut Chart JS', icon: '🍩' },
+    { value: 'radarchart', label: 'Radar Chart JS', icon: '🎯' },
+    { value: 'areachart', label: 'Area Chart JS', icon: '📊' },
+    { value: 'bubblechart', label: 'Bubble Chart JS', icon: '🫧' },
+    { value: 'mixedchart', label: 'Mixed Chart JS', icon: '📊' },
 ];
 
 export function createEmptySchema(name = 'ฟอร์มใหม่') {
@@ -63,9 +63,10 @@ export function createEmptySchema(name = 'ฟอร์มใหม่') {
 }
 
 export function addField(schemaJson, key, type = 'string', options = {}) {
+    const maxOrder = Object.values(schemaJson || {}).reduce((max, f) => Math.max(max, f._order || 0), 0);
     return {
         ...schemaJson,
-        [key]: { type, ...options },
+        [key]: { type, _order: maxOrder + 1, ...options },
     };
 }
 
@@ -89,14 +90,31 @@ export function updateField(schemaJson, oldKey, newKey, fieldDef) {
 }
 
 export function moveField(schemaJson, key, direction) {
-    const entries = Object.entries(schemaJson);
-    const idx = entries.findIndex(([k]) => k === key);
+    const sorted = getFieldEntries(schemaJson);
+    const idx = sorted.findIndex(([k]) => k === key);
     if (idx < 0) return schemaJson;
     const newIdx = direction === 'up' ? idx - 1 : idx + 1;
-    if (newIdx < 0 || newIdx >= entries.length) return schemaJson;
-    const swapped = [...entries];
-    [swapped[idx], swapped[newIdx]] = [swapped[newIdx], swapped[idx]];
-    return Object.fromEntries(swapped);
+    if (newIdx < 0 || newIdx >= sorted.length) return schemaJson;
+    const orderA = sorted[idx][1]._order || 0;
+    const orderB = sorted[newIdx][1]._order || 0;
+    return {
+        ...schemaJson,
+        [sorted[idx][0]]: { ...sorted[idx][1], _order: orderB },
+        [sorted[newIdx][0]]: { ...sorted[newIdx][1], _order: orderA },
+    };
+}
+
+export function reorderField(schemaJson, fromIndex, toIndex) {
+    const sorted = getFieldEntries(schemaJson);
+    if (fromIndex < 0 || fromIndex >= sorted.length || toIndex < 0 || toIndex >= sorted.length) return schemaJson;
+    if (fromIndex === toIndex) return schemaJson;
+    const [moved] = sorted.splice(fromIndex, 1);
+    sorted.splice(toIndex, 0, moved);
+    const result = { ...schemaJson };
+    sorted.forEach(([key, def], i) => {
+        result[key] = { ...def, _order: i + 1 };
+    });
+    return result;
 }
 
 export function getFieldKeys(schemaJson) {
@@ -104,7 +122,25 @@ export function getFieldKeys(schemaJson) {
 }
 
 export function getFieldEntries(schemaJson) {
-    return Object.entries(schemaJson || {});
+    return Object.entries(schemaJson || {}).sort(([keyA, a], [keyB, b]) => {
+        const orderDiff = (a._order || 0) - (b._order || 0);
+        if (orderDiff !== 0) return orderDiff;
+        const numA = parseInt(keyA.match(/(\d+)/)?.[1] || '0', 10);
+        const numB = parseInt(keyB.match(/(\d+)/)?.[1] || '0', 10);
+        if (numA !== numB) return numA - numB;
+        return keyA.localeCompare(keyB);
+    });
+}
+
+export function normalizeOrder(schemaJson) {
+    if (!schemaJson) return schemaJson;
+    const hasOrder = Object.values(schemaJson).some(f => f._order);
+    if (hasOrder) return schemaJson;
+    const result = {};
+    Object.entries(schemaJson).forEach(([key, def], idx) => {
+        result[key] = { ...def, _order: idx + 1 };
+    });
+    return result;
 }
 
 export function validateSchema(schemaJson) {
@@ -116,6 +152,7 @@ export function validateSchema(schemaJson) {
     const validTypes = FIELD_TYPES.map(t => t.value);
     for (const [key, def] of Object.entries(schemaJson || {})) {
         if (!key.trim()) errors.push('field key ต้องไม่ว่าง');
+        if (!def.label?.trim()) errors.push(`field "${key}": กรุณาระบุ Label`);
         if (!validTypes.includes(def.type)) errors.push(`field "${key}": type "${def.type}" ไม่ถูกต้อง`);
         if (def.type === 'select' && (!def.enum || def.enum.length === 0)) {
             errors.push(`field "${key}": select ต้องมี options`);

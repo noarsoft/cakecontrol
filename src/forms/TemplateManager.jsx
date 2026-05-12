@@ -86,7 +86,7 @@ function TemplateManager({ schemas, onSelectSchema, onCreateSchema, onUpdateSche
                         <ButtonControl
                             control={{
                                 value: 'แก้ไข',
-                                className: 'btn-primary btn-sm',
+                                className: 'btn-secondary btn-sm',
                                 onClick: () => handleEdit(rowData),
                             }}
                             rowData={rowData}
@@ -124,9 +124,13 @@ function TemplateManager({ schemas, onSelectSchema, onCreateSchema, onUpdateSche
                     onChange={e => { setSearchQuery(e.target.value); setCurrentPage(1); }}
                     placeholder="ค้นหาแม่แบบ..."
                 />
-                <button className="fb-mode-btn active" onClick={handleCreate}>
-                    + สร้างแม่แบบ
-                </button>
+                <ButtonControl
+                    control={{
+                        value: '+ สร้างแม่แบบ',
+                        className: 'btn-primary',
+                        onClick: handleCreate,
+                    }}
+                />
             </div>
 
             {paged.length > 0 ? (

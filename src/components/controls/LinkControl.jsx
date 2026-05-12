@@ -34,8 +34,8 @@ function LinkControl({ control = {}, rowData = {}, rowIndex = 0 }) {
         rel
     } = control;
 
-    const linkHref = databind ? rowData[databind] : href;
-    const linkText = textBind ? rowData[textBind] : value;
+    const linkHref = (databind && rowData[databind] !== undefined) ? rowData[databind] : href;
+    const linkText = (textBind && rowData[textBind] !== undefined) ? rowData[textBind] : value;
     const isExternal = target === '_blank';
     
     const handleClick = (e) => {

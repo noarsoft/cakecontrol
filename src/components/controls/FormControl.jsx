@@ -71,7 +71,8 @@ function FormControl({ config }) {
         if (value && typeof value === 'object' && value.databind) {
             value = resolveDataBind(value.databind, formData);
         } else if (controlConfig.databind) {
-            value = resolveDataBind(controlConfig.databind, formData);
+            const bound = resolveDataBind(controlConfig.databind, formData);
+            if (bound !== undefined) value = bound;
         }
 
         // Create control configuration for genControl

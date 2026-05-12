@@ -7,6 +7,7 @@ function FormFiller({ schema, formcfgJson, onSubmit }) {
     const [formData, setFormData] = useState({});
     const [submitted, setSubmitted] = useState(false);
     const [resetKey, setResetKey] = useState(0);
+    const [showDebug, setShowDebug] = useState(false);
 
     const formConfig = useMemo(
         () => schemaToFormConfig(schema.json, formcfgJson),
@@ -56,7 +57,20 @@ function FormFiller({ schema, formcfgJson, onSubmit }) {
             <div className="fb-filler-body">
                 <FormControl key={resetKey} config={config} />
             </div>
+            {showDebug && (
+                <div style={{ padding: 12, borderRadius: 6, background: 'var(--bg-secondary)', fontSize: 13, fontFamily: 'monospace' }}>
+                    <strong>Form Data:</strong>
+                    <pre style={{ margin: '8px 0 0', whiteSpace: 'pre-wrap' }}>{JSON.stringify(formData, null, 2)}</pre>
+                </div>
+            )}
             <div className="fb-filler-footer">
+                <button
+                    className="fb-mode-btn"
+                    onClick={() => setShowDebug(d => !d)}
+                    style={{ marginRight: 'auto', opacity: 0.6, fontSize: 12 }}
+                >
+                    {showDebug ? 'ซ่อน JSON' : 'แสดง JSON'}
+                </button>
                 <button className="fb-mode-btn" onClick={handleReset}>ล้างข้อมูล</button>
                 <button className="fb-mode-btn active" onClick={handleSubmit} disabled={!hasData}>บันทึก</button>
             </div>

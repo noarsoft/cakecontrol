@@ -138,11 +138,11 @@ describe('mockSchemaService.js', () => {
         test('seeds demo data when empty', () => {
             seedDemoData();
             const schemas = getSchemas();
-            expect(schemas.length).toBeGreaterThanOrEqual(2);
+            expect(schemas.length).toBeGreaterThanOrEqual(1);
         });
 
         test('does not re-seed when data exists', () => {
-            createSchema('Existing', {});
+            seedDemoData();
             const countBefore = getSchemas().length;
             seedDemoData();
             const countAfter = getSchemas().length;

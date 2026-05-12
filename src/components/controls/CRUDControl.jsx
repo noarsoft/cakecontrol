@@ -70,7 +70,7 @@ function CRUDControl({ config = {} }) {
         });
 
         const cfg = { data: paginatedData, headers, colwidths, controls, onHeaderClick: (event) => {
-            if (selectable && event.columnIndex === 0) { handleSelectAll(); return; }
+            if (selectable && bulkEditMode && event.columnIndex === 0) { handleSelectAll(); return; }
             handleSort(event.columnIndex);
         }};
 

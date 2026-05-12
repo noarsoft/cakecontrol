@@ -5,11 +5,11 @@ import {
 
 describe('schemaTransform.js', () => {
     const sampleSchema = {
-        name: { type: 'string', label: 'ชื่อ' },
-        age: { type: 'number' },
-        role: { type: 'select', enum: ['Admin', 'User'] },
-        is_active: { type: 'boolean' },
-        email: { type: 'email' },
+        name: { type: 'string', label: 'ชื่อ', _order: 1 },
+        age: { type: 'number', _order: 2 },
+        role: { type: 'select', enum: ['Admin', 'User'], _order: 3 },
+        is_active: { type: 'boolean', _order: 4 },
+        email: { type: 'email', _order: 5 },
     };
 
     describe('schemaToColumnsConfig', () => {
@@ -62,7 +62,7 @@ describe('schemaTransform.js', () => {
             expect(nameCtrl.type).toBe('textbox');
             expect(ageCtrl.type).toBe('number');
             expect(roleCtrl.type).toBe('select');
-            expect(activeCtrl.type).toBe('toggle');
+            expect(activeCtrl.type).toBe('checkbox');
             expect(emailCtrl.type).toBe('textbox');
         });
 

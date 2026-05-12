@@ -164,7 +164,15 @@ function schemaToControls(schemaJson, formcfgJson) {
     if (!schemaJson || Object.keys(schemaJson).length === 0) return [createEmptyControl()];
 
     const formControls = formcfgJson?.controls || [];
-    const controls = Object.entries(schemaJson).map(([key, def]) => {
+    const sortedSchema = Object.entries(schemaJson).sort(([keyA, a], [keyB, b]) => {
+        const orderDiff = (a._order || 0) - (b._order || 0);
+        if (orderDiff !== 0) return orderDiff;
+        const numA = parseInt(keyA.match(/(\d+)/)?.[1] || '0', 10);
+        const numB = parseInt(keyB.match(/(\d+)/)?.[1] || '0', 10);
+        if (numA !== numB) return numA - numB;
+        return keyA.localeCompare(keyB);
+    });
+    const controls = sortedSchema.map(([key, def]) => {
         const fc = formControls.find(c => c.key === key);
         return {
             id: Date.now() + Math.random(),

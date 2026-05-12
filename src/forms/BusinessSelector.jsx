@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { getBusinesses, createBusiness, deleteBusiness } from '../lib/schemaService';
+import { initService, getBusinesses, createBusiness, deleteBusiness } from '../lib/schemaService';
 import ConfirmModal from '../components/controls/ConfirmModal';
 import { useToast } from '../contexts/ToastContext';
 import './BusinessSelector.css';
@@ -15,7 +15,7 @@ export default function BusinessSelector() {
     const [deleteConfirm, setDeleteConfirm] = useState(null);
 
     useEffect(() => {
-        loadBusinesses();
+        initService().then(() => loadBusinesses());
     }, []);
 
     const loadBusinesses = async () => {
@@ -23,13 +23,13 @@ export default function BusinessSelector() {
             const data = await getBusinesses();
             setBusinesses(data || []);
         } catch (error) {
-            console.error('Failed to load businesses:', error);
             showToast('ไม่สามารถโหลดข้อมูลโครงการได้', 'error');
         }
     };
 
     const handleSelect = (business) => {
         localStorage.setItem('activeBusinessId', business.id);
+        localStorage.setItem('activeBusinessRootId', business.rootid);
         localStorage.setItem('activeBusinessName', business.name);
         navigate('/formbuilder');
     };
@@ -102,7 +102,7 @@ export default function BusinessSelector() {
                             }}
                             title="ลบโครงการ"
                         >
-                            ✕
+                            <span style={{ fontSize: '16px', fontWeight: 700, lineHeight: 1 }}>✕</span>
                         </button>
                     </div>
                 ))}

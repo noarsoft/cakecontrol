@@ -11,6 +11,58 @@ function normalizeEnumOptions(enumArr) {
     return enumArr.map(v => typeof v === 'object' ? { label: v.label, value: v.value } : { label: v, value: v });
 }
 
+const DISPLAY_DEFAULTS = {
+    label: { value: 'ตัวอย่างข้อความ' },
+    link: { value: 'ตัวอย่างลิงก์', href: '#' },
+    image: { value: 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="200" height="120"%3E%3Crect fill="%23e2e8f0" width="200" height="120" rx="8"/%3E%3Ctext x="100" y="65" text-anchor="middle" fill="%2394a3b8" font-size="14"%3ESample Image%3C/text%3E%3C/svg%3E', width: '200px', height: '120px' },
+    badge: { value: 'Badge' },
+    icon: { value: '⭐' },
+    button: { value: 'Button' },
+};
+
+function getDisplayProps(fieldType, fieldDef) {
+    const defaults = DISPLAY_DEFAULTS[fieldType];
+    if (!defaults) return {};
+    const props = { ...defaults };
+    if (fieldDef.value !== undefined) props.value = fieldDef.value;
+    if (fieldDef.href !== undefined) props.href = fieldDef.href;
+    return props;
+}
+
+const PASSTHROUGH_PROPS = {
+    number: ['min', 'max', 'step'],
+    password: ['showStrength', 'minLength', 'maxLength'],
+    slider: ['min', 'max', 'step'],
+    rating: ['max'],
+    progress: ['showValue', 'color'],
+    searchbox: ['multiple', 'allowCreate'],
+    qrcode: ['width', 'height'],
+    image: ['width', 'height', 'borderRadius', 'objectFit', 'shadow'],
+    boolean: [],
+    toggle: [],
+};
+
+function getFieldProps(fieldType, fieldDef) {
+    const keys = PASSTHROUGH_PROPS[fieldType];
+    if (!keys) return {};
+    const props = {};
+    for (const k of keys) {
+        if (fieldDef[k] !== undefined) props[k] = fieldDef[k];
+    }
+    return props;
+}
+
+function sortedEntries(schemaJson) {
+    return Object.entries(schemaJson || {}).sort(([keyA, a], [keyB, b]) => {
+        const orderDiff = (a._order || 0) - (b._order || 0);
+        if (orderDiff !== 0) return orderDiff;
+        const numA = parseInt(keyA.match(/(\d+)/)?.[1] || '0', 10);
+        const numB = parseInt(keyB.match(/(\d+)/)?.[1] || '0', 10);
+        if (numA !== numB) return numA - numB;
+        return keyA.localeCompare(keyB);
+    });
+}
+
 function fieldTypeToControlType(fieldType) {
     const map = {
         // Input
@@ -19,7 +71,7 @@ function fieldTypeToControlType(fieldType) {
         password: 'password',
         email: 'textbox',
         select: 'select',
-        boolean: 'toggle',
+        boolean: 'checkbox',
         toggle: 'toggle',
         date: 'date',
         datepicker: 'datepicker',
@@ -75,7 +127,7 @@ export function schemaToColumnsConfig(schemaJson, viewJson = null) {
     if (viewJson && viewJson.columns && viewJson.columns.length > 0) {
         columns = viewJson.columns;
     } else {
-        columns = Object.entries(schemaJson || {}).map(([key, def]) => {
+        columns = sortedEntries(schemaJson).map(([key, def]) => {
             const col = { key, header: def.label || key, sortable: true, width: 'auto' };
             if (def.type === 'boolean') col.type = 'badge';
             return col;
@@ -127,13 +179,15 @@ export function schemaToFormConfig(schemaJson, formcfgJson = null) {
                         options: normalizeEnumOptions(fieldDef.enum),
                     } : {}),
                     ...(fieldDef.type === 'email' ? { inputType: 'email' } : {}),
+                    ...getDisplayProps(fieldDef.type, fieldDef),
+                    ...getFieldProps(fieldDef.type, fieldDef),
                 };
             }),
         };
     }
 
     // Auto-generate: 1 field ต่อ 1 row, full width
-    const controls = Object.entries(schemaJson || {}).map(([key, def], idx) => ({
+    const controls = sortedEntries(schemaJson).map(([key, def], idx) => ({
         type: fieldTypeToControlType(def.type),
         databind: key,
         label: def.label || key,
@@ -141,9 +195,11 @@ export function schemaToFormConfig(schemaJson, formcfgJson = null) {
         rowno: idx + 1,
         colspan: colnumbers,
         ...(def.type === 'select' && def.enum ? {
-            options: def.enum.map(v => ({ label: v, value: v })),
+            options: normalizeEnumOptions(def.enum),
         } : {}),
         ...(def.type === 'email' ? { inputType: 'email' } : {}),
+        ...getDisplayProps(def.type, def),
+        ...getFieldProps(def.type, def),
     }));
 
     return { colnumbers, controls };
@@ -173,7 +229,7 @@ export function buildCrudConfig({ schemaJson, viewJson, formcfgJson, data, keyFi
  */
 export function generateDefaultView(schemaJson) {
     return {
-        columns: Object.entries(schemaJson || {}).map(([key, def]) => {
+        columns: sortedEntries(schemaJson).map(([key, def]) => {
             const col = { key, header: def.label || key, width: 'auto', sortable: true };
             if (def.type === 'boolean') col.type = 'badge';
             return col;
@@ -187,7 +243,7 @@ export function generateDefaultView(schemaJson) {
 export function generateDefaultFormcfg(schemaJson, colnumbers = 6) {
     return {
         colnumbers,
-        controls: Object.entries(schemaJson || {}).map(([key, def], idx) => ({
+        controls: sortedEntries(schemaJson).map(([key, def], idx) => ({
             key,
             label: def.label || key,
             colno: 1,
