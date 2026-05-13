@@ -117,7 +117,7 @@ export function getSchemas(businessId) {
 }
 
 export function getSchemaById(id) {
-    return getStore(STORAGE_KEYS.schemas).find(s => s.id === id && s.activate !== false);
+    return getStore(STORAGE_KEYS.schemas).find(s => (s.id === id || s.rootid === id) && s.activate !== false);
 }
 
 export function createSchema(name, json = {}, business_id = null) {

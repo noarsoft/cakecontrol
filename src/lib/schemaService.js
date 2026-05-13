@@ -2,8 +2,15 @@ import * as mock from './mockSchemaService';
 
 let strategy = mock;
 let isMock = true;
+let _initPromise = null;
 
 export async function initService() {
+    if (_initPromise) return _initPromise;
+    _initPromise = _doInit();
+    return _initPromise;
+}
+
+async function _doInit() {
     try {
         const res = await fetch('http://localhost:3002/api/health', { signal: AbortSignal.timeout(1500) });
         if (res.ok) {

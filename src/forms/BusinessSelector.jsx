@@ -31,7 +31,7 @@ export default function BusinessSelector() {
         localStorage.setItem('activeBusinessId', business.id);
         localStorage.setItem('activeBusinessRootId', business.rootid);
         localStorage.setItem('activeBusinessName', business.name);
-        navigate('/formbuilder');
+        navigate('/dashboard');
     };
 
     const handleAddBusiness = async () => {

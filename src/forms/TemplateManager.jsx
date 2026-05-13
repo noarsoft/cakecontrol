@@ -65,7 +65,8 @@ function TemplateManager({ schemas, onSelectSchema, onCreateSchema, onUpdateSche
             _fieldCount: s.json ? Object.keys(s.json).length : 0,
         })),
         headers: ['ชื่อแม่แบบ', 'Fields', 'วันที่แก้ไข', 'จัดการ'],
-        colwidths: ['auto', '80', '160', '220'],
+        colwidths: ['auto', '80', '160', '60'],
+        onRowClick: (rowData) => onSelectSchema(rowData.id),
         controls: [
             { type: 'label', databind: 'name' },
             { type: 'label', databind: '_fieldCount' },
@@ -74,33 +75,15 @@ function TemplateManager({ schemas, onSelectSchema, onCreateSchema, onUpdateSche
                 type: 'custom',
                 render: (rowData) => (
                     <div className="tm-row-actions">
-                        <ButtonControl
-                            control={{
-                                value: 'จัดการฟอร์ม',
-                                className: 'btn-outline btn-sm',
-                                onClick: () => onSelectSchema(rowData.id),
-                            }}
-                            rowData={rowData}
-                            rowIndex={0}
-                        />
-                        <ButtonControl
-                            control={{
-                                value: 'แก้ไข',
-                                className: 'btn-secondary btn-sm',
-                                onClick: () => handleEdit(rowData),
-                            }}
-                            rowData={rowData}
-                            rowIndex={0}
-                        />
-                        <ButtonControl
-                            control={{
-                                value: 'ลบ',
-                                className: 'btn-danger btn-sm',
-                                onClick: () => setDeleteConfirm(rowData.rootid),
-                            }}
-                            rowData={rowData}
-                            rowIndex={0}
-                        />
+                        <button
+                            className="tm-delete-btn"
+                            title="ลบแม่แบบ"
+                            onClick={(e) => { e.stopPropagation(); setDeleteConfirm(rowData.rootid); }}
+                        >
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/>
+                            </svg>
+                        </button>
                     </div>
                 ),
             },

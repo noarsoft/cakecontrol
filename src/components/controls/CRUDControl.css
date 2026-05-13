@@ -124,11 +124,31 @@
     box-shadow: none;
 }
 
+/* Boolean badge */
+.bool-badge {
+    display: inline-block;
+    padding: 2px 10px;
+    border-radius: 10px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.bool-badge--true {
+    background: var(--success-light);
+    color: var(--success);
+}
+
+.bool-badge--false {
+    background: var(--error-light);
+    color: var(--error);
+}
+
 /* Row actions */
 .crud-row-actions {
     display: flex;
     gap: 6px;
     align-items: center;
+    justify-content: flex-end;
 }
 
 .crud-row-actions .crud-btn {

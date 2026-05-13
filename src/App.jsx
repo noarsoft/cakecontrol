@@ -2,6 +2,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import ControlsDocs from './components/controls_doc/ControlsDocs';
 import FormBuilder from './forms/FormBuilder';
 import FormFillerPage from './forms/FormFillerPage';
+import Dashboard from './forms/Dashboard';
 import BusinessSelector from './forms/BusinessSelector';
 import ThemeSwitcher from './ThemeSwitcher';
 
@@ -17,6 +18,7 @@ function App() {
         <Routes>
         <Route path="/" element={<BusinessSelector />} />
         <Route path="/controls-docs" element={<ControlsDocs />} />
+        <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/formbuilder" element={<FormBuilder />} />
         <Route path="/form/:schemaId" element={<FormFillerPage />} />
       </Routes>

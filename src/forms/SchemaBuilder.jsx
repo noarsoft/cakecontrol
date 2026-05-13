@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { FIELD_TYPES, addField, removeField, updateField, reorderField, getFieldEntries, validateSchema } from '../lib/schema';
 import { useToast } from '../contexts/ToastContext';
+import { genControl } from '../components/controls/registry';
 
 function KeyInput({ value, onCommit, hasError, onBlur }) {
     const [draft, setDraft] = useState(value);
@@ -112,6 +113,7 @@ const CONTROL_CONFIGS = {
         { key: 'width', label: 'Width', type: 'number', hint: 'ความกว้าง (px)' },
         { key: 'height', label: 'Height', type: 'number', hint: 'ความสูง (px)' },
     ],
+    pagebreak: [],
     calendar: [],
     calendargrid: [],
     button: [
@@ -191,6 +193,51 @@ function OptionEditor({ options: rawOptions, onChange }) {
     );
 }
 
+const FIELD_TYPE_TO_CONTROL = {
+    string: 'textbox', number: 'number', password: 'password', email: 'textbox',
+    select: 'select', boolean: 'checkbox', toggle: 'toggle', date: 'date',
+    datepicker: 'datepicker', slider: 'slider', rating: 'rating', file: 'textbox',
+    searchbox: 'searchbox', multipleupload: 'multipleupload',
+    label: 'label', link: 'link', image: 'image', badge: 'badge', icon: 'icon',
+    progress: 'progress', qrcode: 'qrcode', calendar: 'calendar',
+    calendargrid: 'calendargrid', button: 'button', buttongroup: 'buttongroup',
+};
+
+function ControlPreview({ fieldKey, fieldDef }) {
+    if (!fieldKey || !fieldDef) return null;
+
+    const controlType = FIELD_TYPE_TO_CONTROL[fieldDef.type] || 'textbox';
+    const control = {
+        type: controlType,
+        databind: fieldKey,
+        label: fieldDef.label || fieldKey,
+        value: fieldDef.value ?? '',
+        placeholder: fieldDef.placeholder || '',
+        ...(fieldDef.type === 'select' && fieldDef.enum ? {
+            options: fieldDef.enum.map(v => typeof v === 'object' ? v : { label: v, value: v }),
+        } : {}),
+        ...(fieldDef.type === 'email' ? { inputType: 'email' } : {}),
+    };
+
+    const passthroughKeys = ['min', 'max', 'step', 'showStrength', 'minLength', 'maxLength',
+        'showValue', 'color', 'multiple', 'allowCreate', 'width', 'height',
+        'borderRadius', 'objectFit', 'shadow', 'href'];
+    for (const k of passthroughKeys) {
+        if (fieldDef[k] !== undefined) control[k] = fieldDef[k];
+    }
+
+    const rowData = { [fieldKey]: fieldDef.value ?? '' };
+
+    return (
+        <div className="sb-preview-box">
+            <div className="sb-preview-label">Preview</div>
+            <div className="sb-preview-content">
+                {genControl(control, rowData, 0)}
+            </div>
+        </div>
+    );
+}
+
 function FieldConfigPanel({ fieldKey, fieldDef, onUpdate }) {
     if (!fieldKey) {
         return (
@@ -210,6 +257,8 @@ function FieldConfigPanel({ fieldKey, fieldDef, onUpdate }) {
 
     return (
         <div className="sb-config-panel">
+            <ControlPreview fieldKey={fieldKey} fieldDef={fieldDef} />
+
             <div className="sb-config-header">
                 <span className="sb-config-icon">{typeInfo.icon}</span>
                 <span className="sb-config-title">{typeInfo.label || fieldDef.type}</span>
@@ -275,6 +324,7 @@ function SchemaBuilder({ schemaJson, onChange }) {
     const [isDirty, setIsDirty] = useState(false);
     const [touchedFields, setTouchedFields] = useState({});
     const [selectedKey, setSelectedKey] = useState(null);
+    const [panelOpen, setPanelOpen] = useState(true);
 
     useEffect(() => {
         setDraft(schemaJson);
@@ -305,7 +355,7 @@ function SchemaBuilder({ schemaJson, onChange }) {
             showToast('กรุณาระบุชื่อ Key ให้ครบทุกฟิลด์', 'error');
             return;
         }
-        if (entries.some(([_, def]) => !def.label?.trim())) {
+        if (entries.some(([_, def]) => def.type !== 'pagebreak' && !def.label?.trim())) {
             showToast('กรุณาระบุชื่อ Label ให้ครบทุกฟิลด์', 'error');
             return;
         }
@@ -378,11 +428,25 @@ function SchemaBuilder({ schemaJson, onChange }) {
     const errors = validateSchema(draft);
 
     return (
-        <div className="sb-layout">
+        <div className={`sb-layout ${panelOpen ? '' : 'sb-panel-collapsed'}`}>
             <div className="sb-field-list">
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                     <h3 style={{ marginTop: 0 }}>กำหนด Fields ({fields.length} fields)</h3>
-                    {isDirty && <span style={{ fontSize: 12, color: 'var(--accent-primary)' }}>* มีการเปลี่ยนแปลง</span>}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        {isDirty && <span style={{ fontSize: 12, color: 'var(--accent-primary)' }}>* มีการเปลี่ยนแปลง</span>}
+                        <button
+                            className="sb-panel-toggle"
+                            onClick={() => setPanelOpen(p => !p)}
+                            title={panelOpen ? 'ซ่อน Config Panel' : 'แสดง Config Panel'}
+                        >
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                {panelOpen
+                                    ? <><path d="M13 17l5-5-5-5"/><path d="M6 17l5-5-5-5"/></>
+                                    : <><path d="M11 7l-5 5 5 5"/><path d="M18 7l-5 5 5 5"/></>
+                                }
+                            </svg>
+                        </button>
+                    </div>
                 </div>
 
                 {fields.map(([key, def], idx) => {
@@ -392,6 +456,36 @@ function SchemaBuilder({ schemaJson, onChange }) {
                     const isDragging = dragIdx === idx;
                     const isOver = dragOverIdx === idx && dragIdx !== idx;
                     const isSelected = selectedKey === key;
+
+                    if (def.type === 'pagebreak') {
+                        return (
+                            <div
+                                key={idx}
+                                className={`fb-field-card fb-pagebreak-card ${isDragging ? 'dragging' : ''} ${isOver ? 'drag-over' : ''} ${isSelected ? 'selected' : ''}`}
+                                draggable
+                                onDragStart={() => handleDragStart(idx)}
+                                onDragEnter={() => handleDragEnter(idx)}
+                                onDragOver={e => e.preventDefault()}
+                                onDragEnd={handleDragEnd}
+                                onClick={() => setSelectedKey(key)}
+                            >
+                                <span className="field-drag">⠿</span>
+                                <div className="fb-pagebreak-line" />
+                                <span className="fb-pagebreak-label">📄 Page Break</span>
+                                <input
+                                    className="fb-pagebreak-title"
+                                    value={def.label || ''}
+                                    onChange={e => handleUpdateLabel(key, e.target.value)}
+                                    placeholder="ชื่อหน้า (ไม่บังคับ)"
+                                    onClick={e => e.stopPropagation()}
+                                />
+                                <div className="fb-pagebreak-line" />
+                                <div className="fb-field-actions">
+                                    <button onClick={(e) => { e.stopPropagation(); handleRemoveField(key); }} title="ลบ" className="fb-delete-btn">✕</button>
+                                </div>
+                            </div>
+                        );
+                    }
 
                     return (
                         <div
@@ -455,11 +549,13 @@ function SchemaBuilder({ schemaJson, onChange }) {
                 </div>
             </div>
 
-            <FieldConfigPanel
-                fieldKey={selectedKey}
-                fieldDef={selectedDef}
-                onUpdate={handleConfigUpdate}
-            />
+            {panelOpen && (
+                <FieldConfigPanel
+                    fieldKey={selectedKey}
+                    fieldDef={selectedDef}
+                    onUpdate={handleConfigUpdate}
+                />
+            )}
         </div>
     );
 }

@@ -119,7 +119,7 @@ function CRUDControl({ config = {} }) {
                     <TextboxControl control={{ value: searchQuery, placeholder: labels.searchPlaceholder, className: 'crud-search', onChange: handleSearch }} rowData={{}} rowIndex={0} />
                 </div>
                 <div className="crud-toolbar-right">
-                    {(config.onAdd || isAutoAdd) && (
+                    {(config.onAdd || isAutoAdd) && !config.hideAdd && (
                         <ButtonControl control={{ value: '+ ' + labels.addButton, className: 'btn-primary', onClick: () => openAddModal() }} rowData={{}} rowIndex={0} />
                     )}
                 </div>

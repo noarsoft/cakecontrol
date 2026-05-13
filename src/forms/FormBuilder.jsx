@@ -1,10 +1,9 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import CRUDControl from '../components/controls/CRUDControl';
 import ConfirmModal from '../components/controls/ConfirmModal';
 import SchemaBuilder from './SchemaBuilder';
 import SchemaNameInput from './SchemaNameInput';
 import FormFiller from './FormFiller';
-import TemplateManager from './TemplateManager';
 import { buildCrudConfig, generateDefaultView, generateDefaultFormcfg } from '../lib/schemaTransform';
 import {
     initService,
@@ -12,30 +11,42 @@ import {
     getSchemas, createSchema, updateSchema, deleteSchema,
     getViewsBySchema, createView, updateView,
     getFormcfgsBySchema, createFormcfg, updateFormcfg,
-    getFormDataBySchema, createFormData, updateFormData, deleteFormData,
+    getFormDataBySchema, updateFormData, deleteFormData,
 } from '../lib/schemaService';
 import ThemeSwitcher from '../ThemeSwitcher';
 import { useToast } from '../contexts/ToastContext';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import './FormBuilder.css';
 
 function FormBuilder() {
     const navigate = useNavigate();
+    const location = useLocation();
     const { showToast } = useToast();
     const [schemas, setSchemas] = useState([]);
-    const [activeSchemaId, setActiveSchemaId] = useState(null);
-    const [mode, setMode] = useState('templates'); // 'templates' | 'data' | 'builder' | 'fill'
+    const navState = location.state || {};
+    const [activeSchemaId, setActiveSchemaId] = useState(navState.activeSchemaId || null);
+    const [mode, setMode] = useState(navState.mode || 'data');
     const [refreshKey, setRefreshKey] = useState(0);
     const [deleteConfirm, setDeleteConfirm] = useState(null);
     const [schemaData, setSchemaData] = useState(null);
     const [serviceMode, setServiceMode] = useState(null);
 
-    // Init: detect backend + load schemas
+    const createTriggered = useRef(false);
+
+    // Init: detect backend + load schemas (+ auto-create if navigated with createNew)
     useEffect(() => {
         initService()
             .then(mode => {
                 setServiceMode(mode);
-                reloadSchemas();
+                reloadSchemas().then(() => {
+                    if (navState.createNew && !createTriggered.current) {
+                        createTriggered.current = true;
+                        window.history.replaceState({}, '');
+                        handleAddSchema();
+                    } else if (!navState.activeSchemaId && !navState.createNew) {
+                        navigate('/dashboard', { replace: true });
+                    }
+                });
             });
     }, []);
 
@@ -136,15 +147,6 @@ function FormBuilder() {
     };
 
     // ─── Data Manager: CRUDControl callbacks ───
-    const handleDataAdd = useCallback(async (formData) => {
-        if (!activeSchema) return;
-        const clean = { ...formData };
-        delete clean._formId;
-        await createFormData(activeSchema.id, clean);
-        setRefreshKey(k => k + 1);
-        showToast('บันทึกข้อมูลสำเร็จ', 'success');
-    }, [activeSchema, showToast]);
-
     const handleDataEdit = useCallback(async (formData, oldData) => {
         if (!oldData?._formId) return;
         const clean = { ...formData };
@@ -173,11 +175,11 @@ function FormBuilder() {
         });
         return {
             ...cfg,
-            onAdd: handleDataAdd,
             onEdit: handleDataEdit,
             onDelete: handleDataDelete,
+            hideAdd: true,
         };
-    }, [activeSchema, schemaData, handleDataAdd, handleDataEdit, handleDataDelete]);
+    }, [activeSchema, schemaData, handleDataEdit, handleDataDelete]);
 
     // ─── Form Builder: Schema editing ───
     const handleSchemaJsonChange = async (newJson) => {
@@ -222,181 +224,54 @@ function FormBuilder() {
         })();
     }, [schemas, refreshKey]);
 
-    // Formcfgs cache for template manager
-    const [formcfgsCache, setFormcfgsCache] = useState({});
-    useEffect(() => {
-        (async () => {
-            const cache = {};
-            await Promise.all(schemas.map(async s => {
-                const cfgs = await getFormcfgsBySchema(s.id);
-                if (cfgs[0]) cache[s.id] = cfgs[0];
-            }));
-            setFormcfgsCache(cache);
-        })();
-    }, [schemas, refreshKey]);
-
-    // ─── Template Manager Callbacks ───
-    const handleTemplateCreate = async (name, json, formcfg) => {
-        const businessId = await resolveBusinessId();
-        try {
-            const schema = await createSchema(name, json, businessId);
-            await createView(schema.id, 'table', generateDefaultView(json), 'Default View');
-            await createFormcfg(schema.id, formcfg, 'Default Form');
-            await reloadSchemas();
-            setActiveSchemaId(schema.id);
-            setMode('data');
-            setRefreshKey(k => k + 1);
-            showToast('สร้างแม่แบบสำเร็จ', 'success');
-        } catch (err) {
-            showToast('สร้างแม่แบบไม่สำเร็จ', 'error');
-        }
-    };
-
-    const handleTemplateUpdate = async (schema, name, json, formcfg) => {
-        try {
-            const updated = await updateSchema(schema.rootid, { name, json });
-            const newSchemaId = updated?.id ?? schema.id;
-            const [views, formcfgs] = await Promise.all([
-                getViewsBySchema(newSchemaId),
-                getFormcfgsBySchema(newSchemaId),
-            ]);
-            const viewUpdate = views[0]
-                ? updateView(views[0].rootid, { json_table_config: generateDefaultView(json) })
-                : createView(newSchemaId, 'table', generateDefaultView(json), 'Default View');
-            const cfgUpdate = formcfgs[0]
-                ? updateFormcfg(formcfgs[0].rootid, { json_form_config: formcfg })
-                : createFormcfg(newSchemaId, formcfg, 'Default Form');
-            await Promise.all([viewUpdate, cfgUpdate]);
-            await reloadSchemas();
-            setRefreshKey(k => k + 1);
-            showToast('อัปเดตแม่แบบสำเร็จ', 'success');
-        } catch (err) {
-            showToast('อัปเดตแม่แบบไม่สำเร็จ', 'error');
-        }
-    };
-
-    const handleTemplateDelete = async (rootid) => {
-        try {
-            await deleteSchema(rootid);
-            const deleted = schemas.find(s => s.rootid === rootid);
-            if (deleted && activeSchemaId === deleted.id) setActiveSchemaId(null);
-            await reloadSchemas();
-            showToast('ลบแม่แบบสำเร็จ', 'success');
-        } catch (err) {
-            showToast('ลบแม่แบบไม่สำเร็จ', 'error');
-        }
-    };
-
-    const handleTemplateSelect = (schemaId) => {
-        setActiveSchemaId(schemaId);
-        setMode('data');
-        setRefreshKey(k => k + 1);
-    };
-
     return (
         <div className="formbuilder-container">
-            {/* Sidebar */}
-            <aside className="fb-sidebar">
-                <div className="fb-sidebar-header">
-                    <button className="fb-back-btn" onClick={() => navigate('/')} title="กลับหน้า Business">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></svg>
-                        <span>Business</span>
-                    </button>
-                    <h2>Form Builder</h2>
-                    <p>สร้างและจัดการฟอร์ม</p>
-                    <span style={{ fontSize: 11, opacity: 0.5, display: 'block', marginTop: 4 }}>
-                        {serviceMode === 'api' ? '🟢 API Online' : '🔴 API Offline'}
-                    </span>
-                </div>
-                <div className="fb-sidebar-list">
-                    {schemas.map(s => (
-                        <div key={s.id} className="fb-schema-row">
-                            <button
-                                className={`fb-schema-item ${activeSchemaId === s.id ? 'active' : ''}`}
-                                onClick={() => handleSelectSchema(s.id)}
-                            >
-                                <span className="schema-name">{s.name}</span>
-                                <span className="schema-count">{dataCounts[s.id] || 0} ข้อมูล</span>
+            {activeSchema ? (
+                <>
+                    <header className="fb-topbar">
+                        <div className="fb-topbar-left">
+                            <button className="fb-back-btn" onClick={() => navigate('/dashboard')} title="กลับหน้า Dashboard">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></svg>
                             </button>
-                            <button
-                                className="fb-delete-schema-btn"
-                                onClick={e => { e.stopPropagation(); setDeleteConfirm(s.rootid); }}
-                                title="ลบแม่แบบ"
-                            >
-                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                    <path d="M3 6h18"></path>
-                                    <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path>
-                                    <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path>
-                                </svg>
-                            </button>
-                        </div>
-                    ))}
-                </div>
-                <button className="fb-add-schema-btn" onClick={handleAddSchema}>
-                    + สร้างฟอร์มใหม่
-                </button>
-                <button
-                    className={`fb-template-btn ${mode === 'templates' ? 'active' : ''}`}
-                    onClick={() => { setMode('templates'); setActiveSchemaId(null); }}
-                >
-                    จัดการแม่แบบ
-                </button>
-            </aside>
-
-            {/* Main */}
-            <main className="fb-main">
-                {mode === 'templates' ? (
-                    <div className="fb-content">
-                        <TemplateManager
-                            schemas={schemas}
-                            formcfgs={formcfgsCache}
-                            onSelectSchema={handleTemplateSelect}
-                            onCreateSchema={handleTemplateCreate}
-                            onUpdateSchema={handleTemplateUpdate}
-                            onDeleteSchema={handleTemplateDelete}
-                        />
-                    </div>
-                ) : activeSchema ? (
-                    <>
-                        <div className="fb-toolbar">
                             <SchemaNameInput
                                 value={activeSchema.name}
                                 onSave={handleSchemaNameSave}
                             />
-                            <div style={{ flex: 1 }} />
-                            <div className="fb-mode-group">
-                                <button
-                                    className={`fb-mode-btn ${mode === 'data' ? 'active' : ''}`}
-                                    onClick={() => { setMode('data'); setRefreshKey(k => k + 1); }}
-                                >
-                                    ข้อมูล
-                                </button>
-                                <button
-                                    className={`fb-mode-btn ${mode === 'builder' ? 'active' : ''}`}
-                                    onClick={() => setMode('builder')}
-                                >
-                                    แก้ไขฟอร์ม
-                                </button>
-                                <button
-                                    className={`fb-mode-btn ${mode === 'fill' ? 'active' : ''}`}
-                                    onClick={() => setMode('fill')}
-                                >
-                                    กรอกฟอร์ม
-                                </button>
-                                <button
-                                    className="fb-mode-btn"
-                                    onClick={() => {
-                                        const url = `${window.location.origin}/form/${activeSchema.id}`;
-                                        navigator.clipboard.writeText(url).then(() => {
-                                            showToast('คัดลอก link แล้ว', 'success');
-                                        });
-                                    }}
-                                    title="คัดลอก link สำหรับแชร์"
-                                >
-                                    แชร์
-                                </button>
-                            </div>
                         </div>
+                        <div className="fb-mode-group">
+                            <button
+                                className={`fb-mode-btn ${mode === 'data' ? 'active' : ''}`}
+                                onClick={() => { setMode('data'); setRefreshKey(k => k + 1); }}
+                            >
+                                ข้อมูล
+                            </button>
+                            <button
+                                className={`fb-mode-btn ${mode === 'builder' ? 'active' : ''}`}
+                                onClick={() => setMode('builder')}
+                            >
+                                แก้ไขฟอร์ม
+                            </button>
+                            <button
+                                className={`fb-mode-btn ${mode === 'fill' ? 'active' : ''}`}
+                                onClick={() => setMode('fill')}
+                            >
+                                เพิ่มข้อมูล
+                            </button>
+                            <button
+                                className="fb-mode-btn"
+                                onClick={() => {
+                                    const url = `${window.location.origin}/form/${activeSchema.rootid}`;
+                                    navigator.clipboard.writeText(url).then(() => {
+                                        showToast('คัดลอก link แล้ว', 'success');
+                                    });
+                                }}
+                                title="คัดลอก link สำหรับแชร์"
+                            >
+                                แชร์
+                            </button>
+                        </div>
+                    </header>
+                    <main className="fb-main">
                         <div className="fb-content">
                             {mode === 'data' && crudConfig && (
                                 <CRUDControl config={crudConfig} />
@@ -415,17 +290,15 @@ function FormBuilder() {
                                 />
                             )}
                         </div>
+                    </main>
+                </>
+            ) : (
+                <div className="fb-empty">
+                    <div className="fb-empty-icon">📝</div>
+                    <div>เลือกฟอร์มจาก sidebar หรือสร้างฟอร์มใหม่</div>
+                </div>
+            )}
 
-                    </>
-                ) : (
-                    <div className="fb-empty">
-                        <div className="fb-empty-icon">📝</div>
-                        <div>เลือกฟอร์มจาก sidebar หรือสร้างฟอร์มใหม่</div>
-                    </div>
-                )}
-            </main>
-
-            {/* Delete Confirm */}
             <ConfirmModal
                 isOpen={deleteConfirm !== null}
                 title="ยืนยันการลบแม่แบบ"

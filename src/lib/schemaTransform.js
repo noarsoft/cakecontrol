@@ -2,6 +2,7 @@
  * schemaTransform.js — Bridge schema → existing control configs
  * แปลง data_schema, data_view, data_formcfg → CRUDControl / FormControl config
  */
+import { createElement } from 'react';
 
 /**
  * แปลง schema field type → control type ที่ genControl รู้จัก
@@ -127,15 +128,32 @@ export function schemaToColumnsConfig(schemaJson, viewJson = null) {
     if (viewJson && viewJson.columns && viewJson.columns.length > 0) {
         columns = viewJson.columns;
     } else {
-        columns = sortedEntries(schemaJson).map(([key, def]) => {
-            const col = { key, header: def.label || key, sortable: true, width: 'auto' };
-            if (def.type === 'boolean') col.type = 'badge';
-            return col;
-        });
+        columns = sortedEntries(schemaJson)
+            .filter(([, def]) => def.type !== 'pagebreak')
+            .map(([key, def]) => {
+                const col = { key, header: def.label || key, sortable: true, width: 'auto' };
+                if (def.type === 'boolean') col.type = 'badge';
+                return col;
+            });
     }
 
     return columns.map(col => {
         const fieldDef = (schemaJson || {})[col.key];
+        if (fieldDef && (fieldDef.type === 'boolean' || fieldDef.type === 'toggle')) {
+            return {
+                ...col,
+                type: 'custom',
+                controlProps: {
+                    render: (rowData) => {
+                        const val = rowData[col.key];
+                        const isTrue = val === true || val === 'true';
+                        return createElement('span', {
+                            className: `bool-badge bool-badge--${isTrue ? 'true' : 'false'}`,
+                        }, isTrue ? 'true' : 'false');
+                    },
+                },
+            };
+        }
         if (fieldDef && fieldDef.type === 'select' && fieldDef.enum) {
             const opts = normalizeEnumOptions(fieldDef.enum);
             const enumMap = Object.fromEntries(opts.map(o => [String(o.value), o.label]));
@@ -186,21 +204,23 @@ export function schemaToFormConfig(schemaJson, formcfgJson = null) {
         };
     }
 
-    // Auto-generate: 1 field ต่อ 1 row, full width
-    const controls = sortedEntries(schemaJson).map(([key, def], idx) => ({
-        type: fieldTypeToControlType(def.type),
-        databind: key,
-        label: def.label || key,
-        colno: 1,
-        rowno: idx + 1,
-        colspan: colnumbers,
-        ...(def.type === 'select' && def.enum ? {
-            options: normalizeEnumOptions(def.enum),
-        } : {}),
-        ...(def.type === 'email' ? { inputType: 'email' } : {}),
-        ...getDisplayProps(def.type, def),
-        ...getFieldProps(def.type, def),
-    }));
+    // Auto-generate: 1 field ต่อ 1 row, full width (skip pagebreak)
+    const controls = sortedEntries(schemaJson)
+        .filter(([, def]) => def.type !== 'pagebreak')
+        .map(([key, def], idx) => ({
+            type: fieldTypeToControlType(def.type),
+            databind: key,
+            label: def.label || key,
+            colno: 1,
+            rowno: idx + 1,
+            colspan: colnumbers,
+            ...(def.type === 'select' && def.enum ? {
+                options: normalizeEnumOptions(def.enum),
+            } : {}),
+            ...(def.type === 'email' ? { inputType: 'email' } : {}),
+            ...getDisplayProps(def.type, def),
+            ...getFieldProps(def.type, def),
+        }));
 
     return { colnumbers, controls };
 }
@@ -227,13 +247,36 @@ export function buildCrudConfig({ schemaJson, viewJson, formcfgJson, data, keyFi
 /**
  * สร้าง default data_view JSON จาก schema
  */
+/**
+ * สร้าง pages array จาก schema โดยแบ่งตาม pagebreak fields
+ * คืน array ของ { label, fieldKeys } แต่ละ page
+ */
+export function getSchemaPages(schemaJson) {
+    const entries = sortedEntries(schemaJson);
+    const pages = [];
+    let current = { label: null, fieldKeys: [] };
+
+    for (const [key, def] of entries) {
+        if (def.type === 'pagebreak') {
+            if (current.fieldKeys.length > 0) pages.push(current);
+            current = { label: def.label || null, fieldKeys: [] };
+        } else {
+            current.fieldKeys.push(key);
+        }
+    }
+    if (current.fieldKeys.length > 0) pages.push(current);
+    return pages;
+}
+
 export function generateDefaultView(schemaJson) {
     return {
-        columns: sortedEntries(schemaJson).map(([key, def]) => {
-            const col = { key, header: def.label || key, width: 'auto', sortable: true };
-            if (def.type === 'boolean') col.type = 'badge';
-            return col;
-        }),
+        columns: sortedEntries(schemaJson)
+            .filter(([, def]) => def.type !== 'pagebreak')
+            .map(([key, def]) => {
+                const col = { key, header: def.label || key, width: 'auto', sortable: true };
+                if (def.type === 'boolean') col.type = 'badge';
+                return col;
+            }),
     };
 }
 
@@ -243,13 +286,15 @@ export function generateDefaultView(schemaJson) {
 export function generateDefaultFormcfg(schemaJson, colnumbers = 6) {
     return {
         colnumbers,
-        controls: sortedEntries(schemaJson).map(([key, def], idx) => ({
-            key,
-            label: def.label || key,
-            colno: 1,
-            rowno: idx + 1,
-            colspan: colnumbers,
-            placeholder: '',
-        })),
+        controls: sortedEntries(schemaJson)
+            .filter(([, def]) => def.type !== 'pagebreak')
+            .map(([key, def], idx) => ({
+                key,
+                label: def.label || key,
+                colno: 1,
+                rowno: idx + 1,
+                colspan: colnumbers,
+                placeholder: '',
+            })),
     };
 }

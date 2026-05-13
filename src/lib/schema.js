@@ -19,6 +19,8 @@ export const FIELD_TYPES = [
     { value: 'file', label: 'File Upload', icon: '📁' },
     { value: 'searchbox', label: 'SearchBox Control', icon: '🔍' },
     { value: 'multipleupload', label: 'Multiple Upload', icon: '📤' },
+    // --- Layout ---
+    { value: 'pagebreak', label: 'Page Break', icon: '📄' },
     // --- Display ---
     { value: 'label', label: 'Label Control', icon: '🏷️' },
     { value: 'link', label: 'Link Control', icon: '🔗' },
@@ -152,7 +154,7 @@ export function validateSchema(schemaJson) {
     const validTypes = FIELD_TYPES.map(t => t.value);
     for (const [key, def] of Object.entries(schemaJson || {})) {
         if (!key.trim()) errors.push('field key ต้องไม่ว่าง');
-        if (!def.label?.trim()) errors.push(`field "${key}": กรุณาระบุ Label`);
+        if (def.type !== 'pagebreak' && !def.label?.trim()) errors.push(`field "${key}": กรุณาระบุ Label`);
         if (!validTypes.includes(def.type)) errors.push(`field "${key}": type "${def.type}" ไม่ถูกต้อง`);
         if (def.type === 'select' && (!def.enum || def.enum.length === 0)) {
             errors.push(`field "${key}": select ต้องมี options`);

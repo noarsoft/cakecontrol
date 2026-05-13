@@ -2,7 +2,7 @@ import { useState, useMemo, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import FormControl from '../components/controls/FormControl';
 import ThemeSwitcher from '../ThemeSwitcher';
-import { schemaToFormConfig } from '../lib/schemaTransform';
+import { schemaToFormConfig, getSchemaPages } from '../lib/schemaTransform';
 import {
     initService, getSchemaById, getFormcfgsBySchema, createFormData,
 } from '../lib/schemaService';
@@ -21,31 +21,48 @@ function FormFillerPage() {
     const [submitted, setSubmitted] = useState(false);
     const [notFound, setNotFound] = useState(false);
     const [resetKey, setResetKey] = useState(0);
+    const [currentPage, setCurrentPage] = useState(0);
 
     useEffect(() => {
         (async () => {
             await initService();
-            const id = parseInt(schemaId, 10);
-            const s = await getSchemaById(id);
+            const s = await getSchemaById(schemaId);
             if (!s) {
                 setNotFound(true);
                 return;
             }
             setSchema(s);
-            const cfgs = await getFormcfgsBySchema(id);
+            const cfgs = await getFormcfgsBySchema(s.id);
             if (cfgs[0]) setFormcfgJson(cfgs[0].json_form_config);
         })();
     }, [schemaId]);
 
-    const formConfig = useMemo(() => {
+    const fullFormConfig = useMemo(() => {
         if (!schema) return null;
         return schemaToFormConfig(schema.json, formcfgJson);
     }, [schema, formcfgJson]);
 
-    const config = useMemo(() => {
-        if (!formConfig) return null;
+    const pages = useMemo(() => {
+        if (!schema) return [];
+        return getSchemaPages(schema.json);
+    }, [schema]);
+    const totalPages = pages.length;
+    const hasPages = totalPages > 1;
+
+    const pageConfig = useMemo(() => {
+        if (!fullFormConfig) return null;
+        if (!hasPages) return fullFormConfig;
+        const pageFieldKeys = new Set(pages[currentPage]?.fieldKeys || []);
         return {
-            ...formConfig,
+            ...fullFormConfig,
+            controls: fullFormConfig.controls.filter(c => pageFieldKeys.has(c.databind)),
+        };
+    }, [fullFormConfig, hasPages, pages, currentPage]);
+
+    const config = useMemo(() => {
+        if (!pageConfig) return null;
+        return {
+            ...pageConfig,
             data: [formData],
             onChange: (e) => {
                 const val = e?.target?.value;
@@ -54,13 +71,14 @@ function FormFillerPage() {
                 }
             },
         };
-    }, [formConfig, formData]);
+    }, [pageConfig, formData]);
 
     const hasData = Object.values(formData).some(v => v !== '' && v !== null && v !== undefined);
+    const isLastPage = !hasPages || currentPage === totalPages - 1;
 
     const handleSubmit = async () => {
         if (!hasData) return;
-        await createFormData(parseInt(schemaId, 10), formData);
+        await createFormData(schema.id, formData);
         setSubmitted(true);
     };
 
@@ -68,7 +86,11 @@ function FormFillerPage() {
         setFormData({});
         setSubmitted(false);
         setResetKey(k => k + 1);
+        setCurrentPage(0);
     };
+
+    const handleNext = () => { if (currentPage < totalPages - 1) setCurrentPage(p => p + 1); };
+    const handlePrev = () => { if (currentPage > 0) setCurrentPage(p => p - 1); };
 
     if (notFound) {
         return (
@@ -139,16 +161,47 @@ function FormFillerPage() {
                     <h2>{schema.name}</h2>
                     <p>กรอกข้อมูลให้ครบแล้วกดบันทึก</p>
                 </div>
+
+                {hasPages && (
+                    <div className="fb-filler-pages">
+                        {pages.map((page, idx) => (
+                            <button
+                                key={idx}
+                                className={`fb-filler-page-dot ${idx === currentPage ? 'active' : ''} ${idx < currentPage ? 'done' : ''}`}
+                                onClick={() => setCurrentPage(idx)}
+                                title={page.label || `หน้า ${idx + 1}`}
+                            >
+                                {idx < currentPage ? '✓' : idx + 1}
+                            </button>
+                        ))}
+                    </div>
+                )}
+
+                {hasPages && pages[currentPage]?.label && (
+                    <div className="fb-filler-page-title">{pages[currentPage].label}</div>
+                )}
+
                 <div className="fb-filler-body">
-                    <FormControl key={resetKey} config={config} />
+                    <FormControl key={`${resetKey}-${currentPage}`} config={config} />
                 </div>
                 <div className="fb-filler-footer">
-                    <button className="fb-mode-btn" onClick={handleReset}>
-                        ล้างข้อมูล
-                    </button>
-                    <button className="fb-mode-btn active" onClick={handleSubmit} disabled={!hasData}>
-                        บันทึก
-                    </button>
+                    {hasPages && currentPage > 0 && (
+                        <button className="fb-mode-btn" onClick={handlePrev}>ย้อนกลับ</button>
+                    )}
+
+                    {!hasPages && (
+                        <button className="fb-mode-btn" onClick={handleReset}>ล้างข้อมูล</button>
+                    )}
+
+                    {hasPages && !isLastPage && (
+                        <button className="fb-mode-btn active" onClick={handleNext}>ถัดไป</button>
+                    )}
+
+                    {isLastPage && (
+                        <button className="fb-mode-btn active" onClick={handleSubmit} disabled={!hasData}>
+                            บันทึก
+                        </button>
+                    )}
                 </div>
             </div>
         </div>
