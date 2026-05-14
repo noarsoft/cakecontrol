@@ -1,5 +1,4 @@
 // CardControl.jsx
-import React from 'react';
 import FormControl from './FormControl';
 import './CardControl.css';
 

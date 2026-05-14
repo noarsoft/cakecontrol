@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import { useMemo } from 'react';
 import TableviewControl from './TableviewControl';
 import FormControl from './FormControl';
 import ConfirmModal from './ConfirmModal';
@@ -70,7 +70,7 @@ function CRUDControl({ config = {} }) {
         });
 
         const cfg = { data: paginatedData, headers, colwidths, controls, onHeaderClick: (event) => {
-            if (selectable && event.columnIndex === 0) { handleSelectAll(); return; }
+            if (selectable && bulkEditMode && event.columnIndex === 0) { handleSelectAll(); return; }
             handleSort(event.columnIndex);
         }};
 
@@ -119,7 +119,7 @@ function CRUDControl({ config = {} }) {
                     <TextboxControl control={{ value: searchQuery, placeholder: labels.searchPlaceholder, className: 'crud-search', onChange: handleSearch }} rowData={{}} rowIndex={0} />
                 </div>
                 <div className="crud-toolbar-right">
-                    {(config.onAdd || isAutoAdd) && (
+                    {(config.onAdd || isAutoAdd) && !config.hideAdd && (
                         <ButtonControl control={{ value: '+ ' + labels.addButton, className: 'btn-primary', onClick: () => openAddModal() }} rowData={{}} rowIndex={0} />
                     )}
                 </div>

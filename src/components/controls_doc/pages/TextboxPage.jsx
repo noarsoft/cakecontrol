@@ -1,5 +1,5 @@
 // TextboxPage.jsx - Textbox Control Documentation
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { TextboxControl, FormControl } from '../../controls';
 
 function TextboxPage({ addLog }) {

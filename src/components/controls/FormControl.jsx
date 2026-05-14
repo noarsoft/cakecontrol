@@ -1,5 +1,5 @@
 // FormControl.jsx
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { genControl } from './registry';
 import './FormControl.css';
 
@@ -49,17 +49,14 @@ function FormControl({ config }) {
 
     const handleControlChange = (databind, value) => {
         if (!databind) return;
-        
-        setFormData(prevData => {
-            const newData = { ...prevData };
-            setNestedValue(newData, databind, value);
-            
-            if (config.onChange) {
-                config.onChange({ target: { value: newData } });
-            }
-            
-            return newData;
-        });
+
+        const newData = { ...formData };
+        setNestedValue(newData, databind, value);
+        setFormData(newData);
+
+        if (config.onChange) {
+            config.onChange({ target: { value: newData } });
+        }
     };
 
     const renderControl = (controlConfig, index) => {
@@ -74,7 +71,8 @@ function FormControl({ config }) {
         if (value && typeof value === 'object' && value.databind) {
             value = resolveDataBind(value.databind, formData);
         } else if (controlConfig.databind) {
-            value = resolveDataBind(controlConfig.databind, formData);
+            const bound = resolveDataBind(controlConfig.databind, formData);
+            if (bound !== undefined) value = bound;
         }
 
         // Create control configuration for genControl

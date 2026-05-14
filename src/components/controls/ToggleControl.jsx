@@ -1,5 +1,4 @@
 // ToggleControl.jsx
-import React from 'react';
 import './ToggleControl.css';
 
 function ToggleControl({ control, rowData, rowIndex }) {

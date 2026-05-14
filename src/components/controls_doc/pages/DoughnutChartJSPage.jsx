@@ -1,5 +1,4 @@
 // DoughnutChartJSPage.jsx
-import React from 'react';
 import { DoughnutChartJSControl } from '../../controls';
 
 function DoughnutChartJSPage({ addLog }) {

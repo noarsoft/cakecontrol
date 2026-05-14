@@ -1,12 +1,14 @@
 import { useState, useMemo, useEffect, useCallback, useRef } from 'react';
 
+const EMPTY_ARRAY = [];
+
 export function useCRUDState(config) {
     const {
-        data: dataProp = [],
-        columns = [],
+        data: dataProp = EMPTY_ARRAY,
+        columns = EMPTY_ARRAY,
         keyField,
         pagination,
-        searchFields = [],
+        searchFields = EMPTY_ARRAY,
         selectable = true,
         onAdd, onEdit, onDelete, onBulkDelete,
         onChange, onPageChange, onSearch, onSort,
@@ -99,7 +101,7 @@ export function useCRUDState(config) {
     }, [onSearch]);
 
     const handleSort = useCallback((columnIndex) => {
-        const offset = selectable ? 1 : 0;
+        const offset = (selectable && bulkEditMode) ? 1 : 0;
         const colIdx = columnIndex - offset;
         if (colIdx < 0 || colIdx >= columns.length) return;
         const col = columns[colIdx];
@@ -108,7 +110,7 @@ export function useCRUDState(config) {
         setSortKey(col.key);
         setSortDirection(newDirection);
         if (onSort) onSort(col.key, newDirection);
-    }, [columns, selectable, sortKey, sortDirection, onSort]);
+    }, [columns, selectable, bulkEditMode, sortKey, sortDirection, onSort]);
 
     const handlePageChange = useCallback((page) => {
         if (isClientPagination) setInternalPage(page);

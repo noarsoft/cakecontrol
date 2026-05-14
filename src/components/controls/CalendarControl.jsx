@@ -1,5 +1,5 @@
 // CalendarControl.jsx
-import React, { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import './CalendarControl.css';
 
 function CalendarControl({ control, rowData, rowIndex }) {

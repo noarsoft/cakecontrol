@@ -1,5 +1,4 @@
 // AreaChartJSPage.jsx
-import React from 'react';
 import { AreaChartJSControl } from '../../controls';
 
 function AreaChartJSPage({ addLog }) {

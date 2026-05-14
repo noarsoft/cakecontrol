@@ -1,5 +1,4 @@
 // ButtonControl.jsx
-import React from 'react';
 import './ButtonControl.css';
 
 function ButtonControl({ control, rowData, rowIndex }) {
@@ -11,7 +10,7 @@ function ButtonControl({ control, rowData, rowIndex }) {
     };
 
     // Get button text from databind or value
-    const buttonText = control.databind ? rowData[control.databind] : control.value;
+    const buttonText = (control.databind && rowData[control.databind] !== undefined) ? rowData[control.databind] : control.value;
 
     return (
         <a 

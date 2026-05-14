@@ -5,8 +5,8 @@ import {
 
 describe('schema.js', () => {
     describe('FIELD_TYPES', () => {
-        test('has 7 types', () => {
-            expect(FIELD_TYPES).toHaveLength(7);
+        test('has 45 types', () => {
+            expect(FIELD_TYPES).toHaveLength(45);
         });
 
         test('each type has value, label, icon', () => {
@@ -35,14 +35,16 @@ describe('schema.js', () => {
         test('adds a new field with default type', () => {
             const schema = {};
             const result = addField(schema, 'name');
-            expect(result).toEqual({ name: { type: 'string' } });
+            expect(result.name.type).toBe('string');
+            expect(result.name._order).toBe(1);
         });
 
         test('adds field with custom type and options', () => {
-            const schema = { existing: { type: 'string' } };
+            const schema = { existing: { type: 'string', _order: 1 } };
             const result = addField(schema, 'role', 'select', { enum: ['A', 'B'] });
-            expect(result.role).toEqual({ type: 'select', enum: ['A', 'B'] });
-            expect(result.existing).toEqual({ type: 'string' });
+            expect(result.role.type).toBe('select');
+            expect(result.role.enum).toEqual(['A', 'B']);
+            expect(result.existing.type).toBe('string');
         });
 
         test('does not mutate original', () => {
@@ -98,37 +100,40 @@ describe('schema.js', () => {
 
     describe('moveField', () => {
         const schema = {
-            first: { type: 'string' },
-            second: { type: 'number' },
-            third: { type: 'boolean' },
+            first: { type: 'string', _order: 1 },
+            second: { type: 'number', _order: 2 },
+            third: { type: 'boolean', _order: 3 },
         };
 
         test('moves field up', () => {
             const result = moveField(schema, 'second', 'up');
-            const keys = Object.keys(result);
-            expect(keys).toEqual(['second', 'first', 'third']);
+            const sorted = getFieldEntries(result).map(([k]) => k);
+            expect(sorted).toEqual(['second', 'first', 'third']);
         });
 
         test('moves field down', () => {
             const result = moveField(schema, 'second', 'down');
-            const keys = Object.keys(result);
-            expect(keys).toEqual(['first', 'third', 'second']);
+            const sorted = getFieldEntries(result).map(([k]) => k);
+            expect(sorted).toEqual(['first', 'third', 'second']);
         });
 
         test('does nothing when moving first up', () => {
             const result = moveField(schema, 'first', 'up');
-            expect(Object.keys(result)).toEqual(['first', 'second', 'third']);
+            const sorted = getFieldEntries(result).map(([k]) => k);
+            expect(sorted).toEqual(['first', 'second', 'third']);
         });
 
         test('does nothing when moving last down', () => {
             const result = moveField(schema, 'third', 'down');
-            expect(Object.keys(result)).toEqual(['first', 'second', 'third']);
+            const sorted = getFieldEntries(result).map(([k]) => k);
+            expect(sorted).toEqual(['first', 'second', 'third']);
         });
 
         test('does not mutate original', () => {
-            const original = { a: { type: 'string' }, b: { type: 'number' } };
+            const original = { a: { type: 'string', _order: 1 }, b: { type: 'number', _order: 2 } };
             moveField(original, 'b', 'up');
-            expect(Object.keys(original)).toEqual(['a', 'b']);
+            expect(original.a._order).toBe(1);
+            expect(original.b._order).toBe(2);
         });
     });
 
@@ -157,25 +162,30 @@ describe('schema.js', () => {
 
         test('returns no errors for valid schema', () => {
             const errors = validateSchema({
-                name: { type: 'string' },
-                age: { type: 'number' },
+                name: { type: 'string', label: 'ชื่อ' },
+                age: { type: 'number', label: 'อายุ' },
             });
             expect(errors).toHaveLength(0);
         });
 
         test('detects invalid type', () => {
-            const errors = validateSchema({ x: { type: 'invalid_type' } });
+            const errors = validateSchema({ x: { type: 'invalid_type', label: 'X' } });
             expect(errors.some(e => e.includes('ไม่ถูกต้อง'))).toBe(true);
         });
 
+        test('detects missing label', () => {
+            const errors = validateSchema({ name: { type: 'string' } });
+            expect(errors.some(e => e.includes('Label'))).toBe(true);
+        });
+
         test('detects select without enum', () => {
-            const errors = validateSchema({ role: { type: 'select' } });
+            const errors = validateSchema({ role: { type: 'select', label: 'สิทธิ์' } });
             expect(errors.some(e => e.includes('options'))).toBe(true);
         });
 
         test('select with enum is valid', () => {
             const errors = validateSchema({
-                role: { type: 'select', enum: ['A', 'B'] },
+                role: { type: 'select', label: 'สิทธิ์', enum: ['A', 'B'] },
             });
             expect(errors).toHaveLength(0);
         });

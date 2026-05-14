@@ -1,4 +1,3 @@
-import React from 'react';
 import './TableviewControl.css';
 import { genControl } from './registry';
 import PaginationControl from './PaginationControl';
@@ -18,7 +17,8 @@ function TableviewControl({ config }) {
         summary = '',
         ariaLabel = '',
         schemaType = '',
-        id = ''
+        id = '',
+        onRowClick
     } = config;
 
     const currentPage = pagination?.page || 1;
@@ -77,6 +77,8 @@ function TableviewControl({ config }) {
                             itemProp={schemaType === 'ItemList' ? 'itemListElement' : undefined}
                             itemScope={schemaType === 'ItemList' ? true : false}
                             itemType={schemaType === 'ItemList' ? 'https://schema.org/ListItem' : undefined}
+                            onClick={onRowClick ? () => onRowClick(rowData, rowIndex) : undefined}
+                            style={onRowClick ? { cursor: 'pointer' } : undefined}
                         >
                             {controls.map((control, colIndex) => {
                                 const isRowHeader = colIndex === 0 && control.type === 'label';

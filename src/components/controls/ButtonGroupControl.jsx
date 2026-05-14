@@ -1,5 +1,5 @@
 // ButtonGroupControl.jsx
-import React, { useState } from 'react';
+import { useState } from 'react';
 import ButtonControl from './ButtonControl';
 import './ButtonGroupControl.css';
 

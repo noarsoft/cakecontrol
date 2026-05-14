@@ -50,12 +50,13 @@ describe('mockSchemaService.js', () => {
             expect(found.name).toBe('Find Me');
         });
 
-        test('updateSchema updates fields but protects id/rootid', () => {
+        test('updateSchema creates new version with prev_id', () => {
             const s = createSchema('Original', {});
             const updated = updateSchema(s.rootid, { name: 'Updated', id: 999, rootid: 'hack' });
             expect(updated.name).toBe('Updated');
-            expect(updated.id).toBe(s.id);
-            expect(updated.rootid).toBe(s.rootid);
+            expect(updated.rootid).not.toBe(s.rootid);
+            expect(updated.id).not.toBe(s.id);
+            expect(updated.prev_id).toBe(s.id);
         });
 
         test('deleteSchema soft-deletes', () => {
@@ -76,12 +77,14 @@ describe('mockSchemaService.js', () => {
             expect(views[0].data_schema_id).toBe(schema.id);
         });
 
-        test('updateView protects id/rootid', () => {
+        test('updateView creates new version with prev_id', () => {
             const schema = createSchema('S', {});
             const view = createView(schema.id, 'table', {}, '');
             const updated = updateView(view.rootid, { name: 'New Name', id: 999 });
             expect(updated.name).toBe('New Name');
-            expect(updated.id).toBe(view.id);
+            expect(updated.rootid).not.toBe(view.rootid);
+            expect(updated.id).not.toBe(view.id);
+            expect(updated.prev_id).toBe(view.id);
         });
     });
 
@@ -94,12 +97,13 @@ describe('mockSchemaService.js', () => {
             expect(cfgs[0].json_form_config.colnumbers).toBe(6);
         });
 
-        test('updateFormcfg protects id/rootid', () => {
+        test('updateFormcfg creates new version with prev_id', () => {
             const schema = createSchema('S', {});
             const cfg = createFormcfg(schema.id, {}, '');
             const updated = updateFormcfg(cfg.rootid, { name: 'Updated', rootid: 'hack' });
             expect(updated.name).toBe('Updated');
-            expect(updated.rootid).toBe(cfg.rootid);
+            expect(updated.rootid).not.toBe(cfg.rootid);
+            expect(updated.prev_id).toBe(cfg.id);
         });
     });
 
@@ -134,11 +138,11 @@ describe('mockSchemaService.js', () => {
         test('seeds demo data when empty', () => {
             seedDemoData();
             const schemas = getSchemas();
-            expect(schemas.length).toBeGreaterThanOrEqual(2);
+            expect(schemas.length).toBeGreaterThanOrEqual(1);
         });
 
         test('does not re-seed when data exists', () => {
-            createSchema('Existing', {});
+            seedDemoData();
             const countBefore = getSchemas().length;
             seedDemoData();
             const countAfter = getSchemas().length;
@@ -155,9 +159,10 @@ describe('mockSchemaService.js', () => {
     });
 
     describe('date format', () => {
-        test('modify_datetime follows yyyymmdd_hhmmss format', () => {
+        test('modify_datetime is a 14-digit number (yyyymmddhhmmss)', () => {
             const s = createSchema('Test', {});
-            expect(s.modify_datetime).toMatch(/^\d{8}_\d{6}$/);
+            expect(typeof s.modify_datetime).toBe('number');
+            expect(String(s.modify_datetime)).toMatch(/^\d{14}$/);
         });
     });
 });

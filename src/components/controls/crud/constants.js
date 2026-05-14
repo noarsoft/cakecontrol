@@ -13,7 +13,7 @@ export const DEFAULT_LABELS = {
     confirmBulkDeleteMessage: 'คุณต้องการลบข้อมูลที่เลือกหรือไม่?',
     emptyMessage: 'ไม่มีข้อมูล',
     actionsHeader: '',
-    selectedCount: '���ายการที่เลือก',
+    selectedCount: 'รายการที่เลือก',
     selectAllHeader: '',
     bulkEditButton: 'เลือกรายการ',
     bulkEditCancelButton: 'ยกเลิกเลือก',

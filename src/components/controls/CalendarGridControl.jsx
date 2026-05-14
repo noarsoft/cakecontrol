@@ -1,5 +1,5 @@
 // CalendarGridControl.jsx
-import React, { useState } from 'react';
+import { useState } from 'react';
 import './CalendarGridControl.css';
 
 function CalendarGridControl({ control, rowData, rowIndex }) {

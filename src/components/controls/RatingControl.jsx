@@ -1,5 +1,5 @@
 // RatingControl.jsx
-import React, { useState } from 'react';
+import { useState } from 'react';
 import './RatingControl.css';
 
 function RatingControl({ 

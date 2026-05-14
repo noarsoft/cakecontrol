@@ -1,5 +1,5 @@
 // NumberControl.jsx
-import React, { useRef, useState, useEffect } from 'react';
+import { useRef, useState, useEffect } from 'react';
 import './NumberControl.css';
 
 function NumberControl({ control = {}, rowData, rowIndex }) {

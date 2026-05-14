@@ -1,4 +1,3 @@
-import React from 'react';
 import { IconControl } from '../../controls';
 
 function IconPage({ addLog }) {

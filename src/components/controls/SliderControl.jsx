@@ -1,5 +1,5 @@
 // SliderControl.jsx
-import React, { useState } from 'react';
+import { useState } from 'react';
 import './SliderControl.css';
 
 function SliderControl({ 

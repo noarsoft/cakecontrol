@@ -1,5 +1,4 @@
 // ChartControl.jsx - Chart Control with Pie, Bar, Line, Area, Donut support
-import React from 'react';
 import {
     PieChart, Pie, BarChart, Bar, LineChart, Line, AreaChart, Area,
     XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Cell

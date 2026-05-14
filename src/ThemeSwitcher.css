@@ -1,25 +1,34 @@
 /* ThemeSwitcher.css */
 
+.global-theme-switcher {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    z-index: 9999; /* Highest priority */
+}
+
 .theme-switcher {
     display: inline-flex;
     align-items: center;
     gap: var(--spacing-sm);
     padding: var(--spacing-sm) var(--spacing-md);
-    background-color: var(--bg-tertiary);
+    background-color: var(--bg-primary); /* Use primary for contrast */
     color: var(--text-primary);
     border: 1px solid var(--border-primary);
     border-radius: var(--radius-lg);
     cursor: pointer;
     font-size: 14px;
     font-weight: 500;
-    transition: all 0.2s ease;
+    transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
     font-family: inherit;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
 .theme-switcher:hover {
-    background-color: var(--bg-hover);
-    border-color: var(--border-hover);
-    box-shadow: var(--shadow-sm);
+    background-color: var(--bg-tertiary);
+    border-color: var(--accent-primary);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
+    transform: translateY(-2px);
 }
 
 .theme-switcher:active {

@@ -1,4 +1,3 @@
-import React from 'react';
 import { BadgeControl } from '../../controls';
 
 function BadgePage({ addLog }) {

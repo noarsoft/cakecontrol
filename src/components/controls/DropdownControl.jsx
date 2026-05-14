@@ -1,5 +1,5 @@
 // DropdownControl.jsx
-import React, { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import TableviewControl from './TableviewControl';
 import './DropdownControl.css';
 
@@ -142,7 +142,7 @@ function DropdownControl({ control, rowData, rowIndex }) {
                             setShowDropdown(true);
                         }
                     }}
-                    placeholder={control.placeholder || 'เลือกรายการ...'}
+                    placeholder={control.placeholder || 'เลือกข้อมูล...'}
                     readOnly={!control.searchable}
                 />
                 <div className="dropdown-buttons">

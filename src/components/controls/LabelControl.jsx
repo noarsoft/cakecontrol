@@ -1,8 +1,7 @@
 // LabelControl.jsx
-import React from 'react';
 
 function LabelControl({ control, rowData, rowIndex }) {
-    const labelValue = control.databind ? rowData[control.databind] : control.value;
+    const labelValue = (control.databind && rowData[control.databind] !== undefined) ? rowData[control.databind] : control.value;
     const disabled = control.disabled || false;
     
     if (control.visible === false) return null;

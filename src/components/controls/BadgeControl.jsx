@@ -1,8 +1,7 @@
 // BadgeControl.jsx
-import React from 'react';
 
 function BadgeControl({ control, rowData, rowIndex }) {
-    const badgeValue = control.databind ? rowData[control.databind] : control.value;
+    const badgeValue = (control.databind && rowData[control.databind] !== undefined) ? rowData[control.databind] : control.value;
     const disabled = control.disabled || false;
     
     // Handle backgroundColor as function or value

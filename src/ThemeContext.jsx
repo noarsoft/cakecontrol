@@ -1,5 +1,5 @@
 // ThemeContext.jsx
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import { createContext, useContext, useState, useEffect } from 'react';
 
 const ThemeContext = createContext();
 
@@ -37,11 +37,8 @@ export const ThemeProvider = ({ children }) => {
         setTheme(prev => prev === 'light' ? 'dark' : 'light');
     };
 
-    const setLightTheme = () => setTheme('light');
-    const setDarkTheme = () => setTheme('dark');
-
     return (
-        <ThemeContext.Provider value={{ theme, toggleTheme, setLightTheme, setDarkTheme }}>
+        <ThemeContext.Provider value={{ theme, toggleTheme }}>
             {children}
         </ThemeContext.Provider>
     );

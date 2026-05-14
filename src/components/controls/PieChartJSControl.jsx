@@ -1,4 +1,3 @@
-import React from 'react';
 import { useChartJS, resolveDatabind, extractLabelsAndValues, buildBaseOptions } from './charts/useChartJS';
 import './PieChartJSControl.css';
 

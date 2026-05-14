@@ -1,4 +1,3 @@
-import React from 'react';
 import { useChartJS, resolveDatabind, buildBaseOptions } from './charts/useChartJS';
 import './MixedChartJSControl.css';
 

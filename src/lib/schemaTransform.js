@@ -2,24 +2,144 @@
  * schemaTransform.js — Bridge schema → existing control configs
  * แปลง data_schema, data_view, data_formcfg → CRUDControl / FormControl config
  */
+import { createElement } from 'react';
 
 /**
- * แปลง schema field def → control type ที่ genControl รู้จัก
- * ใช้ controlType ตรง ๆ ถ้ามี, fallback ไปเดาจาก type
+ * แปลง schema field type → control type ที่ genControl รู้จัก
  */
-const FIELD_TYPE_FALLBACK = {
-    string: 'textbox',
-    number: 'number',
-    boolean: 'toggle',
-    date: 'date',
-    email: 'textbox',
-    file: 'textbox',
-    select: 'select',
+function normalizeEnumOptions(enumArr) {
+    if (!enumArr) return [];
+    return enumArr.map(v => typeof v === 'object' ? { label: v.label, value: v.value } : { label: v, value: v });
+}
+
+const DISPLAY_DEFAULTS = {
+    label: { value: 'ตัวอย่างข้อความ' },
+    link: { value: 'ตัวอย่างลิงก์', href: '#' },
+    image: { value: 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="200" height="120"%3E%3Crect fill="%23e2e8f0" width="200" height="120" rx="8"/%3E%3Ctext x="100" y="65" text-anchor="middle" fill="%2394a3b8" font-size="14"%3ESample Image%3C/text%3E%3C/svg%3E', width: '200px', height: '120px' },
+    badge: { value: 'Badge' },
+    icon: { value: '⭐' },
+    button: { value: 'Button' },
+    progress: { value: 50 },
+    qrcode: { value: 'https://example.com' },
 };
 
-function fieldTypeToControlType(fieldType, fieldDef) {
-    if (fieldDef?.controlType) return fieldDef.controlType;
-    return FIELD_TYPE_FALLBACK[fieldType] || 'textbox';
+function getDisplayProps(fieldType, fieldDef) {
+    const defaults = DISPLAY_DEFAULTS[fieldType];
+    if (!defaults) return {};
+    const props = { ...defaults };
+    for (const key of Object.keys(props)) {
+        if (fieldDef[key] !== undefined) props[key] = fieldDef[key];
+    }
+    return props;
+}
+
+const CHART_PROPS = ['chartType', 'title', 'xAxisKey', 'yAxisKey', 'nameKey', 'dataKey', 'showLegend', 'showGrid', 'colors'];
+
+const PASSTHROUGH_PROPS = {
+    string: ['placeholder', 'maxLength', 'rows'],
+    number: ['min', 'max', 'step', 'placeholder'],
+    email: ['placeholder'],
+    password: ['showStrength', 'minLength', 'maxLength', 'placeholder'],
+    slider: ['min', 'max', 'step', 'unit', 'showValue'],
+    rating: ['max', 'allowHalf'],
+    progress: ['showValue', 'color', 'value'],
+    searchbox: ['multiple', 'allowCreate', 'placeholder'],
+    qrcode: ['width', 'height', 'value'],
+    image: ['width', 'height', 'borderRadius', 'objectFit', 'shadow'],
+    boolean: [],
+    toggle: [],
+    label: ['value', 'bold', 'italic', 'fontSize'],
+    link: ['value', 'href', 'target'],
+    badge: ['value', 'backgroundColor'],
+    icon: ['value', 'fontSize'],
+    button: ['value'],
+    buttongroup: ['orientation'],
+    calendar: ['placeholder'],
+    chart: CHART_PROPS,
+    barchart: CHART_PROPS,
+    linechart: [...CHART_PROPS, 'curved'],
+    piechart: CHART_PROPS,
+    doughnutchart: [...CHART_PROPS, 'innerRadius'],
+    radarchart: CHART_PROPS,
+    areachart: [...CHART_PROPS, 'fillOpacity'],
+    bubblechart: CHART_PROPS,
+    mixedchart: CHART_PROPS,
+};
+
+function getFieldProps(fieldType, fieldDef) {
+    const keys = PASSTHROUGH_PROPS[fieldType];
+    if (!keys) return {};
+    const props = {};
+    for (const k of keys) {
+        if (fieldDef[k] !== undefined) props[k] = fieldDef[k];
+    }
+    return props;
+}
+
+function sortedEntries(schemaJson) {
+    return Object.entries(schemaJson || {}).sort(([keyA, a], [keyB, b]) => {
+        const orderDiff = (a._order || 0) - (b._order || 0);
+        if (orderDiff !== 0) return orderDiff;
+        const numA = parseInt(keyA.match(/(\d+)/)?.[1] || '0', 10);
+        const numB = parseInt(keyB.match(/(\d+)/)?.[1] || '0', 10);
+        if (numA !== numB) return numA - numB;
+        return keyA.localeCompare(keyB);
+    });
+}
+
+function fieldTypeToControlType(fieldType) {
+    const map = {
+        // Input
+        string: 'textbox',
+        number: 'number',
+        password: 'password',
+        email: 'textbox',
+        select: 'select',
+        boolean: 'checkbox',
+        toggle: 'toggle',
+        date: 'date',
+        datepicker: 'datepicker',
+        slider: 'slider',
+        rating: 'rating',
+        file: 'textbox',
+        searchbox: 'searchbox',
+        multipleupload: 'multipleupload',
+        // Display
+        label: 'label',
+        link: 'link',
+        image: 'image',
+        badge: 'badge',
+        icon: 'icon',
+        progress: 'progress',
+        qrcode: 'qrcode',
+        calendar: 'calendar',
+        calendargrid: 'calendargrid',
+        button: 'button',
+        buttongroup: 'buttongroup',
+        // Layout
+        accordion: 'accordion',
+        tab: 'tab',
+        card: 'card',
+        tree: 'tree',
+        menu: 'menu',
+        gridview: 'gridview',
+        tableview: 'tableview',
+        form: 'form',
+        crud: 'crud',
+        modal: 'modal',
+        pagination: 'pagination',
+        // Charts
+        chart: 'chart',
+        barchart: 'bar',
+        linechart: 'line',
+        piechart: 'pie',
+        doughnutchart: 'doughnut',
+        radarchart: 'radar',
+        areachart: 'area',
+        bubblechart: 'bubble',
+        mixedchart: 'mixed',
+    };
+    return map[fieldType] || 'textbox';
 }
 
 /**
@@ -27,19 +147,52 @@ function fieldTypeToControlType(fieldType, fieldDef) {
  * ถ้าไม่มี data_view ก็ auto-generate จาก schema
  */
 export function schemaToColumnsConfig(schemaJson, viewJson = null) {
+    let columns;
     if (viewJson && viewJson.columns && viewJson.columns.length > 0) {
-        return viewJson.columns;
+        columns = viewJson.columns;
+    } else {
+        columns = sortedEntries(schemaJson)
+            .filter(([, def]) => def.type !== 'pagebreak')
+            .map(([key, def]) => {
+                const col = { key, header: def.label || key, sortable: true, width: 'auto' };
+                if (def.type === 'boolean') col.type = 'badge';
+                return col;
+            });
     }
-    return Object.entries(schemaJson || {}).map(([key, def]) => ({
-        key,
-        header: def.label || key,
-        sortable: true,
-        width: 'auto',
-        type: def.controlType === 'badge' ? 'badge'
-            : def.controlType === 'toggle' ? 'badge'
-            : def.type === 'boolean' ? 'badge'
-            : undefined,
-    }));
+
+    return columns.map(col => {
+        const fieldDef = (schemaJson || {})[col.key];
+        if (fieldDef && (fieldDef.type === 'boolean' || fieldDef.type === 'toggle')) {
+            return {
+                ...col,
+                type: 'custom',
+                controlProps: {
+                    render: (rowData) => {
+                        const val = rowData[col.key];
+                        const isTrue = val === true || val === 'true';
+                        return createElement('span', {
+                            className: `bool-badge bool-badge--${isTrue ? 'true' : 'false'}`,
+                        }, isTrue ? 'true' : 'false');
+                    },
+                },
+            };
+        }
+        if (fieldDef && fieldDef.type === 'select' && fieldDef.enum) {
+            const opts = normalizeEnumOptions(fieldDef.enum);
+            const enumMap = Object.fromEntries(opts.map(o => [String(o.value), o.label]));
+            return {
+                ...col,
+                type: 'custom',
+                controlProps: {
+                    render: (rowData) => {
+                        const val = rowData[col.key];
+                        return enumMap[String(val)] ?? val;
+                    },
+                },
+            };
+        }
+        return col;
+    });
 }
 
 /**
@@ -50,39 +203,47 @@ export function schemaToFormConfig(schemaJson, formcfgJson = null) {
     const colnumbers = formcfgJson?.colnumbers || 6;
 
     if (formcfgJson && formcfgJson.controls && formcfgJson.controls.length > 0) {
+        // Map formcfg controls → FormControl controls with correct type
         return {
             colnumbers,
             controls: formcfgJson.controls.map(ctrl => {
                 const fieldDef = schemaJson[ctrl.key] || { type: 'string' };
                 return {
-                    type: fieldTypeToControlType(fieldDef.type, fieldDef),
+                    type: fieldTypeToControlType(fieldDef.type),
                     databind: ctrl.key,
                     label: ctrl.label || ctrl.key,
                     colno: ctrl.colno || 1,
                     rowno: ctrl.rowno,
                     colspan: ctrl.colspan || colnumbers,
                     placeholder: ctrl.placeholder || '',
-                    ...(fieldDef.enum ? {
-                        options: fieldDef.enum.map(v => ({ label: v, value: v })),
+                    ...(fieldDef.type === 'select' && fieldDef.enum ? {
+                        options: normalizeEnumOptions(fieldDef.enum),
                     } : {}),
                     ...(fieldDef.type === 'email' ? { inputType: 'email' } : {}),
+                    ...getDisplayProps(fieldDef.type, fieldDef),
+                    ...getFieldProps(fieldDef.type, fieldDef),
                 };
             }),
         };
     }
 
-    const controls = Object.entries(schemaJson || {}).map(([key, def], idx) => ({
-        type: fieldTypeToControlType(def.type, def),
-        databind: key,
-        label: def.label || key,
-        colno: 1,
-        rowno: idx + 1,
-        colspan: colnumbers,
-        ...(def.enum ? {
-            options: def.enum.map(v => ({ label: v, value: v })),
-        } : {}),
-        ...(def.type === 'email' ? { inputType: 'email' } : {}),
-    }));
+    // Auto-generate: 1 field ต่อ 1 row, full width (skip pagebreak)
+    const controls = sortedEntries(schemaJson)
+        .filter(([, def]) => def.type !== 'pagebreak')
+        .map(([key, def], idx) => ({
+            type: fieldTypeToControlType(def.type),
+            databind: key,
+            label: def.label || key,
+            colno: 1,
+            rowno: idx + 1,
+            colspan: colnumbers,
+            ...(def.type === 'select' && def.enum ? {
+                options: normalizeEnumOptions(def.enum),
+            } : {}),
+            ...(def.type === 'email' ? { inputType: 'email' } : {}),
+            ...getDisplayProps(def.type, def),
+            ...getFieldProps(def.type, def),
+        }));
 
     return { colnumbers, controls };
 }
@@ -109,15 +270,36 @@ export function buildCrudConfig({ schemaJson, viewJson, formcfgJson, data, keyFi
 /**
  * สร้าง default data_view JSON จาก schema
  */
+/**
+ * สร้าง pages array จาก schema โดยแบ่งตาม pagebreak fields
+ * คืน array ของ { label, fieldKeys } แต่ละ page
+ */
+export function getSchemaPages(schemaJson) {
+    const entries = sortedEntries(schemaJson);
+    const pages = [];
+    let current = { label: null, fieldKeys: [] };
+
+    for (const [key, def] of entries) {
+        if (def.type === 'pagebreak') {
+            if (current.fieldKeys.length > 0) pages.push(current);
+            current = { label: def.label || null, fieldKeys: [] };
+        } else {
+            current.fieldKeys.push(key);
+        }
+    }
+    if (current.fieldKeys.length > 0) pages.push(current);
+    return pages;
+}
+
 export function generateDefaultView(schemaJson) {
     return {
-        columns: Object.entries(schemaJson || {}).map(([key, def]) => ({
-            key,
-            header: key,
-            width: 'auto',
-            sortable: true,
-            type: def.type === 'boolean' ? 'badge' : undefined,
-        })),
+        columns: sortedEntries(schemaJson)
+            .filter(([, def]) => def.type !== 'pagebreak')
+            .map(([key, def]) => {
+                const col = { key, header: def.label || key, width: 'auto', sortable: true };
+                if (def.type === 'boolean') col.type = 'badge';
+                return col;
+            }),
     };
 }
 
@@ -127,13 +309,15 @@ export function generateDefaultView(schemaJson) {
 export function generateDefaultFormcfg(schemaJson, colnumbers = 6) {
     return {
         colnumbers,
-        controls: Object.entries(schemaJson || {}).map(([key, def], idx) => ({
-            key,
-            label: def.label || key,
-            colno: 1,
-            rowno: idx + 1,
-            colspan: colnumbers,
-            placeholder: '',
-        })),
+        controls: sortedEntries(schemaJson)
+            .filter(([, def]) => def.type !== 'pagebreak')
+            .map(([key, def], idx) => ({
+                key,
+                label: def.label || key,
+                colno: 1,
+                rowno: idx + 1,
+                colspan: colnumbers,
+                placeholder: '',
+            })),
     };
 }

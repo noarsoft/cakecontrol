@@ -1,5 +1,5 @@
 // CheckboxControl.jsx
-import React, { useState } from 'react';
+import { useState } from 'react';
 import './CheckboxControl.css';
 
 function CheckboxControl({ control, rowData, rowIndex }) {
