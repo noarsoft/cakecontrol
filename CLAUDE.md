@@ -2,12 +2,15 @@
 
 ## Overview
 
-React 19 + Vite 7 UI Component Library for dynamic form building.
+React 19 + Vite 7 dynamic form builder.
 Web app for **creating forms and managing data** (like Google Forms with CRUD tables).
 
-- 40+ custom UI controls (no MUI/Ant)
+- 47 custom UI controls (no MUI/Ant)
 - Light/Dark theme via CSS variables
-- No auth — free to use
+- Config panels for all control types in form designer
+- Multi-page form support (pagebreak)
+- Share page for public form filling
+- Excel export
 
 ### Tech Stack
 
@@ -29,7 +32,7 @@ npm install
 npm run dev          # http://localhost:5173
 ```
 
-Go to `/formbuilder` — data stored in localStorage, sidebar shows `localStorage`
+Go to `/dashboard` — data stored in localStorage
 
 ### Full Stack (Frontend + Backend)
 
@@ -41,35 +44,41 @@ cd rootid && npm install && npm run prisma:migrate && npm run dev  # port 3002
 cd cakecontrol && npm run dev  # port 5173
 ```
 
-Sidebar shows `API` — data stored in PostgreSQL
-
 ---
 
 ## Project Structure
 
 ```
 src/
-├── Apis/              # API service layer
-├── config/            # api.config.js
+├── contexts/          # ToastContext (global toast notifications)
 ├── forms/             # FormBuilder, TemplateManager, ControlDesignerModal
-│   ├── FormBuilder.jsx        # Main page (sidebar + 5 modes)
-│   ├── TemplateManager.jsx    # Template list (default mode)
-│   ├── ControlDesignerModal.jsx # Modal for designing fields
-│   ├── SchemaBuilder.jsx      # Raw schema editor
+│   ├── FormBuilder.jsx        # Main page (topbar + 4 modes)
+│   ├── Dashboard.jsx          # Dashboard — form list + summary cards
+│   ├── TemplateManager.jsx    # Template list table
+│   ├── ControlDesignerModal.jsx # Modal for designing fields + config
+│   ├── SchemaBuilder.jsx      # Raw schema editor with config side panel
+│   ├── FormFiller.jsx         # Fill form (Google Forms style, multi-page)
 │   ├── FormFillerPage.jsx     # Standalone /form/:schemaId
-│   └── Dashboard.jsx          # Dashboard page
+│   ├── FormPreview.jsx        # Preview form rendering
+│   ├── BusinessSelector.jsx   # Business/tenant selector (landing page)
+│   └── SchemaNameInput.jsx    # Inline schema name editor
 ├── lib/               # Business logic
-│   ├── schema.js              # Schema utilities
+│   ├── schema.js              # Schema utilities + FIELD_TYPES
 │   ├── schemaTransform.js     # schema → CRUDControl/FormControl config
 │   ├── schemaService.js       # Unified service (auto-detect backend)
 │   ├── apiSchemaService.js    # REST API client (lazy loaded)
 │   ├── mockSchemaService.js   # localStorage fallback
 │   └── __tests__/             # 5 suites, 92 tests
 ├── components/
-│   ├── controls/      # 40+ UI controls + CRUDControl + ModalControl
+│   ├── controls/      # 47 UI controls + CRUDControl + ModalControl
 │   │   ├── index.js   # Central export for all controls
+│   │   ├── registry.jsx # genControl() factory + lazy loading
+│   │   ├── crud/      # CRUDControl extracted logic (constants, useCRUDState)
+│   │   ├── charts/    # useChartJS shared hook
 │   │   └── *.jsx/css  # Each control has jsx+css pair
 │   └── controls_doc/  # Documentation + demo pages
+│       ├── pageRegistry.js  # Lazy-loaded page registry
+│       └── pages/     # Individual control demo pages
 ├── ThemeContext.jsx    # Theme provider
 ├── theme.css          # 40+ CSS custom properties
 ├── App.jsx            # Router
@@ -82,36 +91,36 @@ src/
 
 | Path | Component | Description |
 |------|-----------|-------------|
-| `/` | Login | Login page |
-| `/dashboard` | Dashboard | Dashboard + sidebar nav |
-| `/formbuilder` | FormBuilder | Create/manage forms (default: Template Manager) |
-| `/form/:schemaId` | FormFillerPage | Standalone fill page |
-| `/controls` | ControlsDocs | Documentation for all controls |
+| `/` | BusinessSelector | Landing page / tenant selector |
+| `/dashboard` | Dashboard | Form list + summary stats |
+| `/formbuilder` | FormBuilder | Create/manage forms + data |
+| `/form/:schemaId` | FormFillerPage | Public share page for filling forms |
+| `/controls-docs` | ControlsDocs | Control documentation + demos |
 
 ---
 
 ## Page Layout
 
+FormBuilder is the main workspace with a topbar and 4 modes:
+
 ```
-+---------------+----------------------------------------------+
-|  Sidebar      |  Main Content (changes by mode)              |
-|               |                                              |
-|  Manage       |  MODE 0: Template Manager (default)          |
-|  Templates    |  All templates [Search...] [+ Create]        |
-|  ---------    |  +----------+-------+--------+--------+      |
-|  All Forms    |  | Name     | Fields| Date   | Manage |      |
-|  ---------    |  | Employee | 5     | 04/26  | ...    |      |
-|  > Employee   |  +----------+-------+--------+--------+      |
-|    Product    |                                              |
-|               |  MODE 1: Data Manager (click "Manage Form")  |
-|               |  CRUDControl: table + add/edit/delete        |
-|               |                                              |
-|               |  MODE 2: Form Builder (click edit form)      |
-|               |  ControlDesignerModal: define fields          |
-|               |                                              |
-|               |  MODE 3: Preview (click Preview)             |
-|               |  FormControl rendered from config             |
-+---------------+----------------------------------------------+
++------------------------------------------------------------------+
+|  ← Dashboard  |  [Form Name]  | ข้อมูล | แก้ไขฟอร์ม | เพิ่มข้อมูล | แชร์ |  ลบ  |
++------------------------------------------------------------------+
+|                                                                    |
+|  MODE: ข้อมูล (Data)                                               |
+|  CRUDControl: table + search + add/edit/delete + Export Excel      |
+|                                                                    |
+|  MODE: แก้ไขฟอร์ม (Edit Form)                                      |
+|  ControlDesignerModal: define fields + config per control type     |
+|                                                                    |
+|  MODE: เพิ่มข้อมูล (Fill)                                           |
+|  FormFiller: Google Forms style, multi-page with pagebreak         |
+|                                                                    |
+|  MODE: แชร์ (Share)                                                |
+|  Copy share link → /form/:schemaId                                 |
+|                                                                    |
++------------------------------------------------------------------+
 ```
 
 ---
@@ -120,17 +129,21 @@ src/
 
 | Feature | Status |
 |---------|--------|
-| 40+ UI Controls | Done |
+| 47 UI Controls (input + display + chart + layout) | Done |
 | CRUDControl (composite) | Done |
 | ModalControl | Done |
 | Theme Light/Dark | Done |
 | Controls Docs + Demo pages | Done |
-| Form Builder (FE) | Done |
+| Form Builder | Done |
 | Template Manager | Done |
-| Control Designer Modal | Done |
+| Control Designer Modal + config panels | Done |
+| Multi-page forms (pagebreak) | Done |
+| Share page (/form/:schemaId) | Done |
+| Excel export | Done |
+| Dashboard (form list + summary) | Done |
 | Backend (rootid) | Done |
 | FE-BE Integration | Done |
-| Dashboard page | Empty — not implemented |
+| Toast notifications | Done |
 
 ---
 
@@ -144,15 +157,28 @@ Every control follows the same pattern:
 4. **Export**: `export default` then add to `controls/index.js`
 5. **Data binding**: `rowData[control.databind]` or `control.value`
 6. **Events**: callback pattern e.g. `control.onClick(e, rowData, rowIndex)`
-7. **genControl()**: factory function in `TableviewControl.jsx`
+7. **genControl()**: factory function in `registry.jsx` (lazy loading pattern)
 
 ### Adding a New Control
 
 1. Create `XxxControl.jsx` + `XxxControl.css` in `src/components/controls/`
 2. Add export in `controls/index.js`
-3. (table) Add case in `genControl()` at `TableviewControl.jsx`
+3. Add case in `genControl()` at `registry.jsx`
 4. Create demo page `XxxPage.jsx` in `controls_doc/pages/`
-5. Register in `ControlsDocs.jsx`
+5. Register in `pageRegistry.js`
+
+---
+
+## ControlDesignerModal
+
+Modal for form creators to design fields. Each control row has:
+- **Label** — display name
+- **Databind** — field key in data
+- **Type** — control type selector (40+ types: input, display, chart, layout)
+- **Config panel** — type-specific settings (e.g. placeholder, min/max, chart axes, image URL)
+- **Options panel** — for dropdown/buttongroup (key/value pairs + default)
+
+Config values are stored in `data_schema.json` and passed through via `schemaTransform.js` PASSTHROUGH_PROPS.
 
 ---
 
@@ -170,28 +196,18 @@ Composite control for CRUD data management:
 
 ## Form Builder
 
-### Modes
-
-| Mode | Component | Description |
-|------|-----------|-------------|
-| `templates` | TemplateManager | All templates table (default) |
-| `data` | CRUDControl | Manage data for a schema |
-| `builder` | SchemaBuilder | Edit fields (raw) |
-| `fill` | FormFiller | Fill form (Google Forms style) |
-| `preview` | FormPreview | Preview form |
-
 ### Data Flow
 
 ```
-TemplateManager → ControlDesignerModal → Save
+Dashboard → FormBuilder → ControlDesignerModal → Save
     ↓
-data_schema (format: name=string, age=number)
+data_schema (JSON: { name: {type:"string"}, age: {type:"number"}, ...})
     ↓ auto-generate
 view (json_table_config) + form (json_form_config)
-    ↓ transform
-CRUDControl (table + modal) + FormControl
+    ↓ schemaTransform.js
+CRUDControl (table + modal) + FormControl (form grid)
     ↓
-data (actual records)
+data (actual records as JSON)
 ```
 
 ### Service Layer — Auto-Detect Backend
@@ -205,23 +221,17 @@ API signatures are identical — calling code doesn't need to know the data sour
 ### Transform Layer
 
 `schemaTransform.js`:
-- `schemaToFormConfig()` → FormControl config
+- `schemaToFormConfig()` → FormControl config (with PASSTHROUGH_PROPS per type)
 - `schemaToColumnsConfig()` → TableviewControl columns
 - `buildCrudConfig()` → CRUDControl config ready to use
 - `generateDefaultView()` / `generateDefaultFormcfg()` → auto-generate config
+- `getSchemaPages()` → split schema by pagebreak fields into pages
 
 ---
 
 ## Theme System
 
 Light/Dark theme via CSS custom properties (40+ variables)
-
-### Usage
-
-```jsx
-const { theme, toggleTheme } = useTheme();
-// ThemeSwitcher component — in Dashboard navbar + ControlsDocs sidebar
-```
 
 ### Key CSS Variables
 
@@ -238,13 +248,8 @@ const { theme, toggleTheme } = useTheme();
 
 ### Dark Mode
 
-`data-theme="dark"` on `<html>` — all variables switch automatically
-
-### Auto Detection
-
-1. Check localStorage
-2. Check system `prefers-color-scheme`
-3. Default: light
+`data-theme="dark"` on `<html>` — all variables switch automatically.
+Auto-detection: localStorage → system `prefers-color-scheme` → default light.
 
 ### Creating New Controls — always use theme variables
 
@@ -276,13 +281,6 @@ npm run test:coverage # Coverage report
 | benchmarkCalc | ~15 | benchmark calculations, chart data |
 
 Jest 30 + jsdom, CSS mock: identity-obj-proxy, localStorage: in-memory
-
----
-
-## Known Issues
-
-- **Dashboard route missing**: Login navigates to `/dashboard` but route doesn't exist
-- **Dashboard.jsx empty**: Not implemented yet
 
 ---
 
