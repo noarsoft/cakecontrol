@@ -18,7 +18,7 @@ Web app for **creating forms and managing data** (like Google Forms with CRUD ta
 - Jest 30 + Testing Library (92 tests)
 - Chart.js 4 + Recharts 2
 - Axios, CSS variables (no CSS-in-JS)
-- Backend API: `http://localhost:3002` (rootid repo) — auto-detect, fallback to localStorage
+- Backend API: `http://localhost:3000` (rootidx repo) — auto-detect, fallback to localStorage
 
 ---
 
@@ -38,7 +38,7 @@ Go to `/dashboard` — data stored in localStorage
 
 ```bash
 # Terminal 1 — Backend
-cd rootid && npm install && npm run prisma:migrate && npm run dev  # port 3002
+cd rootidx && npm install && npm run dev  # port 3000
 
 # Terminal 2 — Frontend
 cd cakecontrol && npm run dev  # port 5173
@@ -289,5 +289,5 @@ Jest 30 + jsdom, CSS mock: identity-obj-proxy, localStorage: in-memory
 - Controls: PascalCase + `Control` suffix
 - CSS classes: kebab-case
 - Demo pages: `XxxPage.jsx`
-- Backend API: suffix `x` e.g. `schemax`, `viewx`
+- Backend API: rootidx routes e.g. `/schema`, `/view`, `/form`, `/data`, `/business`
 - UI uses Thai language for labels

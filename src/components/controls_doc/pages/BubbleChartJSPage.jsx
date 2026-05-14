@@ -1,4 +1,5 @@
 // BubbleChartJSPage.jsx
+import React from 'react';
 import { BubbleChartJSControl } from '../../controls';
 
 function BubbleChartJSPage({ addLog }) {

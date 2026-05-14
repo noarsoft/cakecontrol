@@ -1,8 +1,16 @@
 /**
- * apiSchemaService.js — API-based CRUD สำหรับ 4 tables
- * ใช้แทน mockSchemaService เมื่อมี backend
+ * apiSchemaService.js — API-based CRUD for rootidx backend
+ *
+ * rootidx API conventions:
+ * - Response: { ok: true, data: ... }
+ * - Versioned objects use _rootid (not rootid)
+ * - All JSON data stored in `payload` column
+ * - Routes: /business, /schema, /view, /form, /data
+ * - Get latest: GET /root/:rootid/latest
+ * - Update: PATCH /root/:rootid
+ * - Delete: DELETE /root/:rootid
  */
-const BASE = 'http://localhost:3002/api';
+const BASE = 'http://localhost:3000/api';
 
 async function request(path, options = {}) {
     const res = await fetch(`${BASE}${path}`, {
@@ -10,131 +18,207 @@ async function request(path, options = {}) {
         ...options,
     });
     const json = await res.json();
-    if (!json.success) throw new Error(json.error || 'API Error');
+    if (!json.ok) throw new Error(json.error?.message || 'API Error');
     return json.data;
+}
+
+function mapBase(row) {
+    if (!row) return row;
+    return { ...row, rootid: row._rootid, modify_datetime: row._modify_datetime };
+}
+
+function mapSchemaRow(row) {
+    if (!row) return row;
+    return { ...mapBase(row), json: row.payload };
+}
+
+function mapBusinessRow(row) {
+    return mapBase(row);
+}
+
+function mapViewRow(row) {
+    if (!row) return row;
+    return { ...mapBase(row), json_table_config: row.payload };
+}
+
+function mapFormcfgRow(row) {
+    if (!row) return row;
+    return { ...mapBase(row), json_form_config: row.payload };
+}
+
+function mapDataRow(row) {
+    if (!row) return row;
+    return { ...mapBase(row), data: row.payload };
 }
 
 // ─── business ───
 
 export async function getBusinesses() {
-    return request('/businessx');
+    const rows = await request('/business');
+    return rows.map(mapBusinessRow);
 }
 
 export async function getBusinessById(rootid) {
-    return request(`/businessx/${rootid}`);
+    const row = await request(`/business/root/${rootid}/latest`);
+    return mapBusinessRow(row);
 }
 
 export async function createBusiness(name, icon = null) {
-    return request('/businessx', {
+    const row = await request('/business', {
         method: 'POST',
         body: JSON.stringify({ name, icon }),
     });
+    return mapBusinessRow(row);
 }
 
 export async function updateBusiness(rootid, updates) {
-    return request(`/businessx/${rootid}`, {
-        method: 'PUT',
+    const row = await request(`/business/root/${rootid}`, {
+        method: 'PATCH',
         body: JSON.stringify(updates),
     });
+    return mapBusinessRow(row);
 }
 
 export async function deleteBusiness(rootid) {
-    return request(`/businessx/${rootid}`, { method: 'DELETE' });
+    const row = await request(`/business/root/${rootid}`, { method: 'DELETE' });
+    return mapBusinessRow(row);
 }
 
 // ─── data_schema ───
 
 export async function getSchemas(businessId = null) {
-    const url = businessId ? `/schemax?business_id=${businessId}` : '/schemax';
-    return request(url);
+    const url = businessId ? `/schema?business_id=${businessId}` : '/schema';
+    const rows = await request(url);
+    return rows.map(mapSchemaRow);
 }
 
 export async function getSchemaById(rootid) {
-    return request(`/schemax/${rootid}`);
+    const row = await request(`/schema/root/${rootid}/latest`);
+    return mapSchemaRow(row);
 }
 
 export async function createSchema(name, json = {}, business_id = null) {
-    return request('/schemax', {
+    const row = await request('/schema', {
         method: 'POST',
-        body: JSON.stringify({ name, json, business_id: business_id ? Number(business_id) : null }),
+        body: JSON.stringify({
+            name,
+            payload: json,
+            business_id: business_id ? Number(business_id) : null,
+        }),
     });
+    return mapSchemaRow(row);
 }
 
 export async function updateSchema(rootid, updates) {
-    return request(`/schemax/${rootid}`, {
-        method: 'PUT',
-        body: JSON.stringify(updates),
+    const body = {};
+    if (updates.name !== undefined) body.name = updates.name;
+    if (updates.json !== undefined) body.payload = updates.json;
+    if (updates.payload !== undefined) body.payload = updates.payload;
+
+    const row = await request(`/schema/root/${rootid}`, {
+        method: 'PATCH',
+        body: JSON.stringify(body),
     });
+    return mapSchemaRow(row);
 }
 
 export async function deleteSchema(rootid) {
-    return request(`/schemax/${rootid}`, { method: 'DELETE' });
+    const row = await request(`/schema/root/${rootid}`, { method: 'DELETE' });
+    return mapSchemaRow(row);
 }
 
 // ─── view ───
 
 export async function getViewsBySchema(schemaId) {
-    return request(`/viewx?data_schema_id=${schemaId}`);
+    const rows = await request(`/view/schema/${schemaId}`);
+    return rows.map(mapViewRow);
 }
 
 export async function createView(schemaId, viewType, json_table_config, name = '') {
-    return request('/viewx', {
+    const row = await request('/view', {
         method: 'POST',
-        body: JSON.stringify({ data_schema_id: schemaId, view_type: viewType, json_table_config, name }),
+        body: JSON.stringify({
+            data_schema_id: schemaId,
+            payload: json_table_config,
+            name,
+        }),
     });
+    return mapViewRow(row);
 }
 
 export async function updateView(rootid, updates) {
-    return request(`/viewx/${rootid}`, {
-        method: 'PUT',
-        body: JSON.stringify(updates),
+    const body = {};
+    if (updates.json_table_config !== undefined) body.payload = updates.json_table_config;
+    if (updates.payload !== undefined) body.payload = updates.payload;
+    if (updates.name !== undefined) body.name = updates.name;
+
+    const row = await request(`/view/root/${rootid}`, {
+        method: 'PATCH',
+        body: JSON.stringify(body),
     });
+    return mapViewRow(row);
 }
 
 // ─── form (config) ───
 
 export async function getFormcfgsBySchema(schemaId) {
-    return request(`/formcfgx?data_id=${schemaId}`);
+    const rows = await request(`/form/schema/${schemaId}`);
+    return rows.map(mapFormcfgRow);
 }
 
 export async function createFormcfg(schemaId, json_form_config, name = '') {
-    return request('/formcfgx', {
+    const row = await request('/form', {
         method: 'POST',
-        body: JSON.stringify({ data_id: schemaId, json_form_config, name }),
+        body: JSON.stringify({
+            data_schema_id: schemaId,
+            payload: json_form_config,
+            name,
+        }),
     });
+    return mapFormcfgRow(row);
 }
 
 export async function updateFormcfg(rootid, updates) {
-    return request(`/formcfgx/${rootid}`, {
-        method: 'PUT',
-        body: JSON.stringify(updates),
+    const body = {};
+    if (updates.json_form_config !== undefined) body.payload = updates.json_form_config;
+    if (updates.payload !== undefined) body.payload = updates.payload;
+    if (updates.name !== undefined) body.name = updates.name;
+
+    const row = await request(`/form/root/${rootid}`, {
+        method: 'PATCH',
+        body: JSON.stringify(body),
     });
+    return mapFormcfgRow(row);
 }
 
-// ─── data (ข้อมูลจริง) ───
+// ─── data ───
 
 export async function getFormDataBySchema(schemaId) {
-    return request(`/formx?data_schema_id=${schemaId}`);
+    const rows = await request(`/data/schema/${schemaId}`);
+    return rows.map(mapDataRow);
 }
 
 export async function createFormData(schemaId, data) {
-    return request('/formx', {
+    const row = await request('/data', {
         method: 'POST',
-        body: JSON.stringify({ data_schema_id: schemaId, data }),
+        body: JSON.stringify({ data_schema_id: schemaId, payload: data }),
     });
+    return mapDataRow(row);
 }
 
 export async function updateFormData(rootid, data) {
-    return request(`/formx/${rootid}`, {
-        method: 'PUT',
-        body: JSON.stringify({ data }),
+    const row = await request(`/data/root/${rootid}`, {
+        method: 'PATCH',
+        body: JSON.stringify({ payload: data }),
     });
+    return mapDataRow(row);
 }
 
 export async function deleteFormData(rootid) {
-    return request(`/formx/${rootid}`, { method: 'DELETE' });
+    const row = await request(`/data/root/${rootid}`, { method: 'DELETE' });
+    return mapDataRow(row);
 }
 
 export async function seedDemoData() {
-    // Server handles its own seeding
+    // rootidx handles its own seeding
 }

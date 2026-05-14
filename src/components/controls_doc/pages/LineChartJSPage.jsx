@@ -1,4 +1,5 @@
 // LineChartJSPage.jsx
+import React from 'react';
 import { LineChartJSControl } from '../../controls';
 
 function LineChartJSPage({ addLog }) {

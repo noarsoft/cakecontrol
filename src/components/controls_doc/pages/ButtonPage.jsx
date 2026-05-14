@@ -1,3 +1,4 @@
+import React from 'react';
 import { ButtonControl } from '../../controls';
 
 function ButtonPage({ addLog }) {

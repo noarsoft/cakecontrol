@@ -1,4 +1,5 @@
 // MixedChartJSPage.jsx
+import React from 'react';
 import { MixedChartJSControl } from '../../controls';
 
 function MixedChartJSPage({ addLog }) {

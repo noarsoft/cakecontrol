@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { TableviewControl } from '../../controls';
 
 function TablePage({ addLog }) {

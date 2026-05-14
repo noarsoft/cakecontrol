@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { MultipleUploadControl, ButtonControl } from '../../controls';
 
 function FileUploadPage({ addLog }) {

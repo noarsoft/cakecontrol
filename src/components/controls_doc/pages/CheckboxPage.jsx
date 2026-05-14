@@ -1,3 +1,4 @@
+import React from 'react';
 import { CheckboxControl } from '../../controls';
 
 function CheckboxPage({ addLog }) {

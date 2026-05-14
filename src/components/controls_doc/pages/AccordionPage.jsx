@@ -1,3 +1,4 @@
+import React from 'react';
 import { AccordionControl } from '../../controls';
 
 function AccordionPage({ addLog }) {

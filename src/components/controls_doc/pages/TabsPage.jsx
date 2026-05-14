@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { TabControl, ButtonControl, TextboxControl, SelectControl } from '../../controls';
 
 function TabsPage({ addLog }) {

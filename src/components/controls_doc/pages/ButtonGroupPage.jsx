@@ -1,3 +1,4 @@
+import React from 'react';
 import { ButtonGroupControl } from '../../controls';
 
 function ButtonGroupPage({ addLog }) {

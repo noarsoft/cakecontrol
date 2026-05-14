@@ -283,6 +283,27 @@
     border-color: var(--error);
 }
 
+.fb-field-actions .fb-move-btn {
+    background: none;
+    border: 1px solid transparent;
+    color: var(--text-tertiary);
+    cursor: pointer;
+    padding: 4px 6px;
+    border-radius: var(--radius-sm);
+    font-size: 14px;
+    transition: all 0.2s;
+}
+
+.fb-field-actions .fb-move-btn:hover:not(:disabled) {
+    color: var(--accent-primary);
+    border-color: var(--accent-primary);
+}
+
+.fb-field-actions .fb-move-btn:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+}
+
 .fb-field-card .field-info {
     flex: 1;
     display: flex;

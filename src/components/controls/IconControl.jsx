@@ -1,9 +1,10 @@
 // IconControl.jsx
+import React from 'react';
 import './IconControl.css';
 
 function IconControl({ control = {}, rowData = {}, rowIndex }) {
     // Determine the source of icon info
-    const boundValue = (control.databind && rowData[control.databind] !== undefined) ? rowData[control.databind] : control.value;
+    const boundValue = control.databind ? rowData[control.databind] : control.value;
     const className = control.iconClass || (typeof boundValue === 'string' && boundValue.match(/\s/)? boundValue : undefined);
     const value = boundValue && !className ? boundValue : control.value;
 

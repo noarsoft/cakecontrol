@@ -1,6 +1,6 @@
 // FormControl.jsx
-import { useState } from 'react';
-import { genControl } from './registry';
+import React, { useState } from 'react';
+import { genControl } from './TableviewControl';
 import './FormControl.css';
 
 function FormControl({ config }) {
@@ -49,14 +49,17 @@ function FormControl({ config }) {
 
     const handleControlChange = (databind, value) => {
         if (!databind) return;
-
-        const newData = { ...formData };
-        setNestedValue(newData, databind, value);
-        setFormData(newData);
-
-        if (config.onChange) {
-            config.onChange({ target: { value: newData } });
-        }
+        
+        setFormData(prevData => {
+            const newData = { ...prevData };
+            setNestedValue(newData, databind, value);
+            
+            if (config.onChange) {
+                config.onChange({ target: { value: newData } });
+            }
+            
+            return newData;
+        });
     };
 
     const renderControl = (controlConfig, index) => {
@@ -71,8 +74,7 @@ function FormControl({ config }) {
         if (value && typeof value === 'object' && value.databind) {
             value = resolveDataBind(value.databind, formData);
         } else if (controlConfig.databind) {
-            const bound = resolveDataBind(controlConfig.databind, formData);
-            if (bound !== undefined) value = bound;
+            value = resolveDataBind(controlConfig.databind, formData);
         }
 
         // Create control configuration for genControl
@@ -80,18 +82,9 @@ function FormControl({ config }) {
             ...controlConfig,
             value: value,
             onChange: (event) => {
-                let newValue;
-                if (event && event.target) {
-                    newValue = event.target.type === 'checkbox'
-                        ? event.target.checked
-                        : event.target.checked !== undefined && event.target.value === undefined
-                            ? event.target.checked
-                            : event.target.value;
-                } else {
-                    newValue = event;
-                }
+                const newValue = event.target ? event.target.value : event;
                 handleControlChange(controlConfig.databind, newValue);
-
+                
                 if (controlConfig.onChange) {
                     controlConfig.onChange(event, formData, index);
                 }

@@ -1,50 +1,91 @@
+// ConfirmModal.jsx
 import React from 'react';
 import './ConfirmModal.css';
 
-/**
- * ConfirmModal — ป๊อปอัปยืนยันการทำงาน
- * @param {boolean} isOpen - เปิด/ปิด
- * @param {string} title - หัวข้อ
- * @param {string} message - ข้อความรายละเอียด
- * @param {string} variant - 'normal' | 'dangerous' (สี icon และอารมณ์ modal)
- * @param {string} confirmText - ข้อความปุ่มตกลง
- * @param {string} cancelText - ข้อความปุ่มยกเลิก
- * @param {function} onConfirm - callback เมื่อกดตกลง
- * @param {function} onCancel - callback เมื่อกดยกเลิก
- */
 function ConfirmModal({ 
     isOpen, 
     title, 
     message, 
-    variant = 'normal', 
-    confirmText = 'ยืนยัน', 
-    cancelText = 'ยกเลิก',
-    onConfirm, 
-    onCancel 
+    onConfirm,
+    onCancel,
+    confirmLabel = 'Confirm',
+    cancelLabel = 'Cancel',
+    confirmVariant = 'danger',  // primary, success, warning, danger
+    cancelVariant = 'secondary',
+    isDangerous = false,         // Shows warning styling if true
+    closeOnBackdropClick = true,
+    closeOnEscapeKey = true
 }) {
+    React.useEffect(() => {
+        const handleEscapeKey = (e) => {
+            if (closeOnEscapeKey && e.key === 'Escape' && isOpen) {
+                onCancel?.();
+            }
+        };
+
+        if (isOpen) {
+            window.addEventListener('keydown', handleEscapeKey);
+            document.body.style.overflow = 'hidden';
+        }
+
+        return () => {
+            window.removeEventListener('keydown', handleEscapeKey);
+            document.body.style.overflow = 'unset';
+        };
+    }, [isOpen, closeOnEscapeKey, onCancel]);
+
     if (!isOpen) return null;
 
-    const icon = variant === 'dangerous' ? '⚠️' : '❓';
-    const confirmClass = variant === 'dangerous' ? 'btn-danger' : 'btn-primary';
+    const handleBackdropClick = (e) => {
+        if (closeOnBackdropClick && e.target === e.currentTarget) {
+            onCancel?.();
+        }
+    };
+
+    const getIcon = () => {
+        return isDangerous ? '⚠️' : '❓';
+    };
 
     return (
-        <div className="confirm-modal-backdrop" onClick={onCancel}>
-            <div className={`confirm-modal confirm-modal-${variant}`} onClick={e => e.stopPropagation()}>
+        <div 
+            className={`confirm-modal-backdrop ${isDangerous ? 'confirm-modal-dangerous' : 'confirm-modal-normal'}`} 
+            onClick={handleBackdropClick}
+        >
+            <div className="confirm-modal">
                 <div className="confirm-modal-header">
-                    <span className="confirm-modal-icon">{icon}</span>
+                    <span className="confirm-modal-icon">{getIcon()}</span>
                     <h2 className="confirm-modal-title">{title}</h2>
                 </div>
+
                 <div className="confirm-modal-content">
                     <p className="confirm-modal-message">{message}</p>
                 </div>
+
                 <div className="confirm-modal-footer">
-                    <button className="confirm-modal-button btn-secondary" onClick={onCancel}>
-                        {cancelText}
+                    <button
+                        className={`confirm-modal-button btn-${cancelVariant}`}
+                        onClick={() => onCancel?.()}
+                    >
+                        {cancelLabel}
                     </button>
-                    <button className={`confirm-modal-button ${confirmClass}`} onClick={onConfirm}>
-                        {confirmText}
+                    <button
+                        className={`confirm-modal-button btn-${confirmVariant}`}
+                        onClick={() => onConfirm?.()}
+                        autoFocus
+                    >
+                        {confirmLabel}
                     </button>
                 </div>
+
+                {closeOnEscapeKey && (
+                    <button 
+                        className="confirm-modal-close"
+                        onClick={onCancel}
+                        aria-label="Close modal"
+                    >
+                        ×
+                    </button>
+                )}
             </div>
         </div>
     );

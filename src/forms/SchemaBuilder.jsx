@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { FIELD_TYPES, addField, removeField, updateField, reorderField, getFieldEntries, validateSchema } from '../lib/schema';
 import { useToast } from '../contexts/ToastContext';
-import { genControl } from '../components/controls/registry';
+import { genControl } from '../components/controls/TableviewControl';
 
 function KeyInput({ value, onCommit, hasError, onBlur }) {
     const [draft, setDraft] = useState(value);
@@ -485,6 +485,12 @@ function SchemaBuilder({ schemaJson, onChange, onDirtyChange }) {
         setDragIdx(null); setDragOverIdx(null);
     };
 
+    const handleMoveField = (idx, direction) => {
+        const target = direction === 'up' ? idx - 1 : idx + 1;
+        if (target < 0 || target >= fields.length) return;
+        updateDraft(reorderField(draft, idx, target));
+    };
+
     const errors = validateSchema(draft);
 
     return (
@@ -508,13 +514,15 @@ function SchemaBuilder({ schemaJson, onChange, onDirtyChange }) {
                             <div
                                 key={idx}
                                 className={`fb-field-card fb-pagebreak-card ${isDragging ? 'dragging' : ''} ${isOver ? 'drag-over' : ''}`}
-                                draggable
-                                onDragStart={() => handleDragStart(idx)}
                                 onDragEnter={() => handleDragEnter(idx)}
                                 onDragOver={e => e.preventDefault()}
-                                onDragEnd={handleDragEnd}
                             >
-                                <span className="field-drag">⠿</span>
+                                <span
+                                    className="field-drag"
+                                    draggable
+                                    onDragStart={() => handleDragStart(idx)}
+                                    onDragEnd={handleDragEnd}
+                                >⠿</span>
                                 <div className="fb-pagebreak-line" />
                                 <span className="fb-pagebreak-label">📄 Page Break</span>
                                 <input
@@ -526,6 +534,8 @@ function SchemaBuilder({ schemaJson, onChange, onDirtyChange }) {
                                 />
                                 <div className="fb-pagebreak-line" />
                                 <div className="fb-field-actions">
+                                    <button onClick={(e) => { e.stopPropagation(); handleMoveField(idx, 'up'); }} disabled={idx === 0} title="ขึ้น" className="fb-move-btn">&#8593;</button>
+                                    <button onClick={(e) => { e.stopPropagation(); handleMoveField(idx, 'down'); }} disabled={idx === fields.length - 1} title="ลง" className="fb-move-btn">&#8595;</button>
                                     <button onClick={(e) => { e.stopPropagation(); handleRemoveField(key); }} title="ลบ" className="fb-delete-btn">✕</button>
                                 </div>
                             </div>
@@ -536,15 +546,18 @@ function SchemaBuilder({ schemaJson, onChange, onDirtyChange }) {
                         <div
                             key={idx}
                             className={`fb-field-card ${isDragging ? 'dragging' : ''} ${isOver ? 'drag-over' : ''} ${isSelected ? 'selected' : ''}`}
-                            draggable
-                            onDragStart={() => handleDragStart(idx)}
                             onDragEnter={() => handleDragEnter(idx)}
                             onDragOver={e => e.preventDefault()}
-                            onDragEnd={handleDragEnd}
                             onClick={() => setSelectedKey(k => k === key ? null : key)}
                         >
-                            <span className="field-drag">⠿</span>
-                            <div className="field-info">
+                            <span
+                                className="field-drag"
+                                draggable
+                                onDragStart={() => handleDragStart(idx)}
+                                onDragEnd={handleDragEnd}
+                                onClick={e => e.stopPropagation()}
+                            >⠿</span>
+                            <div className="field-info" onClick={e => e.stopPropagation()}>
                                 <div className="cd-field-wrapper">
                                     <label className="sb-field-label">ชื่อช่องกรอก (Label)</label>
                                     <input
@@ -574,6 +587,8 @@ function SchemaBuilder({ schemaJson, onChange, onDirtyChange }) {
                                 </div>
                             </div>
                             <div className="fb-field-actions">
+                                <button onClick={(e) => { e.stopPropagation(); handleMoveField(idx, 'up'); }} disabled={idx === 0} title="ขึ้น" className="fb-move-btn">&#8593;</button>
+                                <button onClick={(e) => { e.stopPropagation(); handleMoveField(idx, 'down'); }} disabled={idx === fields.length - 1} title="ลง" className="fb-move-btn">&#8595;</button>
                                 <button onClick={(e) => { e.stopPropagation(); handleRemoveField(key); }} title="ลบ" className="fb-delete-btn">✕</button>
                             </div>
                         </div>

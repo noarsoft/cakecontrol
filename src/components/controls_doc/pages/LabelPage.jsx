@@ -1,4 +1,5 @@
 // LabelPage.jsx - Label Control Documentation
+import React from 'react';
 import { LabelControl } from '../../controls';
 
 function LabelPage({ addLog }) {

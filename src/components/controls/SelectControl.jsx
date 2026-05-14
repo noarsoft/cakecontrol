@@ -1,4 +1,5 @@
 // SelectControl.jsx
+import React from 'react';
 
 function SelectControl({ control, rowData, rowIndex }) {
     const handleChange = (e) => {

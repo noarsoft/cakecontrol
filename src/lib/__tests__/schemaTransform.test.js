@@ -21,10 +21,11 @@ describe('schemaTransform.js', () => {
             expect(cols[0].sortable).toBe(true);
         });
 
-        test('boolean field gets badge type', () => {
+        test('boolean field gets custom type with render', () => {
             const cols = schemaToColumnsConfig(sampleSchema);
             const boolCol = cols.find(c => c.key === 'is_active');
-            expect(boolCol.type).toBe('badge');
+            expect(boolCol.type).toBe('custom');
+            expect(boolCol.controlProps.render).toBeDefined();
         });
 
         test('uses viewJson columns when provided', () => {

@@ -1,4 +1,5 @@
 // PaginationControl.jsx
+import React from 'react';
 import './PaginationControl.css';
 
 /**

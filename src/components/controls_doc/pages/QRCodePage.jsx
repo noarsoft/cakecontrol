@@ -1,3 +1,4 @@
+import React from 'react';
 import { QRCodeControl, TableviewControl } from '../../controls';
 
 function QRCodePage({ addLog }) {

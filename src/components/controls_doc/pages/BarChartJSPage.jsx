@@ -1,5 +1,5 @@
 // BarChartJSPage.jsx - Bar Chart JS Documentation
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { BarChartJSControl } from '../../controls';
 
 function BarChartJSPage({ addLog }) {

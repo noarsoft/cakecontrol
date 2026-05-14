@@ -26,8 +26,7 @@ export { default as FormControl } from './FormControl';
 export { default as TabControl } from './TabControl';
 export { default as TreeControl } from './TreeControl';
 export { default as GridviewControl } from './GridviewControl';
-export { default as TableviewControl } from './TableviewControl';
-export { genControl } from './registry';
+export { default as TableviewControl, genControl } from './TableviewControl';
 export { default as ChartControl } from './ChartControl';
 export { default as SearchBoxControl } from './SearchBoxControl';
 export { default as MultipleUploadControl } from './MultipleUploadControl';
@@ -44,6 +43,4 @@ export { default as BubbleChartJSControl } from './BubbleChartJSControl';
 export { default as MixedChartJSControl } from './MixedChartJSControl';
 export { default as AlertModal } from './AlertModal';
 export { default as ConfirmModal } from './ConfirmModal';
-export { default as ModalControl } from './ModalControl';
-export { default as CRUDControl } from './CRUDControl';
 

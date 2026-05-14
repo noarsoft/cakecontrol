@@ -1,4 +1,5 @@
 // RadarChartJSPage.jsx
+import React from 'react';
 import { RadarChartJSControl } from '../../controls';
 
 function RadarChartJSPage({ addLog }) {

@@ -1,3 +1,4 @@
+import React from 'react';
 import { LinkControl, TableviewControl } from '../../controls';
 
 function LinkPage({ addLog }) {

@@ -1,5 +1,5 @@
 // ImageControl.jsx
-import { useState } from 'react';
+import React, { useState } from 'react';
 
 /**
  * ImageControl Component
@@ -34,12 +34,19 @@ function ImageControl({ control = {}, rowData = {}, rowIndex = 0 }) {
         disabled = false
     } = control;
 
-    const imgSrc = (databind && rowData[databind] !== undefined) ? rowData[databind] : value;
+    const imgSrc = databind ? rowData[databind] : value;
+    const [isLoading, setIsLoading] = useState(true);
     const [hasError, setHasError] = useState(false);
     const [isEnlarged, setIsEnlarged] = useState(false);
 
+    const handleLoad = () => {
+        setIsLoading(false);
+        setHasError(false);
+    };
+
     const handleError = () => {
-        if (!hasError) setHasError(true);
+        setIsLoading(false);
+        setHasError(true);
     };
 
     const handleClick = (e) => {
@@ -72,7 +79,7 @@ function ImageControl({ control = {}, rowData = {}, rowIndex = 0 }) {
         ...style
     };
 
-    const displaySrc = hasError ? fallback : (imgSrc || fallback);
+    const displaySrc = hasError ? fallback : (isLoading ? placeholder : imgSrc);
 
     return (
         <>
@@ -83,6 +90,7 @@ function ImageControl({ control = {}, rowData = {}, rowIndex = 0 }) {
                 style={imageStyle}
                 className={`image-control ${className} ${disabled ? 'disabled' : ''}`}
                 onClick={handleClick}
+                onLoad={handleLoad}
                 onError={handleError}
             />
 
