@@ -38,6 +38,6 @@ coverage
 *.db-shm
 *.db-wal
 
-# Old server (replaced by rootid repo)
+# Old server (replaced by rootidx repo)
 server/
 

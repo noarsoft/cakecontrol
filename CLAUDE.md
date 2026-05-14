@@ -141,7 +141,7 @@ FormBuilder is the main workspace with a topbar and 4 modes:
 | Share page (/form/:schemaId) | Done |
 | Excel export | Done |
 | Dashboard (form list + summary) | Done |
-| Backend (rootid) | Done |
+| Backend (rootidx) | Done |
 | FE-BE Integration | Done |
 | Toast notifications | Done |
 
