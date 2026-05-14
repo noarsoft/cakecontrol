@@ -137,15 +137,65 @@ const CONTROL_CONFIGS = {
     pagination: [
         { key: 'total', label: 'Total Pages', type: 'number', hint: 'จำนวนหน้าทั้งหมด' },
     ],
-    chart:    [],
-    barchart: [],
-    linechart: [],
-    piechart: [],
-    doughnutchart: [],
-    radarchart: [],
-    areachart: [],
-    bubblechart: [],
-    mixedchart: [],
+    chart: [
+        { key: 'chartType', label: 'Chart Type', type: 'text', hint: 'ประเภทกราฟ: bar, line, pie, doughnut, radar, area' },
+        { key: 'title', label: 'Title', type: 'text', hint: 'ชื่อกราฟ' },
+        { key: 'xAxisKey', label: 'X Axis Key', type: 'text', hint: 'ชื่อ field สำหรับแกน X' },
+        { key: 'yAxisKey', label: 'Y Axis Key', type: 'text', hint: 'ชื่อ field สำหรับแกน Y' },
+        { key: 'nameKey', label: 'Name Key', type: 'text', hint: 'key สำหรับ label ของข้อมูล' },
+        { key: 'dataKey', label: 'Data Key', type: 'text', hint: 'key สำหรับค่าข้อมูล' },
+        { key: 'showLegend', label: 'Show Legend', type: 'toggle', hint: 'แสดง Legend' },
+        { key: 'showGrid', label: 'Show Grid', type: 'toggle', hint: 'แสดงเส้น Grid' },
+    ],
+    barchart: [
+        { key: 'title', label: 'Title', type: 'text', hint: 'ชื่อกราฟ' },
+        { key: 'xAxisKey', label: 'X Axis Key', type: 'text', hint: 'ชื่อ field สำหรับแกน X' },
+        { key: 'yAxisKey', label: 'Y Axis Key', type: 'text', hint: 'ชื่อ field สำหรับแกน Y' },
+        { key: 'showLegend', label: 'Show Legend', type: 'toggle', hint: 'แสดง Legend' },
+        { key: 'showGrid', label: 'Show Grid', type: 'toggle', hint: 'แสดงเส้น Grid' },
+    ],
+    linechart: [
+        { key: 'title', label: 'Title', type: 'text', hint: 'ชื่อกราฟ' },
+        { key: 'xAxisKey', label: 'X Axis Key', type: 'text', hint: 'ชื่อ field สำหรับแกน X' },
+        { key: 'yAxisKey', label: 'Y Axis Key', type: 'text', hint: 'ชื่อ field สำหรับแกน Y' },
+        { key: 'curved', label: 'Curved', type: 'toggle', hint: 'เส้นโค้ง' },
+        { key: 'showLegend', label: 'Show Legend', type: 'toggle', hint: 'แสดง Legend' },
+        { key: 'showGrid', label: 'Show Grid', type: 'toggle', hint: 'แสดงเส้น Grid' },
+    ],
+    piechart: [
+        { key: 'title', label: 'Title', type: 'text', hint: 'ชื่อกราฟ' },
+        { key: 'nameKey', label: 'Name Key', type: 'text', hint: 'key สำหรับ label' },
+        { key: 'dataKey', label: 'Data Key', type: 'text', hint: 'key สำหรับค่า' },
+        { key: 'showLegend', label: 'Show Legend', type: 'toggle', hint: 'แสดง Legend' },
+    ],
+    doughnutchart: [
+        { key: 'title', label: 'Title', type: 'text', hint: 'ชื่อกราฟ' },
+        { key: 'nameKey', label: 'Name Key', type: 'text', hint: 'key สำหรับ label' },
+        { key: 'dataKey', label: 'Data Key', type: 'text', hint: 'key สำหรับค่า' },
+        { key: 'innerRadius', label: 'Inner Radius (%)', type: 'number', hint: 'รัศมีวงใน เช่น 60' },
+        { key: 'showLegend', label: 'Show Legend', type: 'toggle', hint: 'แสดง Legend' },
+    ],
+    radarchart: [
+        { key: 'title', label: 'Title', type: 'text', hint: 'ชื่อกราฟ' },
+        { key: 'showLegend', label: 'Show Legend', type: 'toggle', hint: 'แสดง Legend' },
+    ],
+    areachart: [
+        { key: 'title', label: 'Title', type: 'text', hint: 'ชื่อกราฟ' },
+        { key: 'xAxisKey', label: 'X Axis Key', type: 'text', hint: 'ชื่อ field สำหรับแกน X' },
+        { key: 'yAxisKey', label: 'Y Axis Key', type: 'text', hint: 'ชื่อ field สำหรับแกน Y' },
+        { key: 'fillOpacity', label: 'Fill Opacity', type: 'number', hint: 'ความโปร่งใส 0-1 เช่น 0.3' },
+        { key: 'showLegend', label: 'Show Legend', type: 'toggle', hint: 'แสดง Legend' },
+        { key: 'showGrid', label: 'Show Grid', type: 'toggle', hint: 'แสดงเส้น Grid' },
+    ],
+    bubblechart: [
+        { key: 'title', label: 'Title', type: 'text', hint: 'ชื่อกราฟ' },
+        { key: 'showLegend', label: 'Show Legend', type: 'toggle', hint: 'แสดง Legend' },
+    ],
+    mixedchart: [
+        { key: 'title', label: 'Title', type: 'text', hint: 'ชื่อกราฟ' },
+        { key: 'showLegend', label: 'Show Legend', type: 'toggle', hint: 'แสดง Legend' },
+        { key: 'showGrid', label: 'Show Grid', type: 'toggle', hint: 'แสดงเส้น Grid' },
+    ],
 };
 
 function normalizeOption(opt) {
@@ -318,13 +368,12 @@ function FieldConfigPanel({ fieldKey, fieldDef, onUpdate }) {
     );
 }
 
-function SchemaBuilder({ schemaJson, onChange }) {
+function SchemaBuilder({ schemaJson, onChange, onDirtyChange }) {
     const { showToast } = useToast();
     const [draft, setDraft] = useState(schemaJson);
     const [isDirty, setIsDirty] = useState(false);
     const [touchedFields, setTouchedFields] = useState({});
     const [selectedKey, setSelectedKey] = useState(null);
-    const [panelOpen, setPanelOpen] = useState(true);
 
     useEffect(() => {
         setDraft(schemaJson);
@@ -332,6 +381,10 @@ function SchemaBuilder({ schemaJson, onChange }) {
         setTouchedFields({});
         setSelectedKey(null);
     }, [schemaJson]);
+
+    useEffect(() => {
+        onDirtyChange?.(isDirty);
+    }, [isDirty, onDirtyChange]);
 
     const fields = getFieldEntries(draft);
     const selectedDef = selectedKey ? draft[selectedKey] : null;
@@ -377,6 +430,13 @@ function SchemaBuilder({ schemaJson, onChange }) {
         while (draft[key]) key = `field_${idx}_${Date.now()}`;
         updateDraft(addField(draft, key, 'string'));
         setSelectedKey(key);
+    };
+
+    const handleAddPageBreak = () => {
+        const idx = fields.length + 1;
+        let key = `pagebreak_${idx}`;
+        while (draft[key]) key = `pagebreak_${idx}_${Date.now()}`;
+        updateDraft(addField(draft, key, 'pagebreak'));
     };
 
     const handleRemoveField = (key) => {
@@ -428,25 +488,11 @@ function SchemaBuilder({ schemaJson, onChange }) {
     const errors = validateSchema(draft);
 
     return (
-        <div className={`sb-layout ${panelOpen ? '' : 'sb-panel-collapsed'}`}>
+        <div className="sb-layout">
             <div className="sb-field-list">
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                    <h3 style={{ marginTop: 0 }}>กำหนด Fields ({fields.length} fields)</h3>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                        {isDirty && <span style={{ fontSize: 12, color: 'var(--accent-primary)' }}>* มีการเปลี่ยนแปลง</span>}
-                        <button
-                            className="sb-panel-toggle"
-                            onClick={() => setPanelOpen(p => !p)}
-                            title={panelOpen ? 'ซ่อน Config Panel' : 'แสดง Config Panel'}
-                        >
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                {panelOpen
-                                    ? <><path d="M13 17l5-5-5-5"/><path d="M6 17l5-5-5-5"/></>
-                                    : <><path d="M11 7l-5 5 5 5"/><path d="M18 7l-5 5 5 5"/></>
-                                }
-                            </svg>
-                        </button>
-                    </div>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+                    <h3 style={{ margin: 0 }}>กำหนด Fields ({fields.length} fields)</h3>
+                    {isDirty && <span style={{ fontSize: 12, color: 'var(--accent-primary)' }}>* มีการเปลี่ยนแปลง</span>}
                 </div>
 
                 {fields.map(([key, def], idx) => {
@@ -461,13 +507,12 @@ function SchemaBuilder({ schemaJson, onChange }) {
                         return (
                             <div
                                 key={idx}
-                                className={`fb-field-card fb-pagebreak-card ${isDragging ? 'dragging' : ''} ${isOver ? 'drag-over' : ''} ${isSelected ? 'selected' : ''}`}
+                                className={`fb-field-card fb-pagebreak-card ${isDragging ? 'dragging' : ''} ${isOver ? 'drag-over' : ''}`}
                                 draggable
                                 onDragStart={() => handleDragStart(idx)}
                                 onDragEnter={() => handleDragEnter(idx)}
                                 onDragOver={e => e.preventDefault()}
                                 onDragEnd={handleDragEnd}
-                                onClick={() => setSelectedKey(key)}
                             >
                                 <span className="field-drag">⠿</span>
                                 <div className="fb-pagebreak-line" />
@@ -476,7 +521,7 @@ function SchemaBuilder({ schemaJson, onChange }) {
                                     className="fb-pagebreak-title"
                                     value={def.label || ''}
                                     onChange={e => handleUpdateLabel(key, e.target.value)}
-                                    placeholder="ชื่อหน้า (ไม่บังคับ)"
+                                    placeholder="พิมพ์ชื่อหน้า เช่น ข้อมูลส่วนตัว, ที่อยู่ (ไม่บังคับ)"
                                     onClick={e => e.stopPropagation()}
                                 />
                                 <div className="fb-pagebreak-line" />
@@ -496,7 +541,7 @@ function SchemaBuilder({ schemaJson, onChange }) {
                             onDragEnter={() => handleDragEnter(idx)}
                             onDragOver={e => e.preventDefault()}
                             onDragEnd={handleDragEnd}
-                            onClick={() => setSelectedKey(key)}
+                            onClick={() => setSelectedKey(k => k === key ? null : key)}
                         >
                             <span className="field-drag">⠿</span>
                             <div className="field-info">
@@ -535,7 +580,10 @@ function SchemaBuilder({ schemaJson, onChange }) {
                     );
                 })}
 
-                <button className="fb-add-field-btn" onClick={handleAddField}>+ เพิ่ม Field</button>
+                <div style={{ display: 'flex', gap: 8 }}>
+                    <button className="fb-add-field-btn" onClick={handleAddField}>+ เพิ่ม Field</button>
+                    <button className="fb-add-field-btn fb-add-pagebreak-btn" onClick={handleAddPageBreak}>+ Page Break</button>
+                </div>
 
                 {errors.length > 0 && (
                     <div style={{ marginTop: 12, padding: 12, borderRadius: 6, background: '#e74c3c15', border: '1px solid #e74c3c40', fontSize: 13 }}>
@@ -549,7 +597,7 @@ function SchemaBuilder({ schemaJson, onChange }) {
                 </div>
             </div>
 
-            {panelOpen && (
+            {selectedKey && (
                 <FieldConfigPanel
                     fieldKey={selectedKey}
                     fieldDef={selectedDef}

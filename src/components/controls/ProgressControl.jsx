@@ -2,7 +2,7 @@
 import './ProgressControl.css';
 
 function ProgressControl({ control, rowData, rowIndex }) {
-    const progressValue = control.databind ? rowData[control.databind] : control.value;
+    const progressValue = (control.databind && rowData?.[control.databind] !== undefined) ? rowData[control.databind] : control.value;
     const disabled = control.disabled || false;
     
     const handleClick = (e) => {

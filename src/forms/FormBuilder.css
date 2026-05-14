@@ -24,27 +24,32 @@
     display: flex;
     align-items: center;
     gap: 8px;
+    flex: 1;
+    min-width: 0;
 }
 
-.fb-back-btn {
+.fb-topbar-center {
+    display: flex;
+    justify-content: center;
+}
+
+.fb-topbar-right {
+    flex: 1;
+    display: flex;
+    justify-content: flex-end;
+}
+
+.fb-mode-btn.fb-icon-btn {
     display: inline-flex;
     align-items: center;
     justify-content: center;
     width: 34px;
     height: 34px;
-    background: var(--bg-secondary);
-    border: 1px solid var(--border-primary);
-    border-radius: var(--radius-md);
-    color: var(--text-primary);
-    cursor: pointer;
-    transition: all 0.15s;
+    padding: 0;
     flex-shrink: 0;
-}
-
-.fb-back-btn:hover {
-    color: var(--accent-primary);
-    border-color: var(--accent-primary);
-    background: var(--accent-primary-light);
+    background: var(--bg-secondary);
+    border-color: var(--border-primary);
+    color: var(--text-primary);
 }
 
 /* ─── Main Content ─── */
@@ -96,6 +101,9 @@
     border-radius: 0;
     margin: 0;
     border-right-width: 0;
+    min-width: 80px;
+    text-align: center;
+    justify-content: center;
 }
 
 .fb-mode-group .fb-mode-btn:first-child {
@@ -140,6 +148,27 @@
     font-weight: 700;
 }
 
+.fb-delete-form-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 14px;
+    border: none;
+    border-radius: var(--radius-md);
+    background: var(--error, #e74c3c);
+    color: #fff;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s;
+    margin-left: 8px;
+}
+
+.fb-delete-form-btn:hover {
+    background: #c0392b;
+    box-shadow: 0 2px 8px rgba(231, 76, 60, 0.3);
+}
+
 .fb-content {
     flex: 1;
     overflow-y: auto;
@@ -147,9 +176,49 @@
     background: var(--bg-secondary);
 }
 
+.fb-content > * {
+    max-width: 770px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+/* ─── Data Toolbar ─── */
+.fb-data-toolbar {
+    display: flex;
+    justify-content: flex-end;
+    margin-bottom: 12px;
+}
+
+.fb-export-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 16px;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    border: 1px solid var(--border-primary);
+    border-radius: var(--radius-md);
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.fb-export-btn:hover:not(:disabled) {
+    border-color: #1d6f42;
+    color: #1d6f42;
+    background: #f0faf4;
+}
+
+.fb-export-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
 /* ─── Schema Builder ─── */
 .fb-builder {
-    max-width: 800px;
+    max-width: 640px;
+    min-width: 320px;
     margin: 0 auto;
 }
 
@@ -307,7 +376,7 @@
 }
 
 .fb-add-field-btn {
-    width: 100%;
+    flex: 1;
     padding: 14px 16px;
     border: 2px dashed var(--border-primary);
     border-radius: 10px;
@@ -325,12 +394,15 @@
     border-color: var(--accent-primary);
 }
 
+.fb-add-pagebreak-btn {
+    flex: 0 0 auto;
+    color: var(--text-secondary);
+}
+
 /* ─── Schema Builder Layout ─── */
 .sb-layout {
     display: flex;
     gap: 24px;
-    max-width: 1200px;
-    margin: 0 auto;
     align-items: flex-start;
 }
 
@@ -348,6 +420,7 @@
     display: flex;
     gap: 8px;
     margin-top: 16px;
+    padding-bottom: 64px;
     justify-content: flex-end;
 }
 
@@ -574,30 +647,6 @@
 }
 
 /* ─── Panel Toggle ─── */
-.sb-panel-toggle {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 32px;
-    height: 32px;
-    background: var(--bg-secondary);
-    border: 1px solid var(--border-primary);
-    border-radius: var(--radius-md);
-    color: var(--text-primary);
-    cursor: pointer;
-    transition: all 0.15s;
-    flex-shrink: 0;
-}
-
-.sb-panel-toggle:hover {
-    color: var(--accent-primary);
-    border-color: var(--accent-primary);
-    background: var(--accent-primary-light);
-}
-
-.sb-layout.sb-panel-collapsed {
-    max-width: 800px;
-}
 
 /* ─── Control Preview ─── */
 .sb-preview-box {
@@ -629,9 +678,17 @@
     width: 100%;
 }
 
+/* ─── Standalone Form Page ─── */
+.fb-standalone-page {
+    min-height: 100vh;
+    background: var(--bg-secondary);
+    padding: 32px 16px;
+}
+
 /* ─── Form Filler ─── */
 .fb-filler {
-    max-width: 720px;
+    max-width: 640px;
+    min-width: 320px;
     margin: 0 auto;
     padding: 24px;
 }

@@ -16,6 +16,7 @@ import {
 import ThemeSwitcher from '../ThemeSwitcher';
 import { useToast } from '../contexts/ToastContext';
 import { useNavigate, useLocation } from 'react-router-dom';
+import * as XLSX from 'xlsx';
 import './FormBuilder.css';
 
 function FormBuilder() {
@@ -30,8 +31,23 @@ function FormBuilder() {
     const [deleteConfirm, setDeleteConfirm] = useState(null);
     const [schemaData, setSchemaData] = useState(null);
     const [serviceMode, setServiceMode] = useState(null);
+    const [builderDirty, setBuilderDirty] = useState(false);
+    const [fillerDirty, setFillerDirty] = useState(false);
+    const [pendingMode, setPendingMode] = useState(null);
 
     const createTriggered = useRef(false);
+
+    const anyDirty = builderDirty || fillerDirty;
+
+    useEffect(() => {
+        if (!anyDirty) return;
+        const handleBeforeUnload = (e) => {
+            e.preventDefault();
+            e.returnValue = '';
+        };
+        window.addEventListener('beforeunload', handleBeforeUnload);
+        return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+    }, [anyDirty]);
 
     // Init: detect backend + load schemas (+ auto-create if navigated with createNew)
     useEffect(() => {
@@ -120,18 +136,45 @@ function FormBuilder() {
         setRefreshKey(k => k + 1);
     };
 
+    const handleModeChange = (newMode) => {
+        if (newMode === mode) return;
+        if ((mode === 'builder' && builderDirty) || (mode === 'fill' && fillerDirty)) {
+            setPendingMode(newMode);
+            return;
+        }
+        if (newMode === 'dashboard') {
+            navigate('/dashboard');
+            return;
+        }
+        setMode(newMode);
+        if (newMode === 'data') setRefreshKey(k => k + 1);
+    };
+
     const handleDeleteSchema = async () => {
         if (!deleteConfirm) return;
         try {
             await deleteSchema(deleteConfirm);
-            const deleted = schemas.find(s => s.rootid === deleteConfirm);
             setDeleteConfirm(null);
-            if (deleted && activeSchemaId === deleted.id) setActiveSchemaId(null);
-            await reloadSchemas();
-            showToast('ลบแม่แบบเรียบร้อยแล้ว', 'success');
+            showToast('ลบฟอร์มเรียบร้อยแล้ว', 'success');
+            navigate('/dashboard', { replace: true });
         } catch (err) {
-            showToast('ลบแม่แบบไม่สำเร็จ', 'error');
+            showToast('ลบฟอร์มไม่สำเร็จ', 'error');
         }
+    };
+
+    const handleExportExcel = () => {
+        if (!schemaData?.data?.length || !activeSchema) return;
+        const fields = Object.entries(activeSchema.json)
+            .filter(([, def]) => def.type !== 'pagebreak')
+            .map(([key, def]) => ({ key, label: def.label || key }));
+        const rows = schemaData.data.map(row =>
+            Object.fromEntries(fields.map(f => [f.label, row[f.key] ?? '']))
+        );
+        const ws = XLSX.utils.json_to_sheet(rows);
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, 'Data');
+        XLSX.writeFile(wb, `${activeSchema.name || 'export'}.xlsx`);
+        showToast('ส่งออก Excel สำเร็จ', 'success');
     };
 
     const handleSchemaNameSave = async (name) => {
@@ -230,7 +273,7 @@ function FormBuilder() {
                 <>
                     <header className="fb-topbar">
                         <div className="fb-topbar-left">
-                            <button className="fb-back-btn" onClick={() => navigate('/dashboard')} title="กลับหน้า Dashboard">
+                            <button className="fb-mode-btn fb-icon-btn" onClick={() => handleModeChange('dashboard')} title="กลับหน้า Dashboard">
                                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></svg>
                             </button>
                             <SchemaNameInput
@@ -238,48 +281,74 @@ function FormBuilder() {
                                 onSave={handleSchemaNameSave}
                             />
                         </div>
-                        <div className="fb-mode-group">
+                        <div className="fb-topbar-center">
+                            <div className="fb-mode-group">
+                                <button
+                                    className={`fb-mode-btn ${mode === 'data' ? 'active' : ''}`}
+                                    onClick={() => handleModeChange('data')}
+                                >
+                                    ข้อมูล
+                                </button>
+                                <button
+                                    className={`fb-mode-btn ${mode === 'builder' ? 'active' : ''}`}
+                                    onClick={() => handleModeChange('builder')}
+                                >
+                                    แก้ไขฟอร์ม
+                                </button>
+                                <button
+                                    className={`fb-mode-btn ${mode === 'fill' ? 'active' : ''}`}
+                                    onClick={() => handleModeChange('fill')}
+                                >
+                                    เพิ่มข้อมูล
+                                </button>
+                                <button
+                                    className="fb-mode-btn"
+                                    onClick={() => {
+                                        const url = `${window.location.origin}/form/${activeSchema.rootid}`;
+                                        navigator.clipboard.writeText(url).then(() => {
+                                            showToast('คัดลอก link แล้ว', 'success');
+                                        });
+                                    }}
+                                    title="คัดลอก link สำหรับแชร์"
+                                >
+                                    แชร์
+                                </button>
+                            </div>
+                        </div>
+                        <div className="fb-topbar-right">
                             <button
-                                className={`fb-mode-btn ${mode === 'data' ? 'active' : ''}`}
-                                onClick={() => { setMode('data'); setRefreshKey(k => k + 1); }}
+                                className="fb-delete-form-btn"
+                                onClick={() => setDeleteConfirm(activeSchema.rootid)}
+                                title="ลบฟอร์มนี้"
                             >
-                                ข้อมูล
-                            </button>
-                            <button
-                                className={`fb-mode-btn ${mode === 'builder' ? 'active' : ''}`}
-                                onClick={() => setMode('builder')}
-                            >
-                                แก้ไขฟอร์ม
-                            </button>
-                            <button
-                                className={`fb-mode-btn ${mode === 'fill' ? 'active' : ''}`}
-                                onClick={() => setMode('fill')}
-                            >
-                                เพิ่มข้อมูล
-                            </button>
-                            <button
-                                className="fb-mode-btn"
-                                onClick={() => {
-                                    const url = `${window.location.origin}/form/${activeSchema.rootid}`;
-                                    navigator.clipboard.writeText(url).then(() => {
-                                        showToast('คัดลอก link แล้ว', 'success');
-                                    });
-                                }}
-                                title="คัดลอก link สำหรับแชร์"
-                            >
-                                แชร์
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                                ลบ
                             </button>
                         </div>
                     </header>
                     <main className="fb-main">
                         <div className="fb-content">
                             {mode === 'data' && crudConfig && (
-                                <CRUDControl config={crudConfig} />
+                                <>
+                                    <div className="fb-data-toolbar">
+                                        <button
+                                            className="fb-export-btn"
+                                            onClick={handleExportExcel}
+                                            disabled={!schemaData?.data?.length}
+                                            title="ส่งออกข้อมูลเป็น Excel"
+                                        >
+                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                                            Export Excel
+                                        </button>
+                                    </div>
+                                    <CRUDControl config={crudConfig} />
+                                </>
                             )}
                             {mode === 'builder' && (
                                 <SchemaBuilder
                                     schemaJson={activeSchema.json}
                                     onChange={handleSchemaJsonChange}
+                                    onDirtyChange={setBuilderDirty}
                                 />
                             )}
                             {mode === 'fill' && (
@@ -287,6 +356,7 @@ function FormBuilder() {
                                     schema={activeSchema}
                                     formcfgJson={schemaData?.formcfg?.json_form_config}
                                     onSubmit={() => setRefreshKey(k => k + 1)}
+                                    onDirtyChange={setFillerDirty}
                                 />
                             )}
                         </div>
@@ -306,6 +376,27 @@ function FormBuilder() {
                 variant="dangerous"
                 onConfirm={handleDeleteSchema}
                 onCancel={() => setDeleteConfirm(null)}
+            />
+            <ConfirmModal
+                isOpen={pendingMode !== null}
+                title="มีการเปลี่ยนแปลงที่ยังไม่ได้บันทึก"
+                message={mode === 'fill' ? 'คุณกรอกข้อมูลแล้วยังไม่ได้ส่ง ต้องการออกจากหน้านี้หรือไม่?' : 'คุณแก้ไขฟอร์มแล้วยังไม่ได้บันทึก ต้องการออกจากหน้านี้หรือไม่?'}
+                confirmText="ออกโดยไม่บันทึก"
+                cancelText="อยู่ต่อ"
+                variant="dangerous"
+                onConfirm={() => {
+                    const target = pendingMode;
+                    setPendingMode(null);
+                    setBuilderDirty(false);
+                    setFillerDirty(false);
+                    if (target === 'dashboard') {
+                        navigate('/dashboard');
+                        return;
+                    }
+                    setMode(target);
+                    if (target === 'data') setRefreshKey(k => k + 1);
+                }}
+                onCancel={() => setPendingMode(null)}
             />
         </div>
     );

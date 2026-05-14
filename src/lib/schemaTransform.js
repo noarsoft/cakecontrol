@@ -19,28 +19,51 @@ const DISPLAY_DEFAULTS = {
     badge: { value: 'Badge' },
     icon: { value: '⭐' },
     button: { value: 'Button' },
+    progress: { value: 50 },
+    qrcode: { value: 'https://example.com' },
 };
 
 function getDisplayProps(fieldType, fieldDef) {
     const defaults = DISPLAY_DEFAULTS[fieldType];
     if (!defaults) return {};
     const props = { ...defaults };
-    if (fieldDef.value !== undefined) props.value = fieldDef.value;
-    if (fieldDef.href !== undefined) props.href = fieldDef.href;
+    for (const key of Object.keys(props)) {
+        if (fieldDef[key] !== undefined) props[key] = fieldDef[key];
+    }
     return props;
 }
 
+const CHART_PROPS = ['chartType', 'title', 'xAxisKey', 'yAxisKey', 'nameKey', 'dataKey', 'showLegend', 'showGrid', 'colors'];
+
 const PASSTHROUGH_PROPS = {
-    number: ['min', 'max', 'step'],
-    password: ['showStrength', 'minLength', 'maxLength'],
-    slider: ['min', 'max', 'step'],
-    rating: ['max'],
-    progress: ['showValue', 'color'],
-    searchbox: ['multiple', 'allowCreate'],
-    qrcode: ['width', 'height'],
+    string: ['placeholder', 'maxLength', 'rows'],
+    number: ['min', 'max', 'step', 'placeholder'],
+    email: ['placeholder'],
+    password: ['showStrength', 'minLength', 'maxLength', 'placeholder'],
+    slider: ['min', 'max', 'step', 'unit', 'showValue'],
+    rating: ['max', 'allowHalf'],
+    progress: ['showValue', 'color', 'value'],
+    searchbox: ['multiple', 'allowCreate', 'placeholder'],
+    qrcode: ['width', 'height', 'value'],
     image: ['width', 'height', 'borderRadius', 'objectFit', 'shadow'],
     boolean: [],
     toggle: [],
+    label: ['value', 'bold', 'italic', 'fontSize'],
+    link: ['value', 'href', 'target'],
+    badge: ['value', 'backgroundColor'],
+    icon: ['value', 'fontSize'],
+    button: ['value'],
+    buttongroup: ['orientation'],
+    calendar: ['placeholder'],
+    chart: CHART_PROPS,
+    barchart: CHART_PROPS,
+    linechart: [...CHART_PROPS, 'curved'],
+    piechart: CHART_PROPS,
+    doughnutchart: [...CHART_PROPS, 'innerRadius'],
+    radarchart: CHART_PROPS,
+    areachart: [...CHART_PROPS, 'fillOpacity'],
+    bubblechart: CHART_PROPS,
+    mixedchart: CHART_PROPS,
 };
 
 function getFieldProps(fieldType, fieldDef) {

@@ -149,6 +149,140 @@ const FIELD_TO_CONTROL_TYPE = {
     mixedchart: 'mixedchart',
 };
 
+const CHART_CONFIG = [
+    { key: 'title', label: 'ชื่อกราฟ', inputType: 'text' },
+    { key: 'xAxisKey', label: 'แกน X (key)', inputType: 'text', placeholder: 'ชื่อ field สำหรับแกน X' },
+    { key: 'yAxisKey', label: 'แกน Y (key)', inputType: 'text', placeholder: 'ชื่อ field สำหรับแกน Y' },
+    { key: 'nameKey', label: 'Name Key', inputType: 'text', placeholder: 'key สำหรับ label' },
+    { key: 'dataKey', label: 'Data Key', inputType: 'text', placeholder: 'key สำหรับค่าข้อมูล' },
+    { key: 'showLegend', label: 'แสดง Legend', inputType: 'checkbox' },
+    { key: 'showGrid', label: 'แสดงเส้น Grid', inputType: 'checkbox' },
+];
+
+const CONTROL_CONFIG_FIELDS = {
+    textbox: [
+        { key: 'placeholder', label: 'Placeholder', inputType: 'text' },
+        { key: 'maxLength', label: 'ความยาวสูงสุด', inputType: 'number' },
+        { key: 'rows', label: 'บรรทัด (textarea)', inputType: 'number', placeholder: 'ปล่อยว่าง = 1 บรรทัด' },
+    ],
+    number: [
+        { key: 'placeholder', label: 'Placeholder', inputType: 'text' },
+        { key: 'min', label: 'ค่าต่ำสุด', inputType: 'number' },
+        { key: 'max', label: 'ค่าสูงสุด', inputType: 'number' },
+        { key: 'step', label: 'Step', inputType: 'number' },
+    ],
+    email: [
+        { key: 'placeholder', label: 'Placeholder', inputType: 'text' },
+    ],
+    password: [
+        { key: 'placeholder', label: 'Placeholder', inputType: 'text' },
+        { key: 'minLength', label: 'ความยาวขั้นต่ำ', inputType: 'number' },
+        { key: 'maxLength', label: 'ความยาวสูงสุด', inputType: 'number' },
+    ],
+    slider: [
+        { key: 'min', label: 'ค่าต่ำสุด', inputType: 'number' },
+        { key: 'max', label: 'ค่าสูงสุด', inputType: 'number' },
+        { key: 'step', label: 'Step', inputType: 'number' },
+        { key: 'unit', label: 'หน่วย', inputType: 'text', placeholder: 'เช่น %, kg' },
+        { key: 'showValue', label: 'แสดงค่า', inputType: 'checkbox' },
+    ],
+    rating: [
+        { key: 'max', label: 'จำนวนดาว', inputType: 'number' },
+        { key: 'allowHalf', label: 'อนุญาตครึ่งดาว', inputType: 'checkbox' },
+    ],
+    label: [
+        { key: 'value', label: 'ข้อความ', inputType: 'text' },
+        { key: 'bold', label: 'ตัวหนา', inputType: 'checkbox' },
+        { key: 'italic', label: 'ตัวเอียง', inputType: 'checkbox' },
+        { key: 'fontSize', label: 'ขนาดตัวอักษร', inputType: 'text', placeholder: 'เช่น 18px' },
+    ],
+    link: [
+        { key: 'value', label: 'ข้อความลิงก์', inputType: 'text' },
+        { key: 'href', label: 'URL', inputType: 'text', placeholder: 'https://...' },
+        { key: 'target', label: 'เปิดในแท็บ', inputType: 'select', selectOptions: [
+            { value: '_self', label: 'แท็บเดิม' },
+            { value: '_blank', label: 'แท็บใหม่' },
+        ]},
+    ],
+    image: [
+        { key: 'value', label: 'URL รูปภาพ', inputType: 'text', placeholder: 'https://...' },
+        { key: 'width', label: 'ความกว้าง', inputType: 'text', placeholder: 'เช่น 200px' },
+        { key: 'height', label: 'ความสูง', inputType: 'text', placeholder: 'เช่น 120px' },
+        { key: 'objectFit', label: 'การแสดงผล', inputType: 'select', selectOptions: [
+            { value: 'cover', label: 'Cover (เติมเต็ม)' },
+            { value: 'contain', label: 'Contain (พอดี)' },
+            { value: 'fill', label: 'Fill (ยืด)' },
+            { value: 'none', label: 'None (ขนาดจริง)' },
+        ]},
+    ],
+    badge: [
+        { key: 'value', label: 'ข้อความ', inputType: 'text' },
+        { key: 'backgroundColor', label: 'สีพื้นหลัง', inputType: 'color' },
+    ],
+    icon: [
+        { key: 'value', label: 'ไอคอน (emoji/text)', inputType: 'text', placeholder: 'เช่น ⭐ 🔥 ✅' },
+        { key: 'fontSize', label: 'ขนาด', inputType: 'text', placeholder: 'เช่น 24px' },
+    ],
+    progress: [
+        { key: 'value', label: 'ค่า (0-100)', inputType: 'number' },
+        { key: 'color', label: 'สี', inputType: 'color' },
+        { key: 'showValue', label: 'แสดงตัวเลข', inputType: 'checkbox' },
+    ],
+    qrcode: [
+        { key: 'value', label: 'URL / ข้อความ', inputType: 'text', placeholder: 'https://...' },
+        { key: 'width', label: 'ความกว้าง (px)', inputType: 'number' },
+        { key: 'height', label: 'ความสูง (px)', inputType: 'number' },
+    ],
+    button: [
+        { key: 'value', label: 'ข้อความปุ่ม', inputType: 'text' },
+    ],
+    buttongroup: [
+        { key: 'orientation', label: 'ทิศทาง', inputType: 'select', selectOptions: [
+            { value: 'horizontal', label: 'แนวนอน' },
+            { value: 'vertical', label: 'แนวตั้ง' },
+        ]},
+    ],
+    calendar: [
+        { key: 'placeholder', label: 'Placeholder', inputType: 'text' },
+    ],
+    chart: [
+        { key: 'chartType', label: 'ประเภทกราฟ', inputType: 'select', selectOptions: [
+            { value: 'bar', label: 'Bar (แท่ง)' },
+            { value: 'line', label: 'Line (เส้น)' },
+            { value: 'pie', label: 'Pie (วงกลม)' },
+            { value: 'doughnut', label: 'Doughnut (โดนัท)' },
+            { value: 'radar', label: 'Radar' },
+            { value: 'area', label: 'Area (พื้นที่)' },
+        ]},
+        ...CHART_CONFIG,
+    ],
+    barchart: CHART_CONFIG,
+    linechart: [...CHART_CONFIG, { key: 'curved', label: 'เส้นโค้ง', inputType: 'checkbox' }],
+    piechart: CHART_CONFIG.filter(f => !['xAxisKey', 'yAxisKey', 'showGrid'].includes(f.key)),
+    doughnutchart: [
+        ...CHART_CONFIG.filter(f => !['xAxisKey', 'yAxisKey', 'showGrid'].includes(f.key)),
+        { key: 'innerRadius', label: 'รัศมีวงใน (%)', inputType: 'number', placeholder: 'เช่น 60' },
+    ],
+    radarchart: CHART_CONFIG,
+    areachart: [...CHART_CONFIG, { key: 'fillOpacity', label: 'ความโปร่งใส (0-1)', inputType: 'number', placeholder: 'เช่น 0.3' }],
+    bubblechart: CHART_CONFIG,
+    mixedchart: CHART_CONFIG,
+};
+
+function getConfigKeys(controlType) {
+    const fields = CONTROL_CONFIG_FIELDS[controlType];
+    return fields ? fields.map(f => f.key) : [];
+}
+
+function extractConfig(def, controlType) {
+    const keys = getConfigKeys(controlType);
+    const config = {};
+    for (const k of keys) {
+        if (def[k] !== undefined) config[k] = def[k];
+    }
+    return config;
+}
+
 function createEmptyControl() {
     return {
         id: Date.now() + Math.random(),
@@ -157,6 +291,7 @@ function createEmptyControl() {
         controlType: 'textbox',
         options: [],
         defaultSelect: '',
+        config: {},
     };
 }
 
@@ -174,15 +309,18 @@ function schemaToControls(schemaJson, formcfgJson) {
     });
     const controls = sortedSchema.map(([key, def]) => {
         const fc = formControls.find(c => c.key === key);
+        const controlType = FIELD_TO_CONTROL_TYPE[def.type] || 'textbox';
+        const hasOptions = (def.type === 'select' || def.type === 'buttongroup') && def.enum;
         return {
             id: Date.now() + Math.random(),
             label: fc?.label || def.label || key,
             databind: key,
-            controlType: FIELD_TO_CONTROL_TYPE[def.type] || 'textbox',
-            options: def.type === 'select' && def.enum
+            controlType,
+            options: hasOptions
                 ? def.enum.map(v => typeof v === 'object' ? { key: String(v.value), value: v.label } : { key: v, value: v })
                 : [],
             defaultSelect: '',
+            config: extractConfig(def, controlType),
         };
     });
 
@@ -196,6 +334,7 @@ function schemaToControls(schemaJson, formcfgJson) {
                 controlType: fc.type || 'textbox',
                 options: [],
                 defaultSelect: '',
+                config: {},
             });
         }
     });
@@ -210,10 +349,16 @@ function controlsToSchema(controls) {
         const fieldType = CONTROL_TO_FIELD_TYPE[ctrl.controlType] || 'string';
         const def = { type: fieldType };
         if (ctrl.label.trim()) def.label = ctrl.label.trim();
-        if (ctrl.controlType === 'dropdown' && ctrl.options.length > 0) {
+        const hasOptions = ctrl.controlType === 'dropdown' || ctrl.controlType === 'buttongroup';
+        if (hasOptions && ctrl.options.length > 0) {
             def.enum = ctrl.options
                 .filter(o => o.key || o.value)
                 .map(o => ({ label: o.value || o.key, value: isNaN(Number(o.key)) ? o.key : Number(o.key) }));
+        }
+        if (ctrl.config) {
+            for (const [k, v] of Object.entries(ctrl.config)) {
+                if (v !== '' && v !== undefined && v !== null) def[k] = v;
+            }
         }
         json[ctrl.databind.trim()] = def;
     }
@@ -231,7 +376,7 @@ function controlsToFormcfg(controls, colnumbers = 6) {
                 colno: 1,
                 rowno: idx + 1,
                 colspan: colnumbers,
-                placeholder: '',
+                placeholder: ctrl.config?.placeholder || '',
             })),
     };
 }
@@ -263,6 +408,13 @@ function ControlDesignerModal({ isOpen, onClose, onSave, schemaName, schemaJson,
 
     const updateControl = (idx, field, value) => {
         setControls(prev => prev.map((c, i) => i === idx ? { ...c, [field]: value } : c));
+    };
+
+    const updateConfig = (idx, key, value) => {
+        setControls(prev => prev.map((c, i) => {
+            if (i !== idx) return c;
+            return { ...c, config: { ...c.config, [key]: value } };
+        }));
     };
 
     const addControl = () => {
@@ -438,7 +590,8 @@ function ControlDesignerModal({ isOpen, onClose, onSave, schemaName, schemaJson,
                                     value={ctrl.controlType}
                                     onChange={e => {
                                         updateControl(idx, 'controlType', e.target.value);
-                                        if (e.target.value === 'dropdown' && ctrl.options.length === 0) {
+                                        const needsOptions = e.target.value === 'dropdown' || e.target.value === 'buttongroup';
+                                        if (needsOptions && ctrl.options.length === 0) {
                                             addOption(idx);
                                         }
                                     }}
@@ -454,9 +607,11 @@ function ControlDesignerModal({ isOpen, onClose, onSave, schemaName, schemaJson,
                                 </div>
                             </div>
 
-                            {ctrl.controlType === 'dropdown' && (
+                            {(ctrl.controlType === 'dropdown' || ctrl.controlType === 'buttongroup') && (
                                 <div className="cd-options-panel">
-                                    <div className="cd-options-title">ตัวเลือก Dropdown</div>
+                                    <div className="cd-options-title">
+                                        {ctrl.controlType === 'dropdown' ? 'ตัวเลือก Dropdown' : 'ตัวเลือก ButtonGroup'}
+                                    </div>
                                     {ctrl.options.map((opt, optIdx) => (
                                         <div key={optIdx} className="cd-option-row">
                                             <input
@@ -475,6 +630,63 @@ function ControlDesignerModal({ isOpen, onClose, onSave, schemaName, schemaJson,
                                         </div>
                                     ))}
                                     <button className="cd-btn-add-opt" onClick={() => addOption(idx)}>+ เพิ่มตัวเลือก</button>
+                                </div>
+                            )}
+
+                            {CONTROL_CONFIG_FIELDS[ctrl.controlType] && (
+                                <div className="cd-config-panel">
+                                    <div className="cd-config-title">ตั้งค่า {CONTROL_TYPES.find(t => t.value === ctrl.controlType)?.label || ctrl.controlType}</div>
+                                    <div className="cd-config-fields">
+                                        {CONTROL_CONFIG_FIELDS[ctrl.controlType].map(field => (
+                                            <div key={field.key} className={`cd-config-field ${field.inputType === 'checkbox' ? 'cd-config-checkbox' : ''}`}>
+                                                <label className="cd-config-label">{field.label}</label>
+                                                {field.inputType === 'text' && (
+                                                    <input
+                                                        className="cd-input"
+                                                        type="text"
+                                                        value={ctrl.config?.[field.key] ?? ''}
+                                                        onChange={e => updateConfig(idx, field.key, e.target.value)}
+                                                        placeholder={field.placeholder || ''}
+                                                    />
+                                                )}
+                                                {field.inputType === 'number' && (
+                                                    <input
+                                                        className="cd-input"
+                                                        type="number"
+                                                        value={ctrl.config?.[field.key] ?? ''}
+                                                        onChange={e => updateConfig(idx, field.key, e.target.value === '' ? '' : Number(e.target.value))}
+                                                        placeholder={field.placeholder || ''}
+                                                    />
+                                                )}
+                                                {field.inputType === 'checkbox' && (
+                                                    <input
+                                                        type="checkbox"
+                                                        checked={!!ctrl.config?.[field.key]}
+                                                        onChange={e => updateConfig(idx, field.key, e.target.checked)}
+                                                    />
+                                                )}
+                                                {field.inputType === 'color' && (
+                                                    <input
+                                                        type="color"
+                                                        value={ctrl.config?.[field.key] || '#3b82f6'}
+                                                        onChange={e => updateConfig(idx, field.key, e.target.value)}
+                                                    />
+                                                )}
+                                                {field.inputType === 'select' && (
+                                                    <select
+                                                        className="cd-select"
+                                                        value={ctrl.config?.[field.key] ?? ''}
+                                                        onChange={e => updateConfig(idx, field.key, e.target.value)}
+                                                    >
+                                                        <option value="">-- เลือก --</option>
+                                                        {field.selectOptions?.map(opt => (
+                                                            <option key={opt.value} value={opt.value}>{opt.label}</option>
+                                                        ))}
+                                                    </select>
+                                                )}
+                                            </div>
+                                        ))}
+                                    </div>
                                 </div>
                             )}
                         </div>

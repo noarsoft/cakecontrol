@@ -1,9 +1,9 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import FormControl from '../components/controls/FormControl';
 import { schemaToFormConfig, getSchemaPages } from '../lib/schemaTransform';
 import { createFormData } from '../lib/schemaService';
 
-function FormFiller({ schema, formcfgJson, onSubmit }) {
+function FormFiller({ schema, formcfgJson, onSubmit, onDirtyChange }) {
     const [formData, setFormData] = useState({});
     const [submitted, setSubmitted] = useState(false);
     const [resetKey, setResetKey] = useState(0);
@@ -39,6 +39,10 @@ function FormFiller({ schema, formcfgJson, onSubmit }) {
 
     const hasData = Object.values(formData).some(v => v !== '' && v !== null && v !== undefined);
     const isLastPage = !hasPages || currentPage === totalPages - 1;
+
+    useEffect(() => {
+        onDirtyChange?.(hasData && !submitted);
+    }, [hasData, submitted, onDirtyChange]);
 
     const handleSubmit = async () => {
         if (!hasData) return;
@@ -104,7 +108,9 @@ function FormFiller({ schema, formcfgJson, onSubmit }) {
             {showDebug && (
                 <div style={{ padding: 12, borderRadius: 6, background: 'var(--bg-secondary)', fontSize: 13, fontFamily: 'monospace' }}>
                     <strong>Form Data:</strong>
-                    <pre style={{ margin: '8px 0 0', whiteSpace: 'pre-wrap' }}>{JSON.stringify(formData, null, 2)}</pre>
+                    <pre style={{ margin: '8px 0 0', whiteSpace: 'pre-wrap' }}>
+                        {hasData ? JSON.stringify(formData, null, 2) : 'ยังไม่มีข้อมูล — กรอกฟอร์มด้านบนก่อน'}
+                    </pre>
                 </div>
             )}
 

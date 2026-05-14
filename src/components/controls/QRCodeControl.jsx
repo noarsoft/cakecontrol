@@ -36,7 +36,7 @@ function QRCodeControl({ control = {}, rowData = {}, rowIndex = 0 }) {
     } = control;
 
     // Get value from databind or use static value
-    const qrValue = databind ? rowData[databind] : value;
+    const qrValue = (databind && rowData?.[databind] !== undefined) ? rowData[databind] : value;
     
     const handleClick = (e) => {
         if (disabled) return;

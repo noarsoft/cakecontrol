@@ -212,6 +212,69 @@
     padding: 4px 8px;
 }
 
+/* ─── Config panel ─── */
+.cd-config-panel {
+    padding: 10px 12px 12px 44px;
+    border-top: 1px dashed var(--border-primary);
+    background: var(--bg-primary);
+}
+
+.cd-config-title {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--accent-primary);
+    margin-bottom: 8px;
+}
+
+.cd-config-fields {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 16px;
+}
+
+.cd-config-field {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    min-width: 180px;
+    flex: 1 1 calc(50% - 8px);
+}
+
+.cd-config-field .cd-input,
+.cd-config-field .cd-select {
+    flex: 1;
+    min-width: 0;
+}
+
+.cd-config-label {
+    font-size: 12px;
+    color: var(--text-secondary);
+    white-space: nowrap;
+    min-width: 80px;
+}
+
+.cd-config-checkbox {
+    flex: 0 0 auto;
+    min-width: auto;
+}
+
+.cd-config-checkbox input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    cursor: pointer;
+    accent-color: var(--accent-primary);
+}
+
+.cd-config-field input[type="color"] {
+    width: 36px;
+    height: 30px;
+    padding: 2px;
+    border: 1px solid var(--border-primary);
+    border-radius: 4px;
+    background: var(--bg-primary);
+    cursor: pointer;
+}
+
 /* ─── Add control button ─── */
 .cd-btn-add-control {
     display: flex;

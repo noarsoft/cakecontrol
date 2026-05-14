@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { initService, getSchemas, getFormDataBySchema } from '../lib/schemaService';
+import { initService, getSchemas, getFormDataBySchema, deleteSchema } from '../lib/schemaService';
+import ConfirmModal from '../components/controls/ConfirmModal';
 import { useToast } from '../contexts/ToastContext';
 import './Dashboard.css';
 
@@ -11,6 +12,7 @@ export default function Dashboard() {
     const [dataCounts, setDataCounts] = useState({});
     const [serviceMode, setServiceMode] = useState(null);
     const [loading, setLoading] = useState(true);
+    const [deleteConfirm, setDeleteConfirm] = useState(null);
 
     const businessName = localStorage.getItem('activeBusinessName') || 'ไม่ระบุ';
 
@@ -36,6 +38,30 @@ export default function Dashboard() {
             }
         })();
     }, []);
+
+    const reloadSchemas = async () => {
+        const businessId = localStorage.getItem('activeBusinessId');
+        const list = await getSchemas(businessId);
+        setSchemas(list || []);
+        const counts = {};
+        await Promise.all((list || []).map(async s => {
+            const data = await getFormDataBySchema(s.id);
+            counts[s.id] = data.length;
+        }));
+        setDataCounts(counts);
+    };
+
+    const handleDeleteSchema = async () => {
+        if (!deleteConfirm) return;
+        try {
+            await deleteSchema(deleteConfirm);
+            setDeleteConfirm(null);
+            await reloadSchemas();
+            showToast('ลบฟอร์มเรียบร้อยแล้ว', 'success');
+        } catch {
+            showToast('ลบฟอร์มไม่สำเร็จ', 'error');
+        }
+    };
 
     const totalForms = schemas.length;
     const totalRecords = Object.values(dataCounts).reduce((a, b) => a + b, 0);
@@ -159,6 +185,16 @@ export default function Dashboard() {
                                             >
                                                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
                                             </button>
+                                            <button
+                                                className="dash-action-btn dash-action-delete"
+                                                title="ลบฟอร์ม"
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    setDeleteConfirm(s.rootid);
+                                                }}
+                                            >
+                                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                                            </button>
                                         </td>
                                     </tr>
                                 );
@@ -167,6 +203,15 @@ export default function Dashboard() {
                     </table>
                 )}
             </section>
+
+            <ConfirmModal
+                isOpen={deleteConfirm !== null}
+                title="ยืนยันการลบฟอร์ม"
+                message="การลบฟอร์มนี้จะทำให้ข้อมูลทั้งหมดที่เคยกรอกผ่านฟอร์มนี้ถูกลบออกไปด้วย คุณแน่ใจหรือไม่?"
+                variant="dangerous"
+                onConfirm={handleDeleteSchema}
+                onCancel={() => setDeleteConfirm(null)}
+            />
         </div>
     );
 }
