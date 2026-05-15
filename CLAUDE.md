@@ -6,18 +6,19 @@ React 19 + Vite 7 dynamic form builder.
 Web app for **creating forms and managing data** (like Google Forms with CRUD tables).
 
 - 44 control types matching ControlsDocs (no MUI/Ant)
-- Light/Dark theme via CSS variables
+- Light/Dark theme via CSS variables (40+ tokens)
 - Config panels for all control types in form designer
 - Multi-page form support (pagebreak)
 - Share page for public form filling
 - Excel export
+- Netflix/Steam style business selector
 
 ### Tech Stack
 
 - React 19, Vite 7, React Router DOM v7
 - Jest 30 + Testing Library (92 tests)
 - Chart.js 4 + Recharts 2
-- Axios, CSS variables (no CSS-in-JS)
+- CSS variables (no CSS-in-JS), shared UI components (`src/styles/ui.css`)
 - Backend API: `http://localhost:3000` (rootidx repo) — auto-detect, fallback to localStorage
 
 ---
@@ -60,15 +61,18 @@ src/
 │   ├── FormFiller.jsx         # Fill form (Google Forms style, multi-page)
 │   ├── FormFillerPage.jsx     # Standalone /form/:schemaId
 │   ├── FormPreview.jsx        # Preview form rendering
-│   ├── BusinessSelector.jsx   # Business/tenant selector (landing page)
+│   ├── BusinessSelector.jsx   # Netflix/Steam profile selector (landing page)
 │   └── SchemaNameInput.jsx    # Inline schema name editor
 ├── lib/               # Business logic
+│   ├── routes.js              # Centralized route constants (PAGES + API)
 │   ├── schema.js              # Schema utilities + FIELD_TYPES
 │   ├── schemaTransform.js     # schema → CRUDControl/FormControl config
 │   ├── schemaService.js       # Unified service (auto-detect backend)
-│   ├── apiSchemaService.js    # REST API client (lazy loaded)
+│   ├── apiSchemaService.js    # REST API client (uses routes.js)
 │   ├── mockSchemaService.js   # localStorage fallback
 │   └── __tests__/             # 5 suites, 92 tests
+├── styles/
+│   └── ui.css                 # Shared UI components (icon buttons, badges, toggles)
 ├── components/
 │   ├── controls/      # 44 control types + CRUDControl + ModalControl
 │   │   ├── index.js   # Central export for all controls
@@ -81,21 +85,55 @@ src/
 │       └── pages/     # Individual control demo pages
 ├── ThemeContext.jsx    # Theme provider
 ├── theme.css          # 40+ CSS custom properties
-├── App.jsx            # Router
+├── App.jsx            # Router (uses PAGES from routes.js)
 └── main.jsx           # Entry point
 ```
 
 ---
 
-## Routes
+## Routes — `src/lib/routes.js`
 
-| Path | Component | Description |
-|------|-----------|-------------|
-| `/` | BusinessSelector | Landing page / tenant selector |
-| `/dashboard` | Dashboard | Form list + summary stats |
-| `/formbuilder` | FormBuilder | Create/manage forms + data |
-| `/form/:schemaId` | FormFillerPage | Public share page for filling forms |
-| `/controls-docs` | ControlsDocs | Control documentation + demos |
+All route constants are centralized in `routes.js`. Never hardcode paths.
+
+### Frontend Pages (`PAGES`)
+
+| Constant | Path | Component |
+|----------|------|-----------|
+| `PAGES.HOME` | `/` | BusinessSelector |
+| `PAGES.DASHBOARD` | `/dashboard` | Dashboard |
+| `PAGES.FORM_BUILDER` | `/formbuilder` | FormBuilder |
+| `PAGES.FORM_FILLER` | `/form/:schemaId` | FormFillerPage |
+| `PAGES.CONTROLS_DOCS` | `/controls-docs` | ControlsDocs |
+
+### API Endpoints (`API`)
+
+| Constant | Pattern |
+|----------|---------|
+| `API.HEALTH` | `GET /api/health` |
+| `API.BUSINESS` | `GET/POST /api/business` |
+| `API.BUSINESS_ROOT(rootid)` | `PATCH/DELETE /api/business/root/:rootid` |
+| `API.SCHEMA` | `GET/POST /api/schema` |
+| `API.SCHEMA_BY_BUSINESS(bizId)` | `GET /api/schema?business_id=:bizId` |
+| `API.SCHEMA_ROOT(rootid)` | `PATCH/DELETE /api/schema/root/:rootid` |
+| `API.SCHEMA_LATEST(rootid)` | `GET /api/schema/root/:rootid/latest` |
+| `API.VIEW` | `POST /api/view` |
+| `API.VIEW_BY_SCHEMA(id)` | `GET /api/view/schema/:id` |
+| `API.VIEW_ROOT(rootid)` | `PATCH /api/view/root/:rootid` |
+| `API.FORM` | `POST /api/form` |
+| `API.FORM_BY_SCHEMA(id)` | `GET /api/form/schema/:id` |
+| `API.FORM_ROOT(rootid)` | `PATCH /api/form/root/:rootid` |
+| `API.DATA` | `POST /api/data` |
+| `API.DATA_BY_SCHEMA(id)` | `GET /api/data/schema/:id` |
+| `API.DATA_BY_SCHEMA_ROOT(rootid)` | `GET /api/data/schema-root/:rootid` |
+| `API.DATA_ROOT(rootid)` | `PATCH/DELETE /api/data/root/:rootid` |
+| `API.DATA_MIGRATE(rootid)` | `POST /api/data/root/:rootid/migrate-latest-schema` |
+
+Usage:
+```js
+import { PAGES, API } from './lib/routes';
+navigate(PAGES.DASHBOARD);
+fetch(API.SCHEMA_LATEST(rootid));
+```
 
 ---
 
@@ -144,6 +182,9 @@ FormBuilder is the main workspace with a topbar and 4 modes:
 | Backend (rootidx) | Done |
 | FE-BE Integration | Done |
 | Toast notifications | Done |
+| Netflix/Steam business selector | Done |
+| Centralized routes (routes.js) | Done |
+| Shared UI components (ui.css) | Done |
 
 ---
 
@@ -153,11 +194,12 @@ Every control follows the same pattern:
 
 1. **Files**: `XxxControl.jsx` + `XxxControl.css`
 2. **Props**: Simple controls take `{ control, rowData, rowIndex }`, Composite controls take `{ config }`
-3. **CSS**: Uses CSS variables from `theme.css`
+3. **CSS**: Uses CSS variables from `theme.css` — never hardcode colors
 4. **Export**: `export default` then add to `controls/index.js`
 5. **Data binding**: `rowData[control.databind]` or `control.value`
-6. **Events**: callback pattern e.g. `control.onClick(e, rowData, rowIndex)`
-7. **genControl()**: factory function in `registry.jsx` (lazy loading pattern)
+6. **Prop sync**: Always add `useEffect` to sync state when `value`/`rowData` changes
+7. **Events**: callback pattern e.g. `control.onClick(e, rowData, rowIndex)`
+8. **genControl()**: factory function in `registry.jsx` (lazy loading pattern)
 
 ### Adding a New Control
 
@@ -199,7 +241,7 @@ Composite control for CRUD data management:
 ### Data Flow
 
 ```
-Dashboard → FormBuilder → ControlDesignerModal → Save
+BusinessSelector → Dashboard → FormBuilder → ControlDesignerModal → Save
     ↓
 data_schema (JSON: { name: {type:"string"}, age: {type:"number"}, ...})
     ↓ auto-generate
@@ -212,8 +254,8 @@ data (actual records as JSON)
 
 ### Service Layer — Auto-Detect Backend
 
-`schemaService.js` → `initService()` → fetch `/api/health` (timeout 1.5s)
-- Responds OK → `apiSchemaService` (REST API)
+`schemaService.js` → `initService()` → fetch `API.HEALTH` (timeout 1.5s)
+- Responds OK → `apiSchemaService` (REST API via `routes.js`)
 - No response → `mockSchemaService` (localStorage + seed demo data)
 
 API signatures are identical — calling code doesn't need to know the data source.
@@ -236,14 +278,15 @@ Light/Dark theme via CSS custom properties (40+ variables)
 ### Key CSS Variables
 
 ```css
-/* Backgrounds */  --bg-primary, --bg-secondary, --bg-hover
+/* Backgrounds */  --bg-primary, --bg-secondary, --bg-hover, --bg-tertiary
 /* Text */         --text-primary, --text-secondary, --text-tertiary
-/* Borders */      --border-primary, --border-focus
-/* Accent */       --accent-primary, --accent-primary-hover
-/* Status */       --success, --error, --warning, --info
+/* Borders */      --border-primary, --border-secondary, --border-hover, --border-focus
+/* Accent */       --accent-primary, --accent-primary-hover, --accent-primary-light
+/* Status */       --success, --success-light, --error, --error-light, --warning, --warning-light, --info
 /* Spacing */      --spacing-sm (8px), --spacing-md (12px), --spacing-lg (16px)
-/* Radius */       --radius-sm (4px), --radius-md (6px), --radius-lg (8px)
+/* Radius */       --radius-sm (4px), --radius-md (6px), --radius-lg (8px), --radius-xl (12px)
 /* Shadows */      --shadow-sm, --shadow-md, --shadow-lg
+/* Text on accent */ --text-on-accent
 ```
 
 ### Dark Mode
@@ -251,7 +294,11 @@ Light/Dark theme via CSS custom properties (40+ variables)
 `data-theme="dark"` on `<html>` — all variables switch automatically.
 Auto-detection: localStorage → system `prefers-color-scheme` → default light.
 
-### Creating New Controls — always use theme variables
+### CSS Rules
+
+- Always use CSS variables — never hardcode hex colors
+- Never use `:root[data-theme="dark"]` overrides — if you need one, the base style should use a variable instead
+- Shared reusable classes go in `src/styles/ui.css`
 
 ```css
 .new-control {
@@ -289,5 +336,16 @@ Jest 30 + jsdom, CSS mock: identity-obj-proxy, localStorage: in-memory
 - Controls: PascalCase + `Control` suffix
 - CSS classes: kebab-case
 - Demo pages: `XxxPage.jsx`
-- Backend API: rootidx routes e.g. `/schema`, `/view`, `/form`, `/data`, `/business`
+- Route constants: UPPER_SNAKE_CASE (`PAGES.DASHBOARD`, `API.SCHEMA_ROOT`)
+- Backend API: rootidx routes defined in `src/lib/routes.js`
 - UI uses Thai language for labels
+
+---
+
+## Constraints
+
+- **Never modify** `controls-docs/` or `rootidx/` — client-provided from initial commit
+- **Never hardcode** API URLs — use `API.*` from `routes.js`
+- **Never hardcode** page paths — use `PAGES.*` from `routes.js`
+- **Never hardcode** colors — use CSS variables from `theme.css`
+- Controls from `controls-docs` are reference only — use but don't modify
