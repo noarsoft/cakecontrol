@@ -9,11 +9,12 @@ describe('schema.js', () => {
             expect(FIELD_TYPES).toHaveLength(46);
         });
 
-        test('each type has value, label, icon', () => {
+        test('each type has value, label, icon, enabled', () => {
             for (const ft of FIELD_TYPES) {
                 expect(ft).toHaveProperty('value');
                 expect(ft).toHaveProperty('label');
                 expect(ft).toHaveProperty('icon');
+                expect(ft).toHaveProperty('enabled');
             }
         });
     });

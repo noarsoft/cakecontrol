@@ -2,12 +2,12 @@
 import React, { useState } from 'react';
 import './SliderControl.css';
 
-function SliderControl({ 
-    control, 
-    rowData, 
+function SliderControl({
+    control,
+    rowData,
     rowIndex,
     value,
-    onChange 
+    onChange
 }) {
     const initialValue = value !== undefined ? value : (control.databind ? rowData?.[control.databind] : control.value) || 0;
     const [sliderValue, setSliderValue] = useState(initialValue);
@@ -16,17 +16,17 @@ function SliderControl({
     const max = control.max !== undefined ? control.max : 100;
     const step = control.step !== undefined ? control.step : 1;
     const disabled = control.disabled || false;
-    const showLabel = control.showLabel !== false; // default true
-    const showValue = control.showValue !== false; // default true
+    const showLabel = control.showLabel !== false;
+    const showValue = control.showValue !== false;
     const showTicks = control.showTicks || false;
-    const size = control.size || 'medium'; // small, medium, large
+    const size = control.size || 'medium';
     const color = control.color || '#3b82f6';
     const onChangeCallback = onChange || control.onChange;
 
     const handleChange = (e) => {
         const newValue = parseFloat(e.target.value);
         setSliderValue(newValue);
-        
+
         if (onChangeCallback) {
             onChangeCallback(newValue);
         }
@@ -40,18 +40,18 @@ function SliderControl({
 
     return (
         <div className={classes}>
-            {showLabel && (
+            {(showLabel || showValue) && (
                 <div className="slider-header">
-                    <label className="slider-label">{label}</label>
+                    {showLabel && <label className="slider-label">{label}</label>}
                     {showValue && (
                         <span className="slider-value-display">
                             {sliderValue.toFixed(step < 1 ? 2 : 0)}
-                            {control.unit ? ` ${control.unit}` : ''}
+                            {control.unit ? ` ${control.unit}` : ' %'}
                         </span>
                     )}
                 </div>
             )}
-            
+
             <div className="slider-container">
                 <input
                     type="range"
@@ -64,7 +64,7 @@ function SliderControl({
                     className="slider-input"
                     style={{ '--slider-color': color, '--slider-percentage': `${percentage}%` }}
                 />
-                
+
                 <div className="slider-track" style={{ '--slider-color': color }}>
                     <div className="slider-progress" style={{ width: `${percentage}%`, backgroundColor: color }} />
                 </div>

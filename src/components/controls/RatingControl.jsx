@@ -1,17 +1,21 @@
 // RatingControl.jsx
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import './RatingControl.css';
 
-function RatingControl({ 
-    control, 
-    rowData, 
+function RatingControl({
+    control,
+    rowData,
     rowIndex,
     value,
-    onChange 
+    onChange
 }) {
-    const initialValue = value !== undefined ? value : (control.databind ? rowData?.[control.databind] : control.value) || 0;
-    const [rating, setRating] = useState(initialValue);
+    const resolvedValue = value !== undefined ? value : (control.databind ? rowData?.[control.databind] : control.value) || 0;
+    const [rating, setRating] = useState(resolvedValue);
     const [hoveredRating, setHoveredRating] = useState(0);
+
+    useEffect(() => {
+        setRating(resolvedValue);
+    }, [resolvedValue]);
 
     const maxStars = control.maxStars || 5;
     const color = control.color || '#ffc107';

@@ -110,8 +110,8 @@ function FormControl({ config }) {
                     gridRow,
                 }}
             >
-                {label && (
-                    <label 
+                {label && controlConfig.type !== 'slider' && (
+                    <label
                         className="form-grid-label"
                         style={{
                             fontWeight: controlConfig.labelBold ? 'bold' : 'inherit',

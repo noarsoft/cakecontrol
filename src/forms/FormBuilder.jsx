@@ -25,8 +25,9 @@ function FormBuilder() {
     const { showToast } = useToast();
     const [schemas, setSchemas] = useState([]);
     const navState = location.state || {};
-    const [activeSchemaId, setActiveSchemaId] = useState(navState.activeSchemaId || null);
-    const [mode, setMode] = useState(navState.mode || 'data');
+    const searchParams = new URLSearchParams(location.search);
+    const [activeSchemaId, setActiveSchemaId] = useState(navState.activeSchemaId || searchParams.get('schema') || null);
+    const [mode, setMode] = useState(navState.mode || searchParams.get('mode') || 'data');
     const [refreshKey, setRefreshKey] = useState(0);
     const [deleteConfirm, setDeleteConfirm] = useState(null);
     const [schemaData, setSchemaData] = useState(null);
@@ -49,17 +50,33 @@ function FormBuilder() {
         return () => window.removeEventListener('beforeunload', handleBeforeUnload);
     }, [anyDirty]);
 
+    useEffect(() => {
+        const params = new URLSearchParams(location.search);
+        if (activeSchemaId) {
+            params.set('schema', activeSchemaId);
+            params.set('mode', mode);
+        } else {
+            params.delete('schema');
+            params.delete('mode');
+        }
+        const newSearch = params.toString();
+        const currentSearch = location.search.replace(/^\?/, '');
+        if (newSearch !== currentSearch) {
+            navigate(`/formbuilder?${newSearch}`, { replace: true });
+        }
+    }, [activeSchemaId, mode]);
+
     // Init: detect backend + load schemas (+ auto-create if navigated with createNew)
     useEffect(() => {
         initService()
-            .then(mode => {
-                setServiceMode(mode);
+            .then(svcMode => {
+                setServiceMode(svcMode);
                 reloadSchemas().then(() => {
                     if (navState.createNew && !createTriggered.current) {
                         createTriggered.current = true;
                         window.history.replaceState({}, '');
                         handleAddSchema();
-                    } else if (!navState.activeSchemaId && !navState.createNew) {
+                    } else if (!navState.activeSchemaId && !navState.createNew && !searchParams.get('schema')) {
                         navigate('/dashboard', { replace: true });
                     }
                 });

@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { FIELD_TYPES, addField, removeField, updateField, reorderField, getFieldEntries, validateSchema } from '../lib/schema';
+import { FIELD_TYPES, ENABLED_FIELD_TYPES, addField, removeField, updateField, reorderField, getFieldEntries, validateSchema } from '../lib/schema';
 import { useToast } from '../contexts/ToastContext';
 import { genControl } from '../components/controls/TableviewControl';
 
@@ -49,6 +49,13 @@ const CONTROL_CONFIGS = {
     select: [
         { key: 'enum', label: 'Options', type: 'options', hint: 'ตัวเลือกในดรอปดาวน์' },
     ],
+    dropdown: [
+        { key: 'enum', label: 'Options', type: 'options', hint: 'ตัวเลือกในดรอปดาวน์' },
+        { key: 'placeholder', label: 'Placeholder', type: 'text', hint: 'ข้อความแสดงตอนยังไม่เลือก เช่น "เลือกรายการ..."' },
+        { key: 'searchable', label: 'ค้นหาได้', type: 'toggle', hint: 'เปิดให้พิมพ์ค้นหาตัวเลือกได้' },
+        { key: 'clearable', label: 'ล้างค่าได้', type: 'toggle', hint: 'แสดงปุ่มล้างค่าที่เลือก' },
+        { key: 'maxHeight', label: 'ความสูงสูงสุด', type: 'text', hint: 'เช่น "300px"' },
+    ],
     boolean: [
         { key: 'value', label: 'Default', type: 'toggle', hint: 'ค่าเริ่มต้น checked หรือไม่' },
     ],
@@ -68,11 +75,18 @@ const CONTROL_CONFIGS = {
         { key: 'value', label: 'Default', type: 'number', hint: 'ค่าเริ่มต้นของแถบเลื่อน' },
     ],
     rating: [
-        { key: 'max', label: 'Max Stars', type: 'number', hint: 'จำนวนดาวสูงสุด (default: 5)' },
+        { key: 'maxStars', label: 'Max Stars', type: 'number', hint: 'จำนวนดาวสูงสุด (default: 5)' },
         { key: 'value', label: 'Default', type: 'number', hint: 'จำนวนดาวเริ่มต้น' },
+        { key: 'allowHalf', label: 'ครึ่งดาว', type: 'toggle', hint: 'อนุญาตให้เลือกครึ่งดาว (0.5)' },
+        { key: 'showLabel', label: 'แสดงค่า', type: 'toggle', hint: 'แสดงตัวเลขคะแนน เช่น 3.5/5' },
+        { key: 'color', label: 'สี', type: 'text', hint: 'สีดาว เช่น "#ffc107", "#ef4444"' },
+        { key: 'size', label: 'ขนาด', type: 'text', hint: 'small, medium, large' },
     ],
-    file: [
+    fileupload: [
         { key: 'placeholder', label: 'Placeholder', type: 'text', hint: 'ข้อความแสดงตอนยังไม่เลือกไฟล์' },
+        { key: 'maxFileSize', label: 'ขนาดไฟล์สูงสุด (bytes)', type: 'number', hint: 'เช่น 52428800 = 50MB' },
+        { key: 'allowedTypes', label: 'ประเภทไฟล์', type: 'text', hint: 'เช่น "image/jpeg,image/png,application/pdf"' },
+        { key: 'buttonLabel', label: 'ข้อความปุ่ม', type: 'text', hint: 'เช่น "Choose Files to Upload"' },
     ],
     searchbox: [
         { key: 'placeholder', label: 'Placeholder', type: 'text', hint: 'เช่น "ค้นหาและเลือก..."' },
@@ -123,14 +137,22 @@ const CONTROL_CONFIGS = {
         { key: 'enum', label: 'Buttons', type: 'options', hint: 'รายการปุ่ม' },
     ],
     accordion: [],
-    tab:      [],
+    tabs:     [],
     card:     [],
     tree:     [],
     menu:     [],
-    gridview: [],
-    tableview: [],
+    grid:     [],
+    table:    [],
     form:     [],
     crud:     [],
+    alertmodal: [
+        { key: 'title', label: 'Title', type: 'text', hint: 'หัวข้อ alert' },
+        { key: 'message', label: 'Message', type: 'text', hint: 'ข้อความใน alert' },
+    ],
+    confirmmodal: [
+        { key: 'title', label: 'Title', type: 'text', hint: 'หัวข้อ confirm' },
+        { key: 'message', label: 'Message', type: 'text', hint: 'ข้อความใน confirm' },
+    ],
     modal: [
         { key: 'value', label: 'Button Text', type: 'text', hint: 'ข้อความปุ่มเปิด modal' },
     ],
@@ -147,14 +169,14 @@ const CONTROL_CONFIGS = {
         { key: 'showLegend', label: 'Show Legend', type: 'toggle', hint: 'แสดง Legend' },
         { key: 'showGrid', label: 'Show Grid', type: 'toggle', hint: 'แสดงเส้น Grid' },
     ],
-    barchart: [
+    chartsbar: [
         { key: 'title', label: 'Title', type: 'text', hint: 'ชื่อกราฟ' },
         { key: 'xAxisKey', label: 'X Axis Key', type: 'text', hint: 'ชื่อ field สำหรับแกน X' },
         { key: 'yAxisKey', label: 'Y Axis Key', type: 'text', hint: 'ชื่อ field สำหรับแกน Y' },
         { key: 'showLegend', label: 'Show Legend', type: 'toggle', hint: 'แสดง Legend' },
         { key: 'showGrid', label: 'Show Grid', type: 'toggle', hint: 'แสดงเส้น Grid' },
     ],
-    linechart: [
+    chartsline: [
         { key: 'title', label: 'Title', type: 'text', hint: 'ชื่อกราฟ' },
         { key: 'xAxisKey', label: 'X Axis Key', type: 'text', hint: 'ชื่อ field สำหรับแกน X' },
         { key: 'yAxisKey', label: 'Y Axis Key', type: 'text', hint: 'ชื่อ field สำหรับแกน Y' },
@@ -162,24 +184,24 @@ const CONTROL_CONFIGS = {
         { key: 'showLegend', label: 'Show Legend', type: 'toggle', hint: 'แสดง Legend' },
         { key: 'showGrid', label: 'Show Grid', type: 'toggle', hint: 'แสดงเส้น Grid' },
     ],
-    piechart: [
+    chartspie: [
         { key: 'title', label: 'Title', type: 'text', hint: 'ชื่อกราฟ' },
         { key: 'nameKey', label: 'Name Key', type: 'text', hint: 'key สำหรับ label' },
         { key: 'dataKey', label: 'Data Key', type: 'text', hint: 'key สำหรับค่า' },
         { key: 'showLegend', label: 'Show Legend', type: 'toggle', hint: 'แสดง Legend' },
     ],
-    doughnutchart: [
+    chartsdoughnut: [
         { key: 'title', label: 'Title', type: 'text', hint: 'ชื่อกราฟ' },
         { key: 'nameKey', label: 'Name Key', type: 'text', hint: 'key สำหรับ label' },
         { key: 'dataKey', label: 'Data Key', type: 'text', hint: 'key สำหรับค่า' },
         { key: 'innerRadius', label: 'Inner Radius (%)', type: 'number', hint: 'รัศมีวงใน เช่น 60' },
         { key: 'showLegend', label: 'Show Legend', type: 'toggle', hint: 'แสดง Legend' },
     ],
-    radarchart: [
+    chartsradar: [
         { key: 'title', label: 'Title', type: 'text', hint: 'ชื่อกราฟ' },
         { key: 'showLegend', label: 'Show Legend', type: 'toggle', hint: 'แสดง Legend' },
     ],
-    areachart: [
+    chartsarea: [
         { key: 'title', label: 'Title', type: 'text', hint: 'ชื่อกราฟ' },
         { key: 'xAxisKey', label: 'X Axis Key', type: 'text', hint: 'ชื่อ field สำหรับแกน X' },
         { key: 'yAxisKey', label: 'Y Axis Key', type: 'text', hint: 'ชื่อ field สำหรับแกน Y' },
@@ -187,11 +209,11 @@ const CONTROL_CONFIGS = {
         { key: 'showLegend', label: 'Show Legend', type: 'toggle', hint: 'แสดง Legend' },
         { key: 'showGrid', label: 'Show Grid', type: 'toggle', hint: 'แสดงเส้น Grid' },
     ],
-    bubblechart: [
+    chartsbubble: [
         { key: 'title', label: 'Title', type: 'text', hint: 'ชื่อกราฟ' },
         { key: 'showLegend', label: 'Show Legend', type: 'toggle', hint: 'แสดง Legend' },
     ],
-    mixedchart: [
+    chartsmixed: [
         { key: 'title', label: 'Title', type: 'text', hint: 'ชื่อกราฟ' },
         { key: 'showLegend', label: 'Show Legend', type: 'toggle', hint: 'แสดง Legend' },
         { key: 'showGrid', label: 'Show Grid', type: 'toggle', hint: 'แสดงเส้น Grid' },
@@ -245,7 +267,7 @@ function OptionEditor({ options: rawOptions, onChange }) {
 
 const FIELD_TYPE_TO_CONTROL = {
     string: 'textbox', number: 'number', password: 'password', email: 'textbox',
-    select: 'select', boolean: 'checkbox', toggle: 'toggle', date: 'date',
+    select: 'select', dropdown: 'dropdown', boolean: 'checkbox', toggle: 'toggle', date: 'date',
     datepicker: 'datepicker', slider: 'slider', rating: 'rating', file: 'textbox',
     searchbox: 'searchbox', multipleupload: 'multipleupload',
     label: 'label', link: 'link', image: 'image', badge: 'badge', icon: 'icon',
@@ -266,12 +288,18 @@ function ControlPreview({ fieldKey, fieldDef }) {
         ...(fieldDef.type === 'select' && fieldDef.enum ? {
             options: fieldDef.enum.map(v => typeof v === 'object' ? v : { label: v, value: v }),
         } : {}),
+        ...(fieldDef.type === 'dropdown' && fieldDef.enum ? {
+            data: fieldDef.enum.map(v => typeof v === 'object' ? { id: v.value, label: v.label } : { id: v, label: String(v) }),
+            keyField: 'id',
+            displayField: 'label',
+        } : {}),
         ...(fieldDef.type === 'email' ? { inputType: 'email' } : {}),
     };
 
     const passthroughKeys = ['min', 'max', 'step', 'showStrength', 'minLength', 'maxLength',
         'showValue', 'color', 'multiple', 'allowCreate', 'width', 'height',
-        'borderRadius', 'objectFit', 'shadow', 'href'];
+        'borderRadius', 'objectFit', 'shadow', 'href',
+        'maxStars', 'allowHalf', 'showLabel', 'size'];
     for (const k of passthroughKeys) {
         if (fieldDef[k] !== undefined) control[k] = fieldDef[k];
     }
@@ -500,8 +528,9 @@ function SchemaBuilder({ schemaJson, onChange, onDirtyChange }) {
     const handleUpdateType = (key, type) => {
         const def = { ...draft[key], type };
         if (type === 'select' && !def.enum) def.enum = [{ label: 'ตัวเลือก 1', value: 0 }, { label: 'ตัวเลือก 2', value: 1 }];
+        if (type === 'dropdown' && !def.enum) def.enum = [{ label: 'ตัวเลือก 1', value: 0 }, { label: 'ตัวเลือก 2', value: 1 }];
         if (type === 'buttongroup' && !def.enum) def.enum = [{ label: 'Option A', value: 0 }, { label: 'Option B', value: 1 }];
-        if (type !== 'select' && type !== 'buttongroup') delete def.enum;
+        if (type !== 'select' && type !== 'dropdown' && type !== 'buttongroup') delete def.enum;
         updateDraft(updateField(draft, key, key, def));
     };
 
@@ -623,7 +652,7 @@ function SchemaBuilder({ schemaJson, onChange, onDirtyChange }) {
                                 <div className="cd-field-wrapper">
                                     <label className="sb-field-label">ชนิด Control</label>
                                     <select className="field-type-select" value={def.type} onChange={e => handleUpdateType(key, e.target.value)}>
-                                        {FIELD_TYPES.map(t => <option key={t.value} value={t.value}>{t.icon} {t.label}</option>)}
+                                        {ENABLED_FIELD_TYPES.map(t => <option key={t.value} value={t.value}>{t.icon} {t.label}</option>)}
                                     </select>
                                 </div>
                             </div>

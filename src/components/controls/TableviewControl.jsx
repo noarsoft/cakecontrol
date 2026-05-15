@@ -185,6 +185,21 @@ import RadarChartJSControl from './RadarChartJSControl';
 import AreaChartJSControl from './AreaChartJSControl';
 import BubbleChartJSControl from './BubbleChartJSControl';
 import MixedChartJSControl from './MixedChartJSControl';
+import ButtonGroupControl from './ButtonGroupControl';
+import CalendarGridControl from './CalendarGridControl';
+import ChartControl from './ChartControl';
+import AccordionControl from './AccordionControl';
+import TabControl from './TabControl';
+import TreeControl from './TreeControl';
+import MenuControl from './MenuControl';
+import CardControl from './CardControl';
+import GridviewControl from './GridviewControl';
+import ModalControl from './ModalControl';
+import AlertModal from './AlertModal';
+import ConfirmModal from './ConfirmModal';
+import FormControl from './FormControl';
+import MultipleUploadControl from './MultipleUploadControl';
+import CRUDControl from './CRUDControl';
 
 /**
  * Generate control component based on control type
@@ -211,8 +226,10 @@ function genControl(control, rowData, rowIndex) {
             return <NumberControl key={key} {...props} />;
         
         case "select":
-        case "dropdown":
             return <SelectControl key={key} {...props} />;
+
+        case "dropdown":
+            return <DropdownControl key={key} {...props} />;
         
         case "image":
             return <ImageControl key={key} {...props} />;
@@ -228,8 +245,6 @@ function genControl(control, rowData, rowIndex) {
             return <IconControl key={key} {...props} />;
         
         case "date":
-            return <DateControl key={key} {...props} />;
-        
         case "datepicker":
             return <DatePickerControl key={key} {...props} />;
         
@@ -298,9 +313,61 @@ function genControl(control, rowData, rowIndex) {
         case "mixed":
             return <MixedChartJSControl key={key} {...props} />;
         
+        case "buttongroup":
+            return <ButtonGroupControl key={key} {...props} />;
+
+        case "calendargrid":
+            return <CalendarGridControl key={key} {...props} />;
+
+        case "chart":
+            return <ChartControl key={key} {...props} />;
+
+        case "accordion":
+            return <AccordionControl key={key} {...props} />;
+
+        case "tabs":
+        case "tab":
+            return <TabControl key={key} {...props} />;
+
+        case "tree":
+            return <TreeControl key={key} {...props} />;
+
+        case "menu":
+            return <MenuControl key={key} data={control.items || control.data || []} orientation={control.orientation} onMenuClick={control.onMenuClick} collapsible={control.collapsible} />;
+
+        case "card":
+            return <CardControl key={key} {...props} />;
+
+        case "grid":
+        case "gridview":
+            return <GridviewControl key={key} config={control} />;
+
+        case "modal":
+            return <ModalControl key={key} isOpen={control.isOpen} title={control.title || control.label} onClose={control.onClose} size={control.size} closeOnBackdropClick={control.closeOnBackdropClick}>{control.content}</ModalControl>;
+
+        case "alertmodal":
+            return <AlertModal key={key} isOpen={control.isOpen} type={control.alertType || control.type} title={control.title || control.label} message={control.message} onClose={control.onClose} />;
+
+        case "confirmmodal":
+            return <ConfirmModal key={key} isOpen={control.isOpen} title={control.title || control.label} message={control.message} onConfirm={control.onConfirm} onCancel={control.onCancel} confirmLabel={control.confirmLabel} cancelLabel={control.cancelLabel} />;
+
+        case "fileupload":
+        case "upload":
+            return <MultipleUploadControl key={key} control={control} />;
+
+        case "form":
+            return <FormControl key={key} config={control} />;
+
+        case "table":
+        case "tableview":
+            return <TableviewControl key={key} config={control} />;
+
+        case "crud":
+            return <CRUDControl key={key} config={control} />;
+
         case "custom":
             return control.render ? control.render(rowData, rowIndex) : null;
-        
+
         default:
             return null;
     }

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import ModalControl from '../components/controls/ModalControl';
 import { useToast } from '../contexts/ToastContext';
+import { FIELD_TYPES } from '../lib/schema';
 import './ControlDesignerModal.css';
 
 const CONTROL_TYPES = [
@@ -58,7 +59,7 @@ const CONTROL_TO_FIELD_TYPE = {
     textbox: 'string',
     number: 'number',
     select: 'select',
-    dropdown: 'select',
+    dropdown: 'dropdown',
     checkbox: 'boolean',
     toggle: 'toggle',
     date: 'date',
@@ -100,10 +101,19 @@ const CONTROL_TO_FIELD_TYPE = {
     chartsmixed: 'chartsmixed',
 };
 
+const DISABLED_FIELD_VALUES = new Set(
+    FIELD_TYPES.filter(t => !t.enabled).map(t => t.value)
+);
+const ENABLED_CONTROL_TYPES = CONTROL_TYPES.filter(t => {
+    const fieldValue = CONTROL_TO_FIELD_TYPE[t.value] || t.value;
+    return !DISABLED_FIELD_VALUES.has(fieldValue);
+});
+
 const FIELD_TO_CONTROL_TYPE = {
     string: 'textbox',
     number: 'number',
     select: 'select',
+    dropdown: 'dropdown',
     boolean: 'checkbox',
     toggle: 'toggle',
     date: 'date',
@@ -172,11 +182,24 @@ const CONTROL_CONFIG_FIELDS = {
         { key: 'max', label: 'ค่าสูงสุด', inputType: 'number' },
         { key: 'step', label: 'Step', inputType: 'number' },
         { key: 'unit', label: 'หน่วย', inputType: 'text', placeholder: 'เช่น %, kg' },
+        { key: 'color', label: 'สี', inputType: 'color' },
+        { key: 'size', label: 'ขนาด', inputType: 'select', selectOptions: [
+            { value: 'small', label: 'เล็ก' },
+            { value: 'medium', label: 'กลาง' },
+            { value: 'large', label: 'ใหญ่' },
+        ]},
         { key: 'showValue', label: 'แสดงค่า', inputType: 'checkbox' },
+        { key: 'showTicks', label: 'แสดงขีด', inputType: 'checkbox' },
     ],
     rating: [
-        { key: 'max', label: 'จำนวนดาว', inputType: 'number' },
+        { key: 'maxStars', label: 'จำนวนดาว', inputType: 'number' },
         { key: 'allowHalf', label: 'อนุญาตครึ่งดาว', inputType: 'checkbox' },
+        { key: 'color', label: 'สี', inputType: 'color' },
+        { key: 'size', label: 'ขนาด', inputType: 'select', selectOptions: [
+            { value: 'small', label: 'เล็ก' },
+            { value: 'medium', label: 'กลาง' },
+            { value: 'large', label: 'ใหญ่' },
+        ]},
     ],
     label: [
         { key: 'value', label: 'ข้อความ', inputType: 'text' },
@@ -226,11 +249,16 @@ const CONTROL_CONFIG_FIELDS = {
         { key: 'disabled', label: 'ปิดใช้งาน', inputType: 'checkbox' },
     ],
     date: [
+        { key: 'placeholder', label: 'Placeholder', inputType: 'text', placeholder: 'เช่น เลือกวันที่' },
         { key: 'min', label: 'วันที่ต่ำสุด', inputType: 'text', placeholder: 'เช่น 2024-01-01' },
         { key: 'max', label: 'วันที่สูงสุด', inputType: 'text', placeholder: 'เช่น 2030-12-31' },
+        { key: 'disabled', label: 'ปิดใช้งาน', inputType: 'checkbox' },
     ],
     datepicker: [
         { key: 'placeholder', label: 'Placeholder', inputType: 'text', placeholder: 'เช่น เลือกวันที่' },
+        { key: 'minDate', label: 'วันที่ต่ำสุด', inputType: 'text', placeholder: 'เช่น 2024-01-01' },
+        { key: 'maxDate', label: 'วันที่สูงสุด', inputType: 'text', placeholder: 'เช่น 2030-12-31' },
+        { key: 'disabled', label: 'ปิดใช้งาน', inputType: 'checkbox' },
     ],
     checkbox: [
         { key: 'disabled', label: 'ปิดใช้งาน', inputType: 'checkbox' },
@@ -242,7 +270,6 @@ const CONTROL_CONFIG_FIELDS = {
         { key: 'placeholder', label: 'Placeholder', inputType: 'text' },
         { key: 'searchable', label: 'ค้นหาได้', inputType: 'checkbox' },
         { key: 'clearable', label: 'ล้างค่าได้', inputType: 'checkbox' },
-        { key: 'displayField', label: 'Display Field', inputType: 'text', placeholder: 'ชื่อ field ที่จะแสดง' },
         { key: 'maxHeight', label: 'ความสูงสูงสุด', inputType: 'text', placeholder: 'เช่น 300px' },
     ],
     fileupload: [
@@ -404,7 +431,7 @@ function schemaToControls(schemaJson, formcfgJson) {
     const controls = sortedSchema.map(([key, def]) => {
         const fc = formControls.find(c => c.key === key);
         const controlType = FIELD_TO_CONTROL_TYPE[def.type] || 'textbox';
-        const hasOptions = (def.type === 'select' || def.type === 'buttongroup') && def.enum;
+        const hasOptions = (def.type === 'select' || def.type === 'dropdown' || def.type === 'buttongroup') && def.enum;
         return {
             id: Date.now() + Math.random(),
             label: fc?.label || def.label || key,
@@ -443,7 +470,7 @@ function controlsToSchema(controls) {
         const fieldType = CONTROL_TO_FIELD_TYPE[ctrl.controlType] || 'string';
         const def = { type: fieldType };
         if (ctrl.label.trim()) def.label = ctrl.label.trim();
-        const hasOptions = ctrl.controlType === 'dropdown' || ctrl.controlType === 'buttongroup';
+        const hasOptions = ctrl.controlType === 'select' || ctrl.controlType === 'dropdown' || ctrl.controlType === 'buttongroup';
         if (hasOptions && ctrl.options.length > 0) {
             def.enum = ctrl.options
                 .filter(o => o.key || o.value)
@@ -684,13 +711,13 @@ function ControlDesignerModal({ isOpen, onClose, onSave, schemaName, schemaJson,
                                     value={ctrl.controlType}
                                     onChange={e => {
                                         updateControl(idx, 'controlType', e.target.value);
-                                        const needsOptions = e.target.value === 'dropdown' || e.target.value === 'buttongroup';
+                                        const needsOptions = e.target.value === 'select' || e.target.value === 'dropdown' || e.target.value === 'buttongroup';
                                         if (needsOptions && ctrl.options.length === 0) {
                                             addOption(idx);
                                         }
                                     }}
                                 >
-                                    {CONTROL_TYPES.map(t => (
+                                    {ENABLED_CONTROL_TYPES.map(t => (
                                         <option key={t.value} value={t.value}>{t.label}</option>
                                     ))}
                                 </select>
@@ -701,10 +728,10 @@ function ControlDesignerModal({ isOpen, onClose, onSave, schemaName, schemaJson,
                                 </div>
                             </div>
 
-                            {(ctrl.controlType === 'dropdown' || ctrl.controlType === 'buttongroup') && (
+                            {(ctrl.controlType === 'select' || ctrl.controlType === 'dropdown' || ctrl.controlType === 'buttongroup') && (
                                 <div className="cd-options-panel">
                                     <div className="cd-options-title">
-                                        {ctrl.controlType === 'dropdown' ? 'ตัวเลือก Dropdown' : 'ตัวเลือก ButtonGroup'}
+                                        {ctrl.controlType === 'dropdown' ? 'ตัวเลือก Dropdown' : ctrl.controlType === 'select' ? 'ตัวเลือก Select' : 'ตัวเลือก ButtonGroup'}
                                     </div>
                                     {ctrl.options.map((opt, optIdx) => (
                                         <div key={optIdx} className="cd-option-row">
