@@ -1,5 +1,5 @@
 // SliderControl.jsx
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import './SliderControl.css';
 
 function SliderControl({
@@ -9,8 +9,13 @@ function SliderControl({
     value,
     onChange
 }) {
-    const initialValue = value !== undefined ? value : (control.databind ? rowData?.[control.databind] : control.value) || 0;
-    const [sliderValue, setSliderValue] = useState(initialValue);
+    const resolvedValue = value !== undefined ? value : (control.databind ? rowData?.[control.databind] : control.value);
+    const numericValue = Number(resolvedValue) || 0;
+    const [sliderValue, setSliderValue] = useState(numericValue);
+
+    useEffect(() => {
+        setSliderValue(numericValue);
+    }, [numericValue]);
 
     const min = control.min !== undefined ? control.min : 0;
     const max = control.max !== undefined ? control.max : 100;
@@ -65,14 +70,10 @@ function SliderControl({
                     style={{ '--slider-color': color, '--slider-percentage': `${percentage}%` }}
                 />
 
-                <div className="slider-track" style={{ '--slider-color': color }}>
-                    <div className="slider-progress" style={{ width: `${percentage}%`, backgroundColor: color }} />
-                </div>
-
                 {showTicks && (
                     <div className="slider-ticks">
                         {Array.from({ length: Math.min(11, Math.ceil((max - min) / step) + 1) }).map((_, i) => (
-                            <div key={i} className="slider-tick" style={{ left: `${(i / 10) * 100}%` }} />
+                            <div key={i} className="slider-tick" />
                         ))}
                     </div>
                 )}
