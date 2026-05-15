@@ -22,3 +22,7 @@
 .checkbox-control svg {
     display: block;
 }
+
+.checkbox-icon.checked {
+    color: var(--accent-primary);
+}

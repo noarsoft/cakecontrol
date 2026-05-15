@@ -9,6 +9,10 @@ function DatePickerControl({ control, rowData, rowIndex }) {
     const [showCalendar, setShowCalendar] = useState(false);
     const containerRef = useRef(null);
 
+    useEffect(() => {
+        setSelectedDate(value || '');
+    }, [value]);
+
     // Convert Buddhist year to Christian year
     const beToCe = (beYear) => beYear - 543;
     const ceToBe = (ceYear) => ceYear + 543;

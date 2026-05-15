@@ -22,7 +22,7 @@
     line-height: 1;
     cursor: pointer;
     transition: all 0.15s ease;
-    color: #d3d3d3;
+    color: var(--border-primary);
     width: 1em;
     height: 1em;
     display: flex;
@@ -38,7 +38,7 @@
     background: linear-gradient(
         to right,
         var(--rating-color) 50%,
-        #d3d3d3 50%
+        var(--border-primary) 50%
     );
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
@@ -65,7 +65,7 @@
     align-items: baseline;
     gap: 2px;
     font-weight: 500;
-    color: #333;
+    color: var(--text-primary);
 }
 
 .rating-value {
@@ -75,7 +75,7 @@
 
 .rating-max {
     font-size: 0.85em;
-    color: #666;
+    color: var(--text-tertiary);
 }
 
 /* States */
@@ -96,19 +96,3 @@
     cursor: default;
 }
 
-/* Dark theme support */
-:root[data-theme="dark"] .rating-label {
-    color: #e5e7eb;
-}
-
-:root[data-theme="dark"] .rating-max {
-    color: #9ca3af;
-}
-
-:root[data-theme="dark"] .star {
-    color: #4b5563;
-}
-
-:root[data-theme="dark"] .star.filled {
-    color: var(--rating-color);
-}

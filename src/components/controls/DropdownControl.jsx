@@ -10,6 +10,10 @@ function DropdownControl({ control, rowData, rowIndex }) {
     const [searchText, setSearchText] = useState('');
     const containerRef = useRef(null);
 
+    useEffect(() => {
+        setSelectedValue(value || '');
+    }, [value]);
+
     // Get display text for selected value
     const getDisplayText = () => {
         if (!selectedValue) return '';
