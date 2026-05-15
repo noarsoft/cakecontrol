@@ -1,0 +1,259 @@
+/* ─── Shared UI Components ───
+   Reusable design patterns extracted from repeated styles across pages.
+   Import once in main.jsx — use class names anywhere. */
+
+/* ═══ Icon Button (34×34 square) ═══
+   Used: ThemeSwitcher, share btn, delete btn, dashboard action btns */
+.ui-icon-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
+    padding: 0;
+    border: 1px solid var(--border-primary);
+    border-radius: var(--radius-md);
+    background: transparent;
+    color: var(--text-secondary);
+    cursor: pointer;
+    font-family: inherit;
+    transition: all 0.15s;
+    flex-shrink: 0;
+}
+
+.ui-icon-btn:hover {
+    background: var(--bg-hover);
+    color: var(--accent-primary);
+    border-color: var(--accent-primary);
+}
+
+.ui-icon-btn:active {
+    transform: scale(0.95);
+}
+
+.ui-icon-btn.danger:hover {
+    border-color: var(--error);
+    color: var(--error);
+    background: var(--error-light);
+}
+
+.ui-icon-btn.success:hover {
+    border-color: var(--success);
+    color: var(--success);
+    background: var(--success-light);
+}
+
+/* ═══ Primary Button ═══
+   Accent bg, white text. Used across Dashboard, FormBuilder, etc. */
+.ui-btn-primary {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 20px;
+    background: var(--accent-primary);
+    color: var(--text-on-accent);
+    border: none;
+    border-radius: var(--radius-md);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: inherit;
+    transition: all 0.2s;
+}
+
+.ui-btn-primary:hover {
+    background: var(--accent-primary-hover);
+    box-shadow: 0 4px 12px var(--accent-primary-light);
+    transform: translateY(-1px);
+}
+
+.ui-btn-primary:active {
+    transform: translateY(0);
+}
+
+/* ═══ Secondary / Outline Button ═══ */
+.ui-btn-secondary {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 16px;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    border: 1px solid var(--border-primary);
+    border-radius: var(--radius-md);
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    font-family: inherit;
+    transition: all 0.15s;
+}
+
+.ui-btn-secondary:hover {
+    border-color: var(--accent-primary);
+    color: var(--accent-primary);
+    background: var(--accent-primary-light);
+}
+
+/* ═══ Status Badge (pill) ═══
+   Compact status indicator. Variants via data-variant attr. */
+.ui-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 10px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 600;
+    line-height: 1.5;
+}
+
+.ui-badge[data-variant="success"] {
+    background: var(--success-light);
+    color: var(--success);
+}
+
+.ui-badge[data-variant="error"] {
+    background: var(--error-light);
+    color: var(--error);
+}
+
+.ui-badge[data-variant="warning"] {
+    background: var(--warning-light);
+    color: var(--warning);
+}
+
+.ui-badge[data-variant="info"] {
+    background: var(--info-light);
+    color: var(--info);
+}
+
+.ui-badge[data-variant="neutral"] {
+    background: var(--bg-tertiary);
+    color: var(--text-secondary);
+}
+
+/* ═══ Section Title ═══
+   Consistent section headings across panels. */
+.ui-section-title {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--text-primary);
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    padding-bottom: 8px;
+    margin-bottom: 12px;
+    border-bottom: 2px solid var(--border-secondary);
+}
+
+/* ═══ Toggle Switch (controls-docs style) ═══
+   Matches ToggleControl visual language. */
+.ui-toggle {
+    position: relative;
+    display: inline-block;
+    width: 44px;
+    height: 24px;
+    cursor: pointer;
+    flex-shrink: 0;
+}
+
+.ui-toggle input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+    position: absolute;
+}
+
+.ui-toggle-track {
+    position: absolute;
+    inset: 0;
+    background: var(--border-primary);
+    border-radius: 24px;
+    transition: background 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.ui-toggle-track::before {
+    content: '';
+    position: absolute;
+    width: 18px;
+    height: 18px;
+    left: 3px;
+    top: 3px;
+    background: #fff;
+    border-radius: 50%;
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+}
+
+.ui-toggle input:checked + .ui-toggle-track {
+    background: var(--accent-primary);
+}
+
+.ui-toggle input:checked + .ui-toggle-track::before {
+    transform: translateX(20px);
+}
+
+.ui-toggle input:disabled + .ui-toggle-track {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+/* ═══ Color Swatch ═══
+   Enhanced color picker input with visual preview. */
+.ui-color-input {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.ui-color-input input[type="color"] {
+    width: 32px;
+    height: 32px;
+    padding: 2px;
+    border: 2px solid var(--border-primary);
+    border-radius: var(--radius-md);
+    background: var(--bg-primary);
+    cursor: pointer;
+    transition: border-color 0.15s;
+}
+
+.ui-color-input input[type="color"]:hover {
+    border-color: var(--accent-primary);
+}
+
+.ui-color-input .ui-color-value {
+    font-size: 12px;
+    font-family: 'Consolas', 'Monaco', monospace;
+    color: var(--text-tertiary);
+    min-width: 60px;
+}
+
+/* ═══ Empty State ═══
+   Centered placeholder for no-data views. */
+.ui-empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    padding: 64px 24px;
+    text-align: center;
+    color: var(--text-tertiary);
+}
+
+.ui-empty-state svg {
+    opacity: 0.4;
+}
+
+.ui-empty-state .ui-empty-title {
+    margin: 8px 0 0;
+    font-size: 17px;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.ui-empty-state .ui-empty-sub {
+    margin: 0;
+    font-size: 14px;
+    color: var(--text-tertiary);
+    max-width: 320px;
+}
