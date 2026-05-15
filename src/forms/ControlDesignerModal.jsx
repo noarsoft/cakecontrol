@@ -170,12 +170,16 @@ const CONTROL_CONFIG_FIELDS = {
         { key: 'placeholder', label: 'Placeholder', inputType: 'text' },
         { key: 'maxLength', label: 'ความยาวสูงสุด', inputType: 'number' },
         { key: 'rows', label: 'บรรทัด (textarea)', inputType: 'number', placeholder: 'ปล่อยว่าง = 1 บรรทัด' },
+        { key: 'disabled', label: 'ปิดใช้งาน', inputType: 'checkbox' },
+        { key: 'readOnly', label: 'อ่านอย่างเดียว', inputType: 'checkbox' },
     ],
     number: [
         { key: 'placeholder', label: 'Placeholder', inputType: 'text' },
         { key: 'min', label: 'ค่าต่ำสุด', inputType: 'number' },
         { key: 'max', label: 'ค่าสูงสุด', inputType: 'number' },
         { key: 'step', label: 'Step', inputType: 'number' },
+        { key: 'disabled', label: 'ปิดใช้งาน', inputType: 'checkbox' },
+        { key: 'readOnly', label: 'อ่านอย่างเดียว', inputType: 'checkbox' },
     ],
     slider: [
         { key: 'min', label: 'ค่าต่ำสุด', inputType: 'number' },
@@ -190,6 +194,8 @@ const CONTROL_CONFIG_FIELDS = {
         ]},
         { key: 'showValue', label: 'แสดงค่า', inputType: 'checkbox' },
         { key: 'showTicks', label: 'แสดงขีด', inputType: 'checkbox' },
+        { key: 'showLabel', label: 'แสดง Label', inputType: 'checkbox' },
+        { key: 'disabled', label: 'ปิดใช้งาน', inputType: 'checkbox' },
     ],
     rating: [
         { key: 'maxStars', label: 'จำนวนดาว', inputType: 'number' },
@@ -200,12 +206,16 @@ const CONTROL_CONFIG_FIELDS = {
             { value: 'medium', label: 'กลาง' },
             { value: 'large', label: 'ใหญ่' },
         ]},
+        { key: 'showLabel', label: 'แสดง Label', inputType: 'checkbox' },
+        { key: 'disabled', label: 'ปิดใช้งาน', inputType: 'checkbox' },
+        { key: 'readOnly', label: 'อ่านอย่างเดียว', inputType: 'checkbox' },
     ],
     label: [
         { key: 'value', label: 'ข้อความ', inputType: 'text' },
         { key: 'bold', label: 'ตัวหนา', inputType: 'checkbox' },
         { key: 'italic', label: 'ตัวเอียง', inputType: 'checkbox' },
         { key: 'fontSize', label: 'ขนาดตัวอักษร', inputType: 'text', placeholder: 'เช่น 18px' },
+        { key: 'multiline', label: 'หลายบรรทัด', inputType: 'checkbox' },
     ],
     link: [
         { key: 'value', label: 'ข้อความลิงก์', inputType: 'text' },
@@ -214,9 +224,13 @@ const CONTROL_CONFIG_FIELDS = {
             { value: '_self', label: 'แท็บเดิม' },
             { value: '_blank', label: 'แท็บใหม่' },
         ]},
+        { key: 'underline', label: 'ขีดเส้นใต้', inputType: 'checkbox' },
+        { key: 'buttonStyle', label: 'แสดงแบบปุ่ม', inputType: 'checkbox' },
+        { key: 'disabled', label: 'ปิดใช้งาน', inputType: 'checkbox' },
     ],
     image: [
         { key: 'value', label: 'URL รูปภาพ', inputType: 'text', placeholder: 'https://...' },
+        { key: 'alt', label: 'Alt text', inputType: 'text', placeholder: 'คำอธิบายรูป' },
         { key: 'width', label: 'ความกว้าง', inputType: 'text', placeholder: 'เช่น 200px' },
         { key: 'height', label: 'ความสูง', inputType: 'text', placeholder: 'เช่น 120px' },
         { key: 'objectFit', label: 'การแสดงผล', inputType: 'select', selectOptions: [
@@ -225,14 +239,21 @@ const CONTROL_CONFIG_FIELDS = {
             { value: 'fill', label: 'Fill (ยืด)' },
             { value: 'none', label: 'None (ขนาดจริง)' },
         ]},
+        { key: 'borderRadius', label: 'มุมโค้ง', inputType: 'text', placeholder: 'เช่น 8px, 50%' },
+        { key: 'shadow', label: 'เงา', inputType: 'checkbox' },
+        { key: 'grayscale', label: 'ขาวดำ', inputType: 'checkbox' },
+        { key: 'lazy', label: 'โหลดแบบ Lazy', inputType: 'checkbox' },
+        { key: 'enlargeable', label: 'ขยายได้เมื่อคลิก', inputType: 'checkbox' },
     ],
     badge: [
         { key: 'value', label: 'ข้อความ', inputType: 'text' },
         { key: 'backgroundColor', label: 'สีพื้นหลัง', inputType: 'color' },
+        { key: 'color', label: 'สีตัวอักษร', inputType: 'color' },
     ],
     icon: [
         { key: 'value', label: 'ไอคอน (emoji/text)', inputType: 'text', placeholder: 'เช่น ⭐ 🔥 ✅' },
         { key: 'fontSize', label: 'ขนาด', inputType: 'text', placeholder: 'เช่น 24px' },
+        { key: 'color', label: 'สี', inputType: 'color' },
     ],
     progress: [
         { key: 'value', label: 'ค่า (0-100)', inputType: 'number' },
@@ -243,6 +264,13 @@ const CONTROL_CONFIG_FIELDS = {
         { key: 'value', label: 'URL / ข้อความ', inputType: 'text', placeholder: 'https://...' },
         { key: 'width', label: 'ความกว้าง (px)', inputType: 'number' },
         { key: 'height', label: 'ความสูง (px)', inputType: 'number' },
+        { key: 'errorCorrectionLevel', label: 'ระดับ Error Correction', inputType: 'select', selectOptions: [
+            { value: 'L', label: 'L (7%)' },
+            { value: 'M', label: 'M (15%)' },
+            { value: 'Q', label: 'Q (25%)' },
+            { value: 'H', label: 'H (30%)' },
+        ]},
+        { key: 'margin', label: 'ขอบ (px)', inputType: 'number', placeholder: 'เช่น 4' },
     ],
     select: [
         { key: 'placeholder', label: 'Placeholder', inputType: 'text' },
@@ -253,6 +281,7 @@ const CONTROL_CONFIG_FIELDS = {
         { key: 'min', label: 'วันที่ต่ำสุด', inputType: 'text', placeholder: 'เช่น 2024-01-01' },
         { key: 'max', label: 'วันที่สูงสุด', inputType: 'text', placeholder: 'เช่น 2030-12-31' },
         { key: 'disabled', label: 'ปิดใช้งาน', inputType: 'checkbox' },
+        { key: 'readOnly', label: 'อ่านอย่างเดียว', inputType: 'checkbox' },
     ],
     datepicker: [
         { key: 'placeholder', label: 'Placeholder', inputType: 'text', placeholder: 'เช่น เลือกวันที่' },
@@ -271,26 +300,33 @@ const CONTROL_CONFIG_FIELDS = {
         { key: 'searchable', label: 'ค้นหาได้', inputType: 'checkbox' },
         { key: 'clearable', label: 'ล้างค่าได้', inputType: 'checkbox' },
         { key: 'maxHeight', label: 'ความสูงสูงสุด', inputType: 'text', placeholder: 'เช่น 300px' },
+        { key: 'displayField', label: 'แสดงผลจาก field', inputType: 'text', placeholder: 'เช่น label' },
     ],
     fileupload: [
         { key: 'maxFileSize', label: 'ขนาดไฟล์สูงสุด (bytes)', inputType: 'number', placeholder: 'เช่น 52428800 (50MB)' },
         { key: 'allowedTypes', label: 'ประเภทไฟล์ (comma)', inputType: 'text', placeholder: 'image/jpeg,image/png,application/pdf' },
         { key: 'buttonLabel', label: 'ข้อความปุ่ม', inputType: 'text', placeholder: 'Choose Files to Upload' },
+        { key: 'chunkSize', label: 'ขนาด Chunk (bytes)', inputType: 'number', placeholder: 'เช่น 1048576 (1MB)' },
+        { key: 'apiUrl', label: 'Upload API URL', inputType: 'text', placeholder: 'https://...' },
     ],
     button: [
         { key: 'value', label: 'ข้อความปุ่ม', inputType: 'text' },
+        { key: 'disabled', label: 'ปิดใช้งาน', inputType: 'checkbox' },
     ],
     buttongroup: [
         { key: 'orientation', label: 'ทิศทาง', inputType: 'select', selectOptions: [
             { value: 'horizontal', label: 'แนวนอน' },
             { value: 'vertical', label: 'แนวตั้ง' },
         ]},
+        { key: 'multiple', label: 'เลือกได้หลายปุ่ม', inputType: 'checkbox' },
+        { key: 'disabled', label: 'ปิดใช้งาน', inputType: 'checkbox' },
     ],
     calendargrid: [
         { key: 'editable', label: 'แก้ไขได้', inputType: 'checkbox' },
     ],
     accordion: [
         { key: 'allowMultiple', label: 'เปิดได้หลายอันพร้อมกัน', inputType: 'checkbox' },
+        { key: 'defaultOpen', label: 'เปิดอันแรกเป็นค่าเริ่มต้น', inputType: 'checkbox' },
     ],
     tabs: [
         { key: 'tabPosition', label: 'ตำแหน่งแท็บ', inputType: 'select', selectOptions: [
@@ -299,6 +335,7 @@ const CONTROL_CONFIG_FIELDS = {
             { value: 'left', label: 'ซ้าย' },
             { value: 'right', label: 'ขวา' },
         ]},
+        { key: 'activeTab', label: 'แท็บที่เลือกเริ่มต้น', inputType: 'number', placeholder: 'เช่น 0' },
     ],
     card: [
         { key: 'columns', label: 'จำนวนคอลัมน์', inputType: 'number', placeholder: 'เช่น 3' },
@@ -308,6 +345,8 @@ const CONTROL_CONFIG_FIELDS = {
         { key: 'checkable', label: 'แสดง Checkbox', inputType: 'checkbox' },
         { key: 'showLine', label: 'แสดงเส้นเชื่อม', inputType: 'checkbox' },
         { key: 'multiple', label: 'เลือกได้หลายรายการ', inputType: 'checkbox' },
+        { key: 'defaultExpanded', label: 'ขยายทั้งหมดเริ่มต้น', inputType: 'checkbox' },
+        { key: 'disabled', label: 'ปิดใช้งาน', inputType: 'checkbox' },
     ],
     menu: [
         { key: 'orientation', label: 'ทิศทาง', inputType: 'select', selectOptions: [
@@ -315,6 +354,7 @@ const CONTROL_CONFIG_FIELDS = {
             { value: 'horizontal', label: 'แนวนอน' },
         ]},
         { key: 'collapsible', label: 'ยุบ/ขยายได้', inputType: 'checkbox' },
+        { key: 'activeMenu', label: 'เมนูที่เลือกเริ่มต้น', inputType: 'text', placeholder: 'เช่น menu-1' },
     ],
     form: [
         { key: 'colnumbers', label: 'จำนวนคอลัมน์', inputType: 'number', placeholder: 'เช่น 6' },

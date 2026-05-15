@@ -198,6 +198,24 @@ export async function getFormDataBySchema(schemaId) {
     return rows.map(mapDataRow);
 }
 
+export async function getFormDataBySchemaFamily(schemaRootId) {
+    const rows = await request(`/data/schema-root/${schemaRootId}`);
+    return rows.map(mapDataRow);
+}
+
+export async function migrateFormData(dataRootId, force = true) {
+    const row = await request(`/data/root/${dataRootId}/migrate-latest-schema`, {
+        method: 'POST',
+        body: JSON.stringify({ force }),
+    });
+    return mapDataRow(row);
+}
+
+export async function getSchemaVersionById(id) {
+    const row = await request(`/schema/${id}`);
+    return mapSchemaRow(row);
+}
+
 export async function createFormData(schemaId, data) {
     const row = await request('/data', {
         method: 'POST',

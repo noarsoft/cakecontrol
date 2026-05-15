@@ -621,6 +621,7 @@ function SchemaBuilder({ schemaJson, onChange, onDirtyChange }) {
                             onDragEnter={() => handleDragEnter(idx)}
                             onDragOver={e => e.preventDefault()}
                         >
+                            <span className="fb-field-number">{idx + 1}</span>
                             <span
                                 className="field-drag"
                                 draggable

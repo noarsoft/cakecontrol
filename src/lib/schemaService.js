@@ -64,8 +64,13 @@ export const updateFormcfg = delegate('updateFormcfg');
 
 // ─── data (ข้อมูลจริง) ───
 export const getFormDataBySchema = delegate('getFormDataBySchema');
+export const getFormDataBySchemaFamily = delegate('getFormDataBySchemaFamily');
 export const createFormData = delegate('createFormData');
 export const updateFormData = delegate('updateFormData');
 export const deleteFormData = delegate('deleteFormData');
+export const migrateFormData = delegate('migrateFormData');
+
+// ─── schema version ───
+export const getSchemaVersionById = delegate('getSchemaVersionById');
 
 export const seedDemoData = delegate('seedDemoData');

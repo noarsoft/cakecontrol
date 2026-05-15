@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { initService, getBusinesses, createBusiness, deleteBusiness } from '../lib/schemaService';
 import ConfirmModal from '../components/controls/ConfirmModal';
+import ThemeSwitcher from '../ThemeSwitcher';
 import { useToast } from '../contexts/ToastContext';
 import './BusinessSelector.css';
 
@@ -82,8 +83,11 @@ export default function BusinessSelector() {
 
     return (
         <div className="bs-container">
-            <h1 className="bs-title">เลือกโครงการหรือธุรกิจ</h1>
-            <p className="bs-subtitle">เลือกพื้นที่ทำงานที่คุณต้องการจัดการข้อมูลและฟอร์ม</p>
+            <div className="bs-topbar-theme">
+                <ThemeSwitcher />
+            </div>
+            <h1 className="bs-title">ใครกำลังใช้งาน?</h1>
+            <p className="bs-subtitle">เลือกโครงการเพื่อเริ่มจัดการฟอร์มและข้อมูล</p>
 
             <div className="bs-list">
                 {businesses.map(b => (

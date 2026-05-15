@@ -4,17 +4,12 @@ import FormBuilder from './forms/FormBuilder';
 import FormFillerPage from './forms/FormFillerPage';
 import Dashboard from './forms/Dashboard';
 import BusinessSelector from './forms/BusinessSelector';
-import ThemeSwitcher from './ThemeSwitcher';
-
 import './App.css';
 
 function App() {
   return (
     <Router>
       <div className="app-global-container">
-        <div className="global-theme-switcher">
-          <ThemeSwitcher />
-        </div>
         <Routes>
         <Route path="/" element={<BusinessSelector />} />
         <Route path="/controls-docs" element={<ControlsDocs />} />

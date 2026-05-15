@@ -370,6 +370,26 @@ export function getFormDataBySchema(schemaId) {
     return getStore(STORAGE_KEYS.data).filter(f => f.data_schema_id === schemaId && f.activate !== false);
 }
 
+export function getFormDataBySchemaFamily(schemaRootId) {
+    const schemas = getStore(STORAGE_KEYS.schemas);
+    const familySchemaIds = new Set(
+        schemas.filter(s => s.rootid === schemaRootId || s.id === schemaRootId).map(s => s.id)
+    );
+    return getStore(STORAGE_KEYS.data).filter(f => familySchemaIds.has(f.data_schema_id) && f.activate !== false);
+}
+
+export function migrateFormData(dataRootId) {
+    const items = getStore(STORAGE_KEYS.data);
+    const idx = items.findIndex(f => f.rootid === dataRootId && f.activate !== false);
+    if (idx < 0) return null;
+    return items[idx];
+}
+
+export function getSchemaVersionById(id) {
+    const items = getStore(STORAGE_KEYS.schemas);
+    return items.find(s => s.id === id) || null;
+}
+
 export function createFormData(schemaId, data) {
     const items = getStore(STORAGE_KEYS.data);
     const item = {

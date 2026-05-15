@@ -4,8 +4,19 @@ import { initService, getSchemas, getFormDataBySchema, deleteSchema } from '../l
 import ConfirmModal from '../components/controls/ConfirmModal';
 import BulkEditToolbar from '../components/controls/BulkEditToolbar';
 import { useToast } from '../contexts/ToastContext';
+import ThemeSwitcher from '../ThemeSwitcher';
 import '../components/controls/CRUDControl.css';
 import './Dashboard.css';
+
+function formatModifyDate(dt) {
+    if (!dt || dt.length < 12) return '—';
+    const y = dt.slice(0, 4);
+    const m = dt.slice(4, 6);
+    const d = dt.slice(6, 8);
+    const h = dt.slice(8, 10);
+    const min = dt.slice(10, 12);
+    return `${d}/${m}/${y} ${h}:${min}`;
+}
 
 export default function Dashboard() {
     const navigate = useNavigate();
@@ -143,6 +154,7 @@ export default function Dashboard() {
                     </div>
                 </div>
                 <div className="dash-header-right">
+                    <ThemeSwitcher />
                     <button className="dash-new-form-btn" onClick={() => navigate('/formbuilder', { state: { createNew: true } })}>
                         + สร้างฟอร์มใหม่
                     </button>
@@ -201,6 +213,7 @@ export default function Dashboard() {
                                 <th>ชื่อฟอร์ม</th>
                                 <th>ฟิลด์</th>
                                 <th>ข้อมูล</th>
+                                <th>แก้ไขล่าสุด</th>
                                 <th></th>
                             </tr>
                         </thead>
@@ -231,6 +244,7 @@ export default function Dashboard() {
                                         <td className="dash-table-name">{s.name}</td>
                                         <td>{fieldCount}</td>
                                         <td>{dataCount}</td>
+                                        <td className="dash-table-date">{formatModifyDate(s.modify_datetime)}</td>
                                         <td className="dash-table-actions">
                                             <button
                                                 className="dash-action-btn"

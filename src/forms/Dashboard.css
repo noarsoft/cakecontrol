@@ -241,6 +241,12 @@
     color: var(--text-primary) !important;
 }
 
+.dash-table-date {
+    font-size: 13px;
+    color: var(--text-tertiary) !important;
+    white-space: nowrap;
+}
+
 .dash-table-actions {
     text-align: right !important;
     white-space: nowrap;
@@ -258,7 +264,11 @@
     color: var(--text-tertiary);
     cursor: pointer;
     transition: all 0.15s;
-    opacity: 0.5;
+    opacity: 0;
+}
+
+.dash-table-row:hover .dash-action-btn {
+    opacity: 0.7;
 }
 
 .dash-action-btn:hover {
