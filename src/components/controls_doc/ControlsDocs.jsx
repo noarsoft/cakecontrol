@@ -245,6 +245,8 @@ function ControlsDocs() {
         tree: { title: 'Tree Control', category: 'Layout Controls', icon: '🌳' },
         buttongroup: { title: 'Button Group', category: 'Layout Controls', icon: '🔲' },
         pagination: { title: 'Pagination', category: 'Layout Controls', icon: '📄' },
+        crud: { title: 'CRUD Control', category: 'Layout Controls', icon: '🗃️' },
+        modal: { title: 'Modal Control', category: 'Layout Controls', icon: '🪟' },
         label: { title: 'Label Control', category: 'Input Controls', icon: '🏷️' },
         textbox: { title: 'Textbox Control', category: 'Input Controls', icon: '✏️' },
         number: { title: 'Number Control', category: 'Input Controls', icon: '🔢' },
@@ -301,6 +303,8 @@ function ControlsDocs() {
             case 'link': return <LinkPage addLog={addLog} />;
             case 'image': return <ImagePage addLog={addLog} />;
             case 'pagination': return <PaginationPage addLog={addLog} />;
+            case 'crud': return <CRUDPage addLog={addLog} />;
+            case 'modal': return <ModalPage addLog={addLog} />;
             case 'datepicker': return <DatePickerPage addLog={addLog} />;
             case 'calendargrid': return <CalendarGridPage addLog={addLog} />;
             case 'badge': return <BadgePage addLog={addLog} />;
@@ -816,6 +820,8 @@ import RatingPage from './pages/RatingPage';
 import SliderPage from './pages/SliderPage';
 import AlertModalPage from './pages/AlertModalPage';
 import ConfirmModalPage from './pages/ConfirmModalPage';
+import CRUDPage from './pages/CRUDPage';
+import ModalPage from './pages/ModalPage';
 import LabelPage from './pages/LabelPage';
 import TextboxPage from './pages/TextboxPage';
 import NumberPage from './pages/NumberPage';

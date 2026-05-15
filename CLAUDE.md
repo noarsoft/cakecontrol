@@ -5,7 +5,7 @@
 React 19 + Vite 7 dynamic form builder.
 Web app for **creating forms and managing data** (like Google Forms with CRUD tables).
 
-- 47 custom UI controls (no MUI/Ant)
+- 44 control types matching ControlsDocs (no MUI/Ant)
 - Light/Dark theme via CSS variables
 - Config panels for all control types in form designer
 - Multi-page form support (pagebreak)
@@ -70,7 +70,7 @@ src/
 │   ├── mockSchemaService.js   # localStorage fallback
 │   └── __tests__/             # 5 suites, 92 tests
 ├── components/
-│   ├── controls/      # 47 UI controls + CRUDControl + ModalControl
+│   ├── controls/      # 44 control types + CRUDControl + ModalControl
 │   │   ├── index.js   # Central export for all controls
 │   │   ├── registry.jsx # genControl() factory + lazy loading
 │   │   ├── crud/      # CRUDControl extracted logic (constants, useCRUDState)
@@ -129,7 +129,7 @@ FormBuilder is the main workspace with a topbar and 4 modes:
 
 | Feature | Status |
 |---------|--------|
-| 47 UI Controls (input + display + chart + layout) | Done |
+| 44 Control Types (input + display + chart + layout) | Done |
 | CRUDControl (composite) | Done |
 | ModalControl | Done |
 | Theme Light/Dark | Done |
@@ -174,7 +174,7 @@ Every control follows the same pattern:
 Modal for form creators to design fields. Each control row has:
 - **Label** — display name
 - **Databind** — field key in data
-- **Type** — control type selector (40+ types: input, display, chart, layout)
+- **Type** — control type selector (44 types: input, display, chart, layout)
 - **Config panel** — type-specific settings (e.g. placeholder, min/max, chart axes, image URL)
 - **Options panel** — for dropdown/buttongroup (key/value pairs + default)
 

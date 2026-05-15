@@ -82,7 +82,9 @@ function FormControl({ config }) {
             ...controlConfig,
             value: value,
             onChange: (event) => {
-                const newValue = event.target ? event.target.value : event;
+                const newValue = event.target
+                    ? (event.target.type === 'checkbox' ? event.target.checked : event.target.value)
+                    : event;
                 handleControlChange(controlConfig.databind, newValue);
                 
                 if (controlConfig.onChange) {
