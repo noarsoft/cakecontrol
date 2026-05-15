@@ -289,6 +289,38 @@ function ControlPreview({ fieldKey, fieldDef }) {
 }
 
 function FieldConfigPanel({ fieldKey, fieldDef, onUpdate }) {
+    const [locked, setLocked] = useState(true);
+    const [pos, setPos] = useState(null);
+    const dragRef = useRef(null);
+    const offsetRef = useRef({ x: 0, y: 0 });
+
+    const handleMouseDown = (e) => {
+        if (locked) return;
+        offsetRef.current = {
+            x: e.clientX - (pos?.x ?? dragRef.current.getBoundingClientRect().left),
+            y: e.clientY - (pos?.y ?? dragRef.current.getBoundingClientRect().top),
+        };
+        const handleMouseMove = (ev) => {
+            setPos({
+                x: ev.clientX - offsetRef.current.x,
+                y: ev.clientY - offsetRef.current.y,
+            });
+        };
+        const handleMouseUp = () => {
+            document.removeEventListener('mousemove', handleMouseMove);
+            document.removeEventListener('mouseup', handleMouseUp);
+        };
+        document.addEventListener('mousemove', handleMouseMove);
+        document.addEventListener('mouseup', handleMouseUp);
+    };
+
+    const handleToggleLock = () => {
+        setLocked(prev => {
+            if (!prev) setPos(null);
+            return !prev;
+        });
+    };
+
     if (!fieldKey) {
         return (
             <div className="sb-config-panel sb-config-empty">
@@ -305,8 +337,19 @@ function FieldConfigPanel({ fieldKey, fieldDef, onUpdate }) {
         onUpdate(fieldKey, { ...fieldDef, [propKey]: value });
     };
 
+    const panelStyle = !locked && pos ? { position: 'fixed', left: pos.x, top: pos.y, right: 'auto' } : {};
+
     return (
-        <div className="sb-config-panel">
+        <div className={`sb-config-panel ${!locked ? 'unlocked' : ''}`} ref={dragRef} style={panelStyle}>
+            <div className="sb-config-toolbar" onMouseDown={handleMouseDown} style={{ cursor: locked ? 'default' : 'grab' }}>
+                <button className="sb-lock-btn" onClick={handleToggleLock} title={locked ? 'ปลดล็อกเพื่อย้ายได้' : 'ล็อกตำแหน่ง'}>
+                    {locked ? (
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                    ) : (
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 9.9-1"/></svg>
+                    )}
+                </button>
+            </div>
             <ControlPreview fieldKey={fieldKey} fieldDef={fieldDef} />
 
             <div className="sb-config-header">
@@ -548,16 +591,14 @@ function SchemaBuilder({ schemaJson, onChange, onDirtyChange }) {
                             className={`fb-field-card ${isDragging ? 'dragging' : ''} ${isOver ? 'drag-over' : ''} ${isSelected ? 'selected' : ''}`}
                             onDragEnter={() => handleDragEnter(idx)}
                             onDragOver={e => e.preventDefault()}
-                            onClick={() => setSelectedKey(k => k === key ? null : key)}
                         >
                             <span
                                 className="field-drag"
                                 draggable
                                 onDragStart={() => handleDragStart(idx)}
                                 onDragEnd={handleDragEnd}
-                                onClick={e => e.stopPropagation()}
                             >⠿</span>
-                            <div className="field-info" onClick={e => e.stopPropagation()}>
+                            <div className="field-info">
                                 <div className="cd-field-wrapper">
                                     <label className="sb-field-label">ชื่อช่องกรอก (Label)</label>
                                     <input
@@ -587,9 +628,12 @@ function SchemaBuilder({ schemaJson, onChange, onDirtyChange }) {
                                 </div>
                             </div>
                             <div className="fb-field-actions">
-                                <button onClick={(e) => { e.stopPropagation(); handleMoveField(idx, 'up'); }} disabled={idx === 0} title="ขึ้น" className="fb-move-btn">&#8593;</button>
-                                <button onClick={(e) => { e.stopPropagation(); handleMoveField(idx, 'down'); }} disabled={idx === fields.length - 1} title="ลง" className="fb-move-btn">&#8595;</button>
-                                <button onClick={(e) => { e.stopPropagation(); handleRemoveField(key); }} title="ลบ" className="fb-delete-btn">✕</button>
+                                <button onClick={() => setSelectedKey(k => k === key ? null : key)} title="ตั้งค่า" className={`fb-config-btn ${isSelected ? 'active' : ''}`}>
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+                                </button>
+                                <button onClick={() => handleMoveField(idx, 'up')} disabled={idx === 0} title="ขึ้น" className="fb-move-btn">&#8593;</button>
+                                <button onClick={() => handleMoveField(idx, 'down')} disabled={idx === fields.length - 1} title="ลง" className="fb-move-btn">&#8595;</button>
+                                <button onClick={() => handleRemoveField(key)} title="ลบ" className="fb-delete-btn">✕</button>
                             </div>
                         </div>
                     );

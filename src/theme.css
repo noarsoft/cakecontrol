@@ -50,7 +50,7 @@
     --text-on-accent: #ffffff;
 
     /* CAMT token compatibility (for shared controls/web components) */
-    --camt-font: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+    --camt-font: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans Thai", "Helvetica Neue", Arial, sans-serif;
     --camt-text-primary: var(--text-primary);
     --camt-text-secondary: var(--text-secondary);
     --camt-text-muted: var(--text-tertiary);

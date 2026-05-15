@@ -25,15 +25,19 @@ function FormFillerPage() {
 
     useEffect(() => {
         (async () => {
-            await initService();
-            const s = await getSchemaById(schemaId);
-            if (!s) {
+            try {
+                await initService();
+                const s = await getSchemaById(schemaId);
+                if (!s) {
+                    setNotFound(true);
+                    return;
+                }
+                setSchema(s);
+                const cfgs = await getFormcfgsBySchema(s.id);
+                if (cfgs[0]) setFormcfgJson(cfgs[0].json_form_config);
+            } catch {
                 setNotFound(true);
-                return;
             }
-            setSchema(s);
-            const cfgs = await getFormcfgsBySchema(s.id);
-            if (cfgs[0]) setFormcfgJson(cfgs[0].json_form_config);
         })();
     }, [schemaId]);
 

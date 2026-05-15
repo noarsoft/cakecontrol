@@ -5,6 +5,7 @@ import ConfirmModal from './ConfirmModal';
 import ModalControl from './ModalControl';
 import ButtonControl from './ButtonControl';
 import TextboxControl from './TextboxControl';
+import BulkEditToolbar from './BulkEditToolbar';
 import { DEFAULT_LABELS } from './crud/constants';
 import { useCRUDState } from './crud/useCRUDState';
 import './CRUDControl.css';
@@ -37,14 +38,19 @@ function CRUDControl({ config = {} }) {
         const colwidths = [];
         const controls = [];
 
-        if (selectable && bulkEditMode) {
-            const pageKeys = keyField
-                ? paginatedData.map(row => row[keyField])
-                : paginatedData.map((_, i) => (isClientPagination ? (internalPage - 1) * pageLimit : 0) + i);
-            const allSelected = pageKeys.length > 0 && pageKeys.every(k => selectedRows.has(k));
-            headers.push(allSelected ? '[ x ]' : '[   ]');
+        if (selectable) {
+            if (bulkEditMode) {
+                const pageKeys = keyField
+                    ? paginatedData.map(row => row[keyField])
+                    : paginatedData.map((_, i) => (isClientPagination ? (internalPage - 1) * pageLimit : 0) + i);
+                const allSelected = pageKeys.length > 0 && pageKeys.every(k => selectedRows.has(k));
+                headers.push(allSelected ? '[ x ]' : '[   ]');
+                controls.push({ type: 'checkbox', value: '', onChange: (e, rowData, rowIndex) => handleRowSelect(rowIndex, e.target.checked) });
+            } else {
+                headers.push('');
+                controls.push({ type: 'label', value: '' });
+            }
             colwidths.push('50');
-            controls.push({ type: 'checkbox', value: '', onChange: (e, rowData, rowIndex) => handleRowSelect(rowIndex, e.target.checked) });
         }
 
         columns.forEach(col => {
@@ -71,6 +77,7 @@ function CRUDControl({ config = {} }) {
 
         const cfg = { data: paginatedData, headers, colwidths, controls, onHeaderClick: (event) => {
             if (selectable && bulkEditMode && event.columnIndex === 0) { handleSelectAll(); return; }
+            if (selectable && event.columnIndex === 0) return;
             handleSort(event.columnIndex);
         }};
 
@@ -102,28 +109,35 @@ function CRUDControl({ config = {} }) {
 
     return (
         <div className={`crud-control ${config.className || ''}`}>
-            <div className="crud-toolbar">
-                <div className="crud-toolbar-left">
-                    {selectable && !bulkEditMode && (
-                        <ButtonControl control={{ value: labels.bulkEditButton, className: 'btn-outline', onClick: () => setBulkEditMode(true) }} rowData={{}} rowIndex={0} />
-                    )}
-                    {selectable && bulkEditMode && (
-                        <>
-                            <ButtonControl control={{ value: labels.bulkEditCancelButton, className: 'btn-warning', onClick: () => { setBulkEditMode(false); setSelectedRows(new Set()); } }} rowData={{}} rowIndex={0} />
-                            {(config.onBulkDelete || isAutoBulkDelete) && selectedRows.size > 0 && (
-                                <ButtonControl control={{ value: labels.bulkDeleteButton, className: 'btn-danger', onClick: () => openBulkDeleteConfirm() }} rowData={{}} rowIndex={0} />
-                            )}
-                            {selectedRows.size > 0 && <span className="crud-selected-count">{selectedRows.size} {labels.selectedCount}</span>}
-                        </>
-                    )}
+            {selectable ? (
+                <BulkEditToolbar
+                    bulkEditMode={bulkEditMode}
+                    selectedCount={selectedRows.size}
+                    canDelete={!!(config.onBulkDelete || isAutoBulkDelete)}
+                    labels={labels}
+                    onEnterBulkMode={() => setBulkEditMode(true)}
+                    onExitBulkMode={() => { setBulkEditMode(false); setSelectedRows(new Set()); }}
+                    onBulkDelete={openBulkDeleteConfirm}
+                    rightContent={
+                        (config.onAdd || isAutoAdd) && !config.hideAdd
+                            ? <ButtonControl control={{ value: '+ ' + labels.addButton, className: 'btn-primary', onClick: () => openAddModal() }} rowData={{}} rowIndex={0} />
+                            : null
+                    }
+                >
                     <TextboxControl control={{ value: searchQuery, placeholder: labels.searchPlaceholder, className: 'crud-search', onChange: handleSearch }} rowData={{}} rowIndex={0} />
+                </BulkEditToolbar>
+            ) : (
+                <div className="crud-toolbar">
+                    <div className="crud-toolbar-left">
+                        <TextboxControl control={{ value: searchQuery, placeholder: labels.searchPlaceholder, className: 'crud-search', onChange: handleSearch }} rowData={{}} rowIndex={0} />
+                    </div>
+                    <div className="crud-toolbar-right">
+                        {(config.onAdd || isAutoAdd) && !config.hideAdd && (
+                            <ButtonControl control={{ value: '+ ' + labels.addButton, className: 'btn-primary', onClick: () => openAddModal() }} rowData={{}} rowIndex={0} />
+                        )}
+                    </div>
                 </div>
-                <div className="crud-toolbar-right">
-                    {(config.onAdd || isAutoAdd) && !config.hideAdd && (
-                        <ButtonControl control={{ value: '+ ' + labels.addButton, className: 'btn-primary', onClick: () => openAddModal() }} rowData={{}} rowIndex={0} />
-                    )}
-                </div>
-            </div>
+            )}
 
             <div className="crud-table-wrapper">
                 {(paginatedData.length > 0 || data.length > 0) ? (

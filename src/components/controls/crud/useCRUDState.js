@@ -101,7 +101,7 @@ export function useCRUDState(config) {
     }, [onSearch]);
 
     const handleSort = useCallback((columnIndex) => {
-        const offset = (selectable && bulkEditMode) ? 1 : 0;
+        const offset = selectable ? 1 : 0;
         const colIdx = columnIndex - offset;
         if (colIdx < 0 || colIdx >= columns.length) return;
         const col = columns[colIdx];
@@ -110,7 +110,7 @@ export function useCRUDState(config) {
         setSortKey(col.key);
         setSortDirection(newDirection);
         if (onSort) onSort(col.key, newDirection);
-    }, [columns, selectable, bulkEditMode, sortKey, sortDirection, onSort]);
+    }, [columns, selectable, sortKey, sortDirection, onSort]);
 
     const handlePageChange = useCallback((page) => {
         if (isClientPagination) setInternalPage(page);

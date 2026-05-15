@@ -2,7 +2,9 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { initService, getSchemas, getFormDataBySchema, deleteSchema } from '../lib/schemaService';
 import ConfirmModal from '../components/controls/ConfirmModal';
+import BulkEditToolbar from '../components/controls/BulkEditToolbar';
 import { useToast } from '../contexts/ToastContext';
+import '../components/controls/CRUDControl.css';
 import './Dashboard.css';
 
 export default function Dashboard() {
@@ -13,8 +15,19 @@ export default function Dashboard() {
     const [serviceMode, setServiceMode] = useState(null);
     const [loading, setLoading] = useState(true);
     const [deleteConfirm, setDeleteConfirm] = useState(null);
+    const [selected, setSelected] = useState(new Set());
+    const [bulkEditMode, setBulkEditMode] = useState(false);
+    const [bulkDeleteConfirm, setBulkDeleteConfirm] = useState(false);
 
     const businessName = localStorage.getItem('activeBusinessName') || 'ไม่ระบุ';
+    const businessId = localStorage.getItem('activeBusinessId');
+
+    useEffect(() => {
+        if (!businessId) {
+            navigate('/');
+            return;
+        }
+    }, [businessId, navigate]);
 
     useEffect(() => {
         (async () => {
@@ -60,6 +73,41 @@ export default function Dashboard() {
             showToast('ลบฟอร์มเรียบร้อยแล้ว', 'success');
         } catch {
             showToast('ลบฟอร์มไม่สำเร็จ', 'error');
+        }
+    };
+
+    const toggleSelect = (rootid) => {
+        setSelected(prev => {
+            const next = new Set(prev);
+            if (next.has(rootid)) next.delete(rootid);
+            else next.add(rootid);
+            return next;
+        });
+    };
+
+    const toggleSelectAll = () => {
+        if (selected.size === schemas.length) {
+            setSelected(new Set());
+        } else {
+            setSelected(new Set(schemas.map(s => s.rootid)));
+        }
+    };
+
+    const exitBulkMode = () => {
+        setBulkEditMode(false);
+        setSelected(new Set());
+    };
+
+    const handleBulkDelete = async () => {
+        const count = selected.size;
+        try {
+            await Promise.all([...selected].map(rootid => deleteSchema(rootid)));
+            setBulkDeleteConfirm(false);
+            exitBulkMode();
+            await reloadSchemas();
+            showToast(`ลบ ${count} ฟอร์มเรียบร้อยแล้ว`, 'success');
+        } catch {
+            showToast('ลบฟอร์มไม่สำเร็จบางรายการ', 'error');
         }
     };
 
@@ -126,15 +174,22 @@ export default function Dashboard() {
             </div>
 
             <section className="dash-forms-section">
-                <div className="dash-section-header">
-                    <h2>รายการฟอร์ม</h2>
-                </div>
+                {schemas.length > 0 && (
+                    <BulkEditToolbar
+                        bulkEditMode={bulkEditMode}
+                        selectedCount={selected.size}
+                        onEnterBulkMode={() => setBulkEditMode(true)}
+                        onExitBulkMode={exitBulkMode}
+                        onBulkDelete={() => setBulkDeleteConfirm(true)}
+                        rightContent={<h2 className="dash-toolbar-title">รายการฟอร์ม</h2>}
+                    />
+                )}
 
                 {schemas.length === 0 ? (
                     <div className="dash-empty">
                         <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
                         <p>ยังไม่มีฟอร์ม</p>
-                        <button className="dash-create-btn" onClick={() => navigate('/formbuilder')}>
+                        <button className="dash-create-btn" onClick={() => navigate('/formbuilder', { state: { createNew: true } })}>
                             + สร้างฟอร์มแรก
                         </button>
                     </div>
@@ -142,6 +197,7 @@ export default function Dashboard() {
                     <table className="dash-table">
                         <thead>
                             <tr>
+                                <th className="dash-th-check"></th>
                                 <th>ชื่อฟอร์ม</th>
                                 <th>ฟิลด์</th>
                                 <th>ข้อมูล</th>
@@ -152,12 +208,26 @@ export default function Dashboard() {
                             {schemas.map(s => {
                                 const fieldCount = Object.keys(s.json || {}).length;
                                 const dataCount = dataCounts[s.id] || 0;
+                                const isSelected = selected.has(s.rootid);
                                 return (
                                     <tr
                                         key={s.id}
-                                        className="dash-table-row"
-                                        onClick={() => navigate('/formbuilder', { state: { activeSchemaId: s.id, mode: 'data' } })}
+                                        className={`dash-table-row${isSelected ? ' dash-row-selected' : ''}`}
+                                        onClick={() => {
+                                            if (bulkEditMode) { toggleSelect(s.rootid); return; }
+                                            navigate('/formbuilder', { state: { activeSchemaId: s.id, mode: 'data' } });
+                                        }}
                                     >
+                                        <td className="dash-td-check" onClick={e => e.stopPropagation()}>
+                                            {bulkEditMode && (
+                                                <input
+                                                    type="checkbox"
+                                                    className="dash-checkbox"
+                                                    checked={isSelected}
+                                                    onChange={() => toggleSelect(s.rootid)}
+                                                />
+                                            )}
+                                        </td>
                                         <td className="dash-table-name">{s.name}</td>
                                         <td>{fieldCount}</td>
                                         <td>{dataCount}</td>
@@ -211,6 +281,14 @@ export default function Dashboard() {
                 variant="dangerous"
                 onConfirm={handleDeleteSchema}
                 onCancel={() => setDeleteConfirm(null)}
+            />
+            <ConfirmModal
+                isOpen={bulkDeleteConfirm}
+                title="ยืนยันการลบ"
+                message={`ข้อมูลทั้งหมดในฟอร์มที่เลือกจะถูกลบออกไปด้วย (${selected.size} รายการที่เลือก)`}
+                variant="dangerous"
+                onConfirm={handleBulkDelete}
+                onCancel={() => setBulkDeleteConfirm(false)}
             />
         </div>
     );

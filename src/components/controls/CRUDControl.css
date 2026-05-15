@@ -83,10 +83,15 @@
 
 .crud-selected-count {
     font-size: 13px;
+    font-weight: 500;
     color: var(--text-secondary);
     padding: 4px 10px;
     background-color: var(--bg-tertiary);
     border-radius: var(--radius-sm);
+}
+
+.crud-selected-count-zero {
+    opacity: 0.5;
 }
 
 /* Search */

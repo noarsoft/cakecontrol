@@ -31,6 +31,8 @@ coverage
 
 # Playwright artifacts
 .playwright-mcp/
+e2e/
+playwright.config.js
 *.png
 
 # SQLite
