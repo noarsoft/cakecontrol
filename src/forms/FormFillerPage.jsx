@@ -6,6 +6,7 @@ import { schemaToFormConfig, getSchemaPages } from '../lib/schemaTransform';
 import {
     initService, getSchemaById, getFormcfgsBySchema, createFormData,
 } from '../lib/schemaService';
+import { PAGES } from '../lib/routes';
 import './FormBuilder.css';
 
 /**
@@ -107,7 +108,7 @@ function FormFillerPage() {
                         <h2>ไม่พบฟอร์ม</h2>
                         <p>Schema ID: {schemaId} ไม่มีในระบบ</p>
                     </div>
-                    <button className="fb-mode-btn" onClick={() => navigate('/formbuilder')}>
+                    <button className="fb-mode-btn" onClick={() => navigate(PAGES.FORM_BUILDER)}>
                         กลับ Form Builder
                     </button>
                 </div>
@@ -145,7 +146,7 @@ function FormFillerPage() {
                             <button className="fb-mode-btn" onClick={handleReset}>
                                 กรอกอีกครั้ง
                             </button>
-                            <button className="fb-mode-btn" onClick={() => navigate('/formbuilder')}>
+                            <button className="fb-mode-btn" onClick={() => navigate(PAGES.FORM_BUILDER)}>
                                 กลับ Form Builder
                             </button>
                         </div>

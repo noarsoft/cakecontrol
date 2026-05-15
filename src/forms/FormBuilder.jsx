@@ -16,6 +16,7 @@ import {
     updateFormData, deleteFormData,
     migrateFormData, getSchemaVersionById,
 } from '../lib/schemaService';
+import { PAGES } from '../lib/routes';
 import ThemeSwitcher from '../ThemeSwitcher';
 import { useToast } from '../contexts/ToastContext';
 import { useNavigate, useLocation } from 'react-router-dom';
@@ -83,7 +84,7 @@ function FormBuilder() {
                         window.history.replaceState({}, '');
                         handleAddSchema();
                     } else if (!navState.activeSchemaId && !navState.createNew && !searchParams.get('schema')) {
-                        navigate('/dashboard', { replace: true });
+                        navigate(PAGES.DASHBOARD, { replace: true });
                     }
                 });
             });
@@ -206,7 +207,7 @@ function FormBuilder() {
             return;
         }
         if (newMode === 'dashboard') {
-            navigate('/dashboard');
+            navigate(PAGES.DASHBOARD);
             return;
         }
         setMode(newMode);
@@ -219,7 +220,7 @@ function FormBuilder() {
             await deleteSchema(deleteConfirm);
             setDeleteConfirm(null);
             showToast('ลบฟอร์มเรียบร้อยแล้ว', 'success');
-            navigate('/dashboard', { replace: true });
+            navigate(PAGES.DASHBOARD, { replace: true });
         } catch (err) {
             showToast('ลบฟอร์มไม่สำเร็จ', 'error');
         }
@@ -568,7 +569,7 @@ function FormBuilder() {
                     setBuilderDirty(false);
                     setFillerDirty(false);
                     if (target === 'dashboard') {
-                        navigate('/dashboard');
+                        navigate(PAGES.DASHBOARD);
                         return;
                     }
                     setMode(target);

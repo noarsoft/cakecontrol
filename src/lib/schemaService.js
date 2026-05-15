@@ -1,4 +1,5 @@
 import * as mock from './mockSchemaService';
+import { API } from './routes';
 
 let strategy = mock;
 let isMock = true;
@@ -12,7 +13,7 @@ export async function initService() {
 
 async function _doInit() {
     try {
-        const res = await fetch('http://localhost:3000/api/health', { signal: AbortSignal.timeout(1500) });
+        const res = await fetch(API.HEALTH, { signal: AbortSignal.timeout(1500) });
         if (res.ok) {
             strategy = await import('./apiSchemaService');
             isMock = false;

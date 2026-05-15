@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { initService, getBusinesses, createBusiness, deleteBusiness } from '../lib/schemaService';
+import { PAGES } from '../lib/routes';
 import ConfirmModal from '../components/controls/ConfirmModal';
 import ThemeSwitcher from '../ThemeSwitcher';
 import { useToast } from '../contexts/ToastContext';
@@ -32,7 +33,7 @@ export default function BusinessSelector() {
         localStorage.setItem('activeBusinessId', business.id);
         localStorage.setItem('activeBusinessRootId', business.rootid);
         localStorage.setItem('activeBusinessName', business.name);
-        navigate('/dashboard');
+        navigate(PAGES.DASHBOARD);
     };
 
     const handleAddBusiness = async () => {

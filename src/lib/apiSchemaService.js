@@ -5,15 +5,12 @@
  * - Response: { ok: true, data: ... }
  * - Versioned objects use _rootid (not rootid)
  * - All JSON data stored in `payload` column
- * - Routes: /business, /schema, /view, /form, /data
- * - Get latest: GET /root/:rootid/latest
- * - Update: PATCH /root/:rootid
- * - Delete: DELETE /root/:rootid
+ * - Routes defined in routes.js
  */
-const BASE = 'http://localhost:3000/api';
+import { API } from './routes';
 
-async function request(path, options = {}) {
-    const res = await fetch(`${BASE}${path}`, {
+async function request(url, options = {}) {
+    const res = await fetch(url, {
         headers: { 'Content-Type': 'application/json' },
         ...options,
     });
@@ -54,17 +51,17 @@ function mapDataRow(row) {
 // ─── business ───
 
 export async function getBusinesses() {
-    const rows = await request('/business');
+    const rows = await request(API.BUSINESS);
     return rows.map(mapBusinessRow);
 }
 
 export async function getBusinessById(rootid) {
-    const row = await request(`/business/root/${rootid}/latest`);
+    const row = await request(API.BUSINESS_LATEST(rootid));
     return mapBusinessRow(row);
 }
 
 export async function createBusiness(name, icon = null) {
-    const row = await request('/business', {
+    const row = await request(API.BUSINESS, {
         method: 'POST',
         body: JSON.stringify({ name, icon }),
     });
@@ -72,7 +69,7 @@ export async function createBusiness(name, icon = null) {
 }
 
 export async function updateBusiness(rootid, updates) {
-    const row = await request(`/business/root/${rootid}`, {
+    const row = await request(API.BUSINESS_ROOT(rootid), {
         method: 'PATCH',
         body: JSON.stringify(updates),
     });
@@ -80,25 +77,25 @@ export async function updateBusiness(rootid, updates) {
 }
 
 export async function deleteBusiness(rootid) {
-    const row = await request(`/business/root/${rootid}`, { method: 'DELETE' });
+    const row = await request(API.BUSINESS_ROOT(rootid), { method: 'DELETE' });
     return mapBusinessRow(row);
 }
 
 // ─── data_schema ───
 
 export async function getSchemas(businessId = null) {
-    const url = businessId ? `/schema?business_id=${businessId}` : '/schema';
+    const url = businessId ? API.SCHEMA_BY_BUSINESS(businessId) : API.SCHEMA;
     const rows = await request(url);
     return rows.map(mapSchemaRow);
 }
 
 export async function getSchemaById(rootid) {
-    const row = await request(`/schema/root/${rootid}/latest`);
+    const row = await request(API.SCHEMA_LATEST(rootid));
     return mapSchemaRow(row);
 }
 
 export async function createSchema(name, json = {}, business_id = null) {
-    const row = await request('/schema', {
+    const row = await request(API.SCHEMA, {
         method: 'POST',
         body: JSON.stringify({
             name,
@@ -115,7 +112,7 @@ export async function updateSchema(rootid, updates) {
     if (updates.json !== undefined) body.payload = updates.json;
     if (updates.payload !== undefined) body.payload = updates.payload;
 
-    const row = await request(`/schema/root/${rootid}`, {
+    const row = await request(API.SCHEMA_ROOT(rootid), {
         method: 'PATCH',
         body: JSON.stringify(body),
     });
@@ -123,19 +120,19 @@ export async function updateSchema(rootid, updates) {
 }
 
 export async function deleteSchema(rootid) {
-    const row = await request(`/schema/root/${rootid}`, { method: 'DELETE' });
+    const row = await request(API.SCHEMA_ROOT(rootid), { method: 'DELETE' });
     return mapSchemaRow(row);
 }
 
 // ─── view ───
 
 export async function getViewsBySchema(schemaId) {
-    const rows = await request(`/view/schema/${schemaId}`);
+    const rows = await request(API.VIEW_BY_SCHEMA(schemaId));
     return rows.map(mapViewRow);
 }
 
 export async function createView(schemaId, viewType, json_table_config, name = '') {
-    const row = await request('/view', {
+    const row = await request(API.VIEW, {
         method: 'POST',
         body: JSON.stringify({
             data_schema_id: schemaId,
@@ -152,7 +149,7 @@ export async function updateView(rootid, updates) {
     if (updates.payload !== undefined) body.payload = updates.payload;
     if (updates.name !== undefined) body.name = updates.name;
 
-    const row = await request(`/view/root/${rootid}`, {
+    const row = await request(API.VIEW_ROOT(rootid), {
         method: 'PATCH',
         body: JSON.stringify(body),
     });
@@ -162,12 +159,12 @@ export async function updateView(rootid, updates) {
 // ─── form (config) ───
 
 export async function getFormcfgsBySchema(schemaId) {
-    const rows = await request(`/form/schema/${schemaId}`);
+    const rows = await request(API.FORM_BY_SCHEMA(schemaId));
     return rows.map(mapFormcfgRow);
 }
 
 export async function createFormcfg(schemaId, json_form_config, name = '') {
-    const row = await request('/form', {
+    const row = await request(API.FORM, {
         method: 'POST',
         body: JSON.stringify({
             data_schema_id: schemaId,
@@ -184,7 +181,7 @@ export async function updateFormcfg(rootid, updates) {
     if (updates.payload !== undefined) body.payload = updates.payload;
     if (updates.name !== undefined) body.name = updates.name;
 
-    const row = await request(`/form/root/${rootid}`, {
+    const row = await request(API.FORM_ROOT(rootid), {
         method: 'PATCH',
         body: JSON.stringify(body),
     });
@@ -194,17 +191,17 @@ export async function updateFormcfg(rootid, updates) {
 // ─── data ───
 
 export async function getFormDataBySchema(schemaId) {
-    const rows = await request(`/data/schema/${schemaId}`);
+    const rows = await request(API.DATA_BY_SCHEMA(schemaId));
     return rows.map(mapDataRow);
 }
 
 export async function getFormDataBySchemaFamily(schemaRootId) {
-    const rows = await request(`/data/schema-root/${schemaRootId}`);
+    const rows = await request(API.DATA_BY_SCHEMA_ROOT(schemaRootId));
     return rows.map(mapDataRow);
 }
 
 export async function migrateFormData(dataRootId, force = true) {
-    const row = await request(`/data/root/${dataRootId}/migrate-latest-schema`, {
+    const row = await request(API.DATA_MIGRATE(dataRootId), {
         method: 'POST',
         body: JSON.stringify({ force }),
     });
@@ -212,12 +209,12 @@ export async function migrateFormData(dataRootId, force = true) {
 }
 
 export async function getSchemaVersionById(id) {
-    const row = await request(`/schema/${id}`);
+    const row = await request(API.SCHEMA_BY_ID(id));
     return mapSchemaRow(row);
 }
 
 export async function createFormData(schemaId, data) {
-    const row = await request('/data', {
+    const row = await request(API.DATA, {
         method: 'POST',
         body: JSON.stringify({ data_schema_id: schemaId, payload: data }),
     });
@@ -225,7 +222,7 @@ export async function createFormData(schemaId, data) {
 }
 
 export async function updateFormData(rootid, data) {
-    const row = await request(`/data/root/${rootid}`, {
+    const row = await request(API.DATA_ROOT(rootid), {
         method: 'PATCH',
         body: JSON.stringify({ payload: data }),
     });
@@ -233,7 +230,7 @@ export async function updateFormData(rootid, data) {
 }
 
 export async function deleteFormData(rootid) {
-    const row = await request(`/data/root/${rootid}`, { method: 'DELETE' });
+    const row = await request(API.DATA_ROOT(rootid), { method: 'DELETE' });
     return mapDataRow(row);
 }
 
