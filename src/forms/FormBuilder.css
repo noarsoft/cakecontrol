@@ -632,6 +632,19 @@
     z-index: 5;
 }
 
+.fb-builder-actions-spacer {
+    flex: 1;
+}
+
+.fb-save-test-btn {
+    background: var(--success) !important;
+    border-color: var(--success) !important;
+}
+
+.fb-save-test-btn:hover:not(:disabled) {
+    opacity: 0.9;
+}
+
 /* ─── Config Panel ─── */
 .sb-config-panel {
     width: 300px;

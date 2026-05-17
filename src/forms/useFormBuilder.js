@@ -292,7 +292,7 @@ export function useFormBuilder() {
     }, [activeSchema, schemaData, handleDataEdit, handleDataDelete]);
 
     const handleSchemaJsonChange = async (newJson) => {
-        if (!activeSchema) return;
+        if (!activeSchema) return false;
         try {
             const updated = await updateSchema(activeSchema.rootid, { json: newJson });
             const newSchemaId = updated?.id ?? activeSchema.id;
@@ -314,8 +314,18 @@ export function useFormBuilder() {
             await reloadSchemas();
             setActiveSchemaId(newSchemaId);
             setRefreshKey(k => k + 1);
+            return true;
         } catch (err) {
             showToast('ไม่สามารถบันทึกโครงสร้างได้', 'error');
+            return false;
+        }
+    };
+
+    const handleSaveAndTest = async (newJson) => {
+        const ok = await handleSchemaJsonChange(newJson);
+        if (ok) {
+            setBuilderDirty(false);
+            setMode('fill');
         }
     };
 
@@ -336,6 +346,12 @@ export function useFormBuilder() {
         navigator.clipboard.writeText(url).then(() => {
             showToast('คัดลอก link แล้ว', 'success');
         });
+    };
+
+    const handleFillerSubmit = () => {
+        setFillerDirty(false);
+        setMode('data');
+        setRefreshKey(k => k + 1);
     };
 
     const handleConfirmPending = () => {
@@ -359,7 +375,8 @@ export function useFormBuilder() {
 
         handleModeChange, handleSchemaNameSave, handleExportExcel,
         handleMigrateData, handleDeleteSchema, handleSchemaJsonChange,
-        handleShare, handleConfirmPending, handleAddSchema,
+        handleShare, handleConfirmPending, handleAddSchema, handleFillerSubmit,
+        handleSaveAndTest,
         setBuilderDirty, setFillerDirty,
         showToast,
     };

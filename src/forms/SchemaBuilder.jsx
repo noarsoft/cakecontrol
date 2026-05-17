@@ -2,8 +2,9 @@ import { useState, useEffect, useRef } from 'react';
 import { ENABLED_FIELD_TYPES, addField, removeField, updateField, reorderField, getFieldEntries, validateSchema } from '../lib/schema';
 import { useToast } from '../contexts/ToastContext';
 import { KeyInput, FieldConfigPanel } from './SchemaBuilderPanels';
+import Icon from '../components/ui/Icon';
 
-function SchemaBuilder({ schemaJson, onChange, onDirtyChange }) {
+function SchemaBuilder({ schemaJson, onChange, onSaveAndTest, onDirtyChange }) {
     const { showToast } = useToast();
     const [draft, setDraft] = useState(schemaJson);
     const [isDirty, setIsDirty] = useState(false);
@@ -33,7 +34,7 @@ function SchemaBuilder({ schemaJson, onChange, onDirtyChange }) {
 
     const updateDraft = (newJson) => { setDraft(newJson); setIsDirty(true); };
 
-    const handleSave = () => {
+    const validateAndGetDraft = () => {
         const allTouched = {};
         fields.forEach((_, i) => { allTouched[i] = { key: true, label: true }; });
         setTouchedFields(allTouched);
@@ -41,20 +42,33 @@ function SchemaBuilder({ schemaJson, onChange, onDirtyChange }) {
         const entries = getFieldEntries(draft);
         if (entries.some(([k]) => !k.trim())) {
             showToast('กรุณาระบุชื่อ Key ให้ครบทุกฟิลด์', 'error');
-            return;
+            return null;
         }
         if (entries.some(([_, def]) => def.type !== 'pagebreak' && !def.label?.trim())) {
             showToast('กรุณาระบุชื่อ Label ให้ครบทุกฟิลด์', 'error');
-            return;
+            return null;
         }
         const internalErrors = validateSchema(draft);
         if (internalErrors.length > 0) {
             showToast(internalErrors[0], 'error');
-            return;
+            return null;
         }
-        onChange(draft);
+        return draft;
+    };
+
+    const handleSave = () => {
+        const validated = validateAndGetDraft();
+        if (!validated) return;
+        onChange(validated);
         setIsDirty(false);
         showToast('บันทึกโครงสร้างแม่แบบเรียบร้อยแล้ว', 'success');
+    };
+
+    const handleSaveAndTest = () => {
+        const validated = validateAndGetDraft();
+        if (!validated) return;
+        onSaveAndTest(validated);
+        setIsDirty(false);
     };
 
     const handleCancel = () => { setDraft(schemaJson); setIsDirty(false); setSelectedKey(null); };
@@ -223,7 +237,7 @@ function SchemaBuilder({ schemaJson, onChange, onDirtyChange }) {
                             </div>
                             <div className="fb-field-actions">
                                 <button onClick={() => setSelectedKey(k => k === key ? null : key)} title="ตั้งค่า" className={`fb-config-btn ${isSelected ? 'active' : ''}`}>
-                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+                                    <Icon name="settings" size="sm" />
                                 </button>
                                 <button onClick={() => handleMoveField(idx, 'up')} disabled={idx === 0} title="ขึ้น" className="fb-move-btn">&#8593;</button>
                                 <button onClick={() => handleMoveField(idx, 'down')} disabled={idx === fields.length - 1} title="ลง" className="fb-move-btn">&#8595;</button>
@@ -245,8 +259,10 @@ function SchemaBuilder({ schemaJson, onChange, onDirtyChange }) {
                 )}
 
                 <div className="fb-builder-actions">
-                    <button className="fb-mode-btn" onClick={handleCancel} disabled={!isDirty}>ยกเลิก</button>
                     <button className="fb-mode-btn active" onClick={handleSave} disabled={!isDirty || errors.length > 0}>บันทึก</button>
+                    <div className="fb-builder-actions-spacer" />
+                    <button className="fb-mode-btn" onClick={handleCancel} disabled={!isDirty}>ยกเลิก</button>
+                    <button className="fb-mode-btn active fb-save-test-btn" onClick={handleSaveAndTest} disabled={!isDirty || errors.length > 0}>บันทึกและทดสอบ</button>
                 </div>
             </div>
 

@@ -2,13 +2,13 @@
 
 .bs-container {
     min-height: 100vh;
-    background: #141414;
+    background: var(--bg-secondary);
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
     padding: 60px 20px;
-    color: #fff;
+    color: var(--text-primary);
     position: relative;
     overflow: hidden;
 }
@@ -38,14 +38,14 @@
     font-weight: 700;
     margin-bottom: 0.3rem;
     letter-spacing: -1px;
-    color: #fff;
+    color: var(--text-primary);
     text-align: center;
     animation: bsFadeDown 0.6s ease-out;
 }
 
 .bs-subtitle {
     font-size: 1.15rem;
-    color: rgba(255, 255, 255, 0.45);
+    color: var(--text-tertiary);
     margin-bottom: 3.5rem;
     font-weight: 400;
     animation: bsFadeDown 0.6s ease-out 0.1s both;
@@ -102,8 +102,8 @@
 
 .bs-card-wrapper:hover .bs-card {
     transform: scale(1.08);
-    border-color: #e5e5e5;
-    box-shadow: 0 0 24px rgba(255, 255, 255, 0.12);
+    border-color: var(--border-hover);
+    box-shadow: var(--shadow-lg);
 }
 
 .bs-avatar {
@@ -125,7 +125,7 @@
     margin-top: 14px;
     font-size: 14px;
     font-weight: 500;
-    color: rgba(255, 255, 255, 0.5);
+    color: var(--text-tertiary);
     transition: color 0.2s ease;
     text-align: center;
     overflow: hidden;
@@ -135,7 +135,7 @@
 }
 
 .bs-card-wrapper:hover .bs-name {
-    color: #e5e5e5;
+    color: var(--text-primary);
 }
 
 /* ─── Delete Button (show on hover) ─── */
@@ -143,9 +143,9 @@
     position: absolute;
     top: -8px;
     right: -8px;
-    background: rgba(0, 0, 0, 0.75);
-    border: 2px solid rgba(255, 255, 255, 0.2);
-    color: #fff;
+    background: var(--bg-primary);
+    border: 2px solid var(--border-primary);
+    color: var(--text-primary);
     width: 28px;
     height: 28px;
     border-radius: 50%;
@@ -167,45 +167,46 @@
 .bs-delete-btn:hover {
     background: #e50914;
     border-color: #e50914;
+    color: #fff;
     transform: scale(1.15);
     box-shadow: 0 2px 12px rgba(229, 9, 20, 0.5);
 }
 
 /* ─── Add Card ─── */
 .bs-card-wrapper.add-new .bs-card {
-    border: 2px dashed rgba(255, 255, 255, 0.15);
-    background: rgba(255, 255, 255, 0.03);
+    border: 2px dashed var(--border-primary);
+    background: var(--bg-hover);
 }
 
 .bs-card-wrapper.add-new:hover .bs-card {
-    border-color: rgba(255, 255, 255, 0.35);
-    background: rgba(255, 255, 255, 0.06);
+    border-color: var(--border-hover);
+    background: var(--bg-tertiary);
     box-shadow: none;
 }
 
 .bs-add-btn {
     font-size: 3.5rem;
     font-weight: 200;
-    color: rgba(255, 255, 255, 0.3);
+    color: var(--text-disabled);
     transition: color 0.2s;
     line-height: 1;
 }
 
 .bs-card-wrapper.add-new:hover .bs-add-btn {
-    color: rgba(255, 255, 255, 0.6);
+    color: var(--text-secondary);
 }
 
 .bs-card-wrapper.add-new .bs-name {
-    color: rgba(255, 255, 255, 0.35);
+    color: var(--text-disabled);
 }
 
 .bs-card-wrapper.add-new:hover .bs-name {
-    color: rgba(255, 255, 255, 0.55);
+    color: var(--text-secondary);
 }
 
 /* ─── Modal ─── */
 .confirm-modal-backdrop.netflix-style {
-    background: rgba(0, 0, 0, 0.65);
+    background: rgba(0, 0, 0, 0.45);
     backdrop-filter: blur(12px);
     position: fixed;
     top: 0;
@@ -219,14 +220,14 @@
 }
 
 .confirm-modal.netflix-style {
-    background: #1a1a2e;
-    color: #fff;
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    border: 1px solid var(--border-primary);
     border-radius: 16px;
     padding: 36px;
     width: 90%;
     max-width: 440px;
-    box-shadow: 0 24px 80px rgba(0, 0, 0, 0.6);
+    box-shadow: var(--shadow-lg);
     animation: modalPop 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
@@ -239,11 +240,11 @@
     margin: 0 0 10px;
     font-size: 22px;
     font-weight: 700;
-    color: #fff;
+    color: var(--text-primary);
 }
 
 .modal-subtitle {
-    color: rgba(255, 255, 255, 0.45);
+    color: var(--text-tertiary);
     font-size: 14px;
     margin-bottom: 20px;
 }
@@ -258,9 +259,9 @@
 .netflix-input {
     width: 100%;
     padding: 14px 16px;
-    background: rgba(255, 255, 255, 0.06);
-    border: 1px solid rgba(255, 255, 255, 0.12);
-    color: #fff;
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-primary);
+    color: var(--text-primary);
     margin-top: 20px;
     margin-bottom: 8px;
     border-radius: 8px;
@@ -269,14 +270,14 @@
 }
 
 .netflix-input::placeholder {
-    color: rgba(255, 255, 255, 0.3);
+    color: var(--text-placeholder);
 }
 
 .netflix-input:focus {
     outline: none;
     border-color: #6366f1;
     box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
-    background: rgba(255, 255, 255, 0.08);
+    background: var(--bg-hover);
 }
 
 .netflix-btn-primary {
@@ -299,8 +300,8 @@
 
 .netflix-btn-secondary {
     background: transparent;
-    color: rgba(255, 255, 255, 0.6);
-    border: 1px solid rgba(255, 255, 255, 0.12);
+    color: var(--text-secondary);
+    border: 1px solid var(--border-primary);
     padding: 12px 28px;
     font-weight: 600;
     border-radius: 8px;
@@ -311,9 +312,9 @@
 }
 
 .netflix-btn-secondary:hover {
-    background: rgba(255, 255, 255, 0.06);
-    color: #fff;
-    border-color: rgba(255, 255, 255, 0.25);
+    background: var(--bg-hover);
+    color: var(--text-primary);
+    border-color: var(--border-hover);
 }
 
 /* ─── Responsive ─── */

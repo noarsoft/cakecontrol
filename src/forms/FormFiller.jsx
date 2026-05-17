@@ -48,6 +48,7 @@ function FormFiller({ schema, formcfgJson, onSubmit, onDirtyChange }) {
         if (!hasData) return;
         await createFormData(schema.id, formData);
         setSubmitted(true);
+        onDirtyChange?.(false);
         onSubmit?.();
     };
 

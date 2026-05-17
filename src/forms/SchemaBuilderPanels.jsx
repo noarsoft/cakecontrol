@@ -3,6 +3,7 @@ import { FIELD_TYPES } from '../lib/schema';
 import { FIELD_TO_CONTROL_TYPE } from '../lib/controlTypeMap';
 import { genControl } from '../components/controls/TableviewControl';
 import { CONTROL_CONFIGS } from './schemaBuilderConfigs';
+import Icon from '../components/ui/Icon';
 
 export function KeyInput({ value, onCommit, hasError, onBlur }) {
     const [draft, setDraft] = useState(value);
@@ -170,11 +171,7 @@ export function FieldConfigPanel({ fieldKey, fieldDef, onUpdate }) {
         <div className={`sb-config-panel ${!locked ? 'unlocked' : ''}`} ref={dragRef} style={panelStyle}>
             <div className="sb-config-toolbar" onMouseDown={handleMouseDown} style={{ cursor: locked ? 'default' : 'grab' }}>
                 <button className="sb-lock-btn" onClick={handleToggleLock} title={locked ? 'ปลดล็อกเพื่อย้ายได้' : 'ล็อกตำแหน่ง'}>
-                    {locked ? (
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-                    ) : (
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 9.9-1"/></svg>
-                    )}
+                    <Icon name={locked ? 'lock' : 'unlock'} size="sm" />
                 </button>
             </div>
             <ControlPreview fieldKey={fieldKey} fieldDef={fieldDef} />

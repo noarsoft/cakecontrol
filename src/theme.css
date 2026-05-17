@@ -157,6 +157,19 @@
     }
 }
 
+/* Native form elements — inherit theme */
+select,
+select option {
+    background-color: var(--bg-primary);
+    color: var(--text-primary);
+    border-color: var(--border-primary);
+}
+
+[data-theme="dark"] select,
+[data-theme="dark"] select option {
+    color-scheme: dark;
+}
+
 /* Base body styling */
 body {
     background-color: var(--bg-secondary);
