@@ -5,8 +5,8 @@ import {
 
 describe('schema.js', () => {
     describe('FIELD_TYPES', () => {
-        test('has 46 types', () => {
-            expect(FIELD_TYPES).toHaveLength(46);
+        test('has 44 types', () => {
+            expect(FIELD_TYPES).toHaveLength(44);
         });
 
         test('each type has value, label, icon, enabled', () => {

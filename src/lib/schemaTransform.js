@@ -3,10 +3,9 @@
  * แปลง data_schema, data_view, data_formcfg → CRUDControl / FormControl config
  */
 import { createElement } from 'react';
+import { getFieldEntries } from './schema';
+import { fieldTypeToGenControlType } from './controlTypeMap';
 
-/**
- * แปลง schema field type → control type ที่ genControl รู้จัก
- */
 function normalizeEnumOptions(enumArr) {
     if (!enumArr) return [];
     return enumArr.map(v => typeof v === 'object' ? { label: v.label, value: v.value } : { label: v, value: v });
@@ -90,70 +89,6 @@ function getFieldProps(fieldType, fieldDef) {
     return props;
 }
 
-function sortedEntries(schemaJson) {
-    return Object.entries(schemaJson || {}).sort(([keyA, a], [keyB, b]) => {
-        const orderDiff = (a._order || 0) - (b._order || 0);
-        if (orderDiff !== 0) return orderDiff;
-        const numA = parseInt(keyA.match(/(\d+)/)?.[1] || '0', 10);
-        const numB = parseInt(keyB.match(/(\d+)/)?.[1] || '0', 10);
-        if (numA !== numB) return numA - numB;
-        return keyA.localeCompare(keyB);
-    });
-}
-
-function fieldTypeToControlType(fieldType) {
-    const map = {
-        // Input
-        string: 'textbox',
-        number: 'number',
-        select: 'select',
-        dropdown: 'dropdown',
-        boolean: 'checkbox',
-        toggle: 'toggle',
-        date: 'date',
-        datepicker: 'datepicker',
-        slider: 'slider',
-        rating: 'rating',
-        fileupload: 'fileupload',
-        // Display
-        label: 'label',
-        link: 'link',
-        image: 'image',
-        badge: 'badge',
-        icon: 'icon',
-        progress: 'progress',
-        qrcode: 'qrcode',
-        calendargrid: 'calendargrid',
-        button: 'button',
-        buttongroup: 'buttongroup',
-        // Layout
-        form: 'form',
-        table: 'table',
-        grid: 'grid',
-        card: 'card',
-        accordion: 'accordion',
-        tabs: 'tabs',
-        tree: 'tree',
-        menu: 'menu',
-        crud: 'crud',
-        modal: 'modal',
-        pagination: 'pagination',
-        // Modal
-        alertmodal: 'alertmodal',
-        confirmmodal: 'confirmmodal',
-        // Charts
-        chart: 'chart',
-        chartsbar: 'bar',
-        chartsline: 'line',
-        chartspie: 'pie',
-        chartsdoughnut: 'doughnut',
-        chartsradar: 'radar',
-        chartsarea: 'area',
-        chartsbubble: 'bubble',
-        chartsmixed: 'mixed',
-    };
-    return map[fieldType] || 'textbox';
-}
 
 /**
  * สร้าง columns config สำหรับ CRUDControl จาก data_view JSON
@@ -164,7 +99,7 @@ export function schemaToColumnsConfig(schemaJson, viewJson = null) {
     if (viewJson && viewJson.columns && viewJson.columns.length > 0) {
         columns = viewJson.columns;
     } else {
-        columns = sortedEntries(schemaJson)
+        columns = getFieldEntries(schemaJson)
             .filter(([, def]) => def.type !== 'pagebreak')
             .map(([key, def]) => {
                 const col = { key, header: def.label || key, sortable: true, width: 'auto' };
@@ -222,7 +157,7 @@ export function schemaToFormConfig(schemaJson, formcfgJson = null) {
             controls: formcfgJson.controls.map(ctrl => {
                 const fieldDef = schemaJson[ctrl.key] || { type: 'string' };
                 return {
-                    type: fieldTypeToControlType(fieldDef.type),
+                    type: fieldTypeToGenControlType(fieldDef.type),
                     databind: ctrl.key,
                     label: ctrl.label || ctrl.key,
                     colno: ctrl.colno || 1,
@@ -257,10 +192,10 @@ export function schemaToFormConfig(schemaJson, formcfgJson = null) {
     }
 
     // Auto-generate: 1 field ต่อ 1 row, full width (skip pagebreak)
-    const controls = sortedEntries(schemaJson)
+    const controls = getFieldEntries(schemaJson)
         .filter(([, def]) => def.type !== 'pagebreak')
         .map(([key, def], idx) => ({
-            type: fieldTypeToControlType(def.type),
+            type: fieldTypeToGenControlType(def.type),
             databind: key,
             label: def.label || key,
             colno: 1,
@@ -321,7 +256,7 @@ export function buildCrudConfig({ schemaJson, viewJson, formcfgJson, data, keyFi
  * คืน array ของ { label, fieldKeys } แต่ละ page
  */
 export function getSchemaPages(schemaJson) {
-    const entries = sortedEntries(schemaJson);
+    const entries = getFieldEntries(schemaJson);
     const pages = [];
     let current = { label: null, fieldKeys: [] };
 
@@ -339,7 +274,7 @@ export function getSchemaPages(schemaJson) {
 
 export function generateDefaultView(schemaJson) {
     return {
-        columns: sortedEntries(schemaJson)
+        columns: getFieldEntries(schemaJson)
             .filter(([, def]) => def.type !== 'pagebreak')
             .map(([key, def]) => {
                 const col = { key, header: def.label || key, width: 'auto', sortable: true };
@@ -355,7 +290,7 @@ export function generateDefaultView(schemaJson) {
 export function generateDefaultFormcfg(schemaJson, colnumbers = 6) {
     return {
         colnumbers,
-        controls: sortedEntries(schemaJson)
+        controls: getFieldEntries(schemaJson)
             .filter(([, def]) => def.type !== 'pagebreak')
             .map(([key, def], idx) => ({
                 key,

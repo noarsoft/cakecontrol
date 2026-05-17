@@ -13,7 +13,8 @@ export default {
   ],
   testPathIgnorePatterns: [
     '/node_modules/',
-    'src/Apis/.*\\.test\\.jsx$',  // Ignore manual test files in Apis folder
+    '/e2e/',
+    'src/Apis/.*\\.test\\.jsx$',
     'src/Apis/.*\\.test\\.read\\.jsx$'
   ],
   collectCoverageFrom: [

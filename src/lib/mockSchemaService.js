@@ -4,42 +4,10 @@
  * append-only versioning + tombstone soft delete
  */
 
-const STORAGE_KEYS = {
-    business: 'cakecontrol_business',
-    schemas: 'cakecontrol_schemas',
-    views: 'cakecontrol_views',
-    forms: 'cakecontrol_forms',
-    data: 'cakecontrol_data',
-};
-
-function genId() {
-    return crypto.randomUUID();
-}
-
-function now() {
-    const d = new Date();
-    const pad = (n) => String(n).padStart(2, '0');
-    const s = `${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}${pad(d.getHours())}${pad(d.getMinutes())}${pad(d.getSeconds())}`;
-    return Number(s);
-}
-
-function getStore(key) {
-    try {
-        return JSON.parse(localStorage.getItem(key) || '[]');
-    } catch {
-        return [];
-    }
-}
-
-function setStore(key, data) {
-    localStorage.setItem(key, JSON.stringify(data));
-}
-
-function nextId(key) {
-    const items = getStore(key);
-    const maxId = items.reduce((max, item) => Math.max(max, item.id || 0), 0);
-    return maxId + 1;
-}
+import {
+    STORAGE_KEYS, genId, now, getStore, setStore, nextId,
+    detectKeyRenames, migrateDataKeys,
+} from './mockStoreHelpers';
 
 // ─── business ───
 
@@ -138,56 +106,6 @@ export function createSchema(name, json = {}, business_id = null) {
     return item;
 }
 
-function detectKeyRenames(oldJson, newJson) {
-    if (!oldJson || !newJson) return {};
-    const renames = {};
-    const oldByOrder = {};
-    const hasOrder = Object.values(oldJson).some(d => d._order) && Object.values(newJson).some(d => d._order);
-
-    if (hasOrder) {
-        for (const [key, def] of Object.entries(oldJson)) {
-            if (def._order) oldByOrder[def._order] = key;
-        }
-        for (const [key, def] of Object.entries(newJson)) {
-            if (!def._order) continue;
-            const oldKey = oldByOrder[def._order];
-            if (oldKey && oldKey !== key) renames[oldKey] = key;
-        }
-    } else {
-        const oldKeys = new Set(Object.keys(oldJson));
-        const newKeys = new Set(Object.keys(newJson));
-        const removed = [...oldKeys].filter(k => !newKeys.has(k));
-        const added = [...newKeys].filter(k => !oldKeys.has(k));
-        if (removed.length === added.length) {
-            for (let i = 0; i < removed.length; i++) {
-                if (oldJson[removed[i]].type === newJson[added[i]].type) {
-                    renames[removed[i]] = added[i];
-                }
-            }
-        }
-    }
-    return renames;
-}
-
-function migrateDataKeys(schemaId, renames) {
-    const renameEntries = Object.entries(renames);
-    if (renameEntries.length === 0) return;
-    const dataItems = getStore(STORAGE_KEYS.data);
-    let changed = false;
-    dataItems.forEach(record => {
-        if (record.data_schema_id !== schemaId || record.activate === false) return;
-        const d = record.data;
-        if (!d || typeof d !== 'object') return;
-        const migrated = {};
-        for (const [k, v] of Object.entries(d)) {
-            migrated[renames[k] || k] = v;
-        }
-        record.data = migrated;
-        changed = true;
-    });
-    if (changed) setStore(STORAGE_KEYS.data, dataItems);
-}
-
 export function updateSchema(rootid, updates) {
     const items = getStore(STORAGE_KEYS.schemas);
     const idx = items.findIndex(s => s.rootid === rootid && s.activate !== false);
@@ -216,7 +134,6 @@ export function updateSchema(rootid, updates) {
     items.push(newItem);
     setStore(STORAGE_KEYS.schemas, items);
 
-    // Cascade FK updates in localStorage
     const cascadeFk = (storeKey, field) => {
         const children = getStore(storeKey);
         let changed = false;
@@ -233,7 +150,7 @@ export function updateSchema(rootid, updates) {
     cascadeFk(STORAGE_KEYS.data, 'data_schema_id');
 
     if (Object.keys(renames).length > 0) {
-        migrateDataKeys(newItem.id, renames);
+        migrateDataKeys(STORAGE_KEYS.data, newItem.id, renames);
     }
 
     return newItem;
