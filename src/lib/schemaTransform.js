@@ -34,7 +34,7 @@ function getDisplayProps(fieldType, fieldDef) {
 
 const CHART_PROPS = ['chartType', 'title', 'xAxisKey', 'yAxisKey', 'nameKey', 'dataKey', 'showLegend', 'showGrid', 'colors'];
 
-const PASSTHROUGH_PROPS = {
+export const PASSTHROUGH_PROPS = {
     string: ['placeholder', 'maxLength', 'rows', 'disabled', 'readOnly'],
     number: ['min', 'max', 'step', 'placeholder', 'disabled', 'readOnly'],
     password: ['placeholder', 'showStrength', 'minLength'],
@@ -83,7 +83,7 @@ const PASSTHROUGH_PROPS = {
     chartsmixed: CHART_PROPS,
 };
 
-function getFieldProps(fieldType, fieldDef) {
+export function getFieldProps(fieldType, fieldDef) {
     const keys = PASSTHROUGH_PROPS[fieldType];
     if (!keys) return {};
     const props = {};

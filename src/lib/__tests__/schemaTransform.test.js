@@ -1,6 +1,7 @@
 import {
     schemaToColumnsConfig, schemaToFormConfig, buildCrudConfig,
-    generateDefaultView, generateDefaultFormcfg
+    generateDefaultView, generateDefaultFormcfg,
+    getFieldProps, PASSTHROUGH_PROPS
 } from '../schemaTransform';
 
 describe('schemaTransform.js', () => {
@@ -137,6 +138,168 @@ describe('schemaTransform.js', () => {
         test('handles null schema', () => {
             const view = generateDefaultView(null);
             expect(view.columns).toEqual([]);
+        });
+    });
+
+    describe('getFieldProps', () => {
+        test('returns {} for unknown field type', () => {
+            expect(getFieldProps('unknown_type', { foo: 'bar' })).toEqual({});
+        });
+
+        test('returns {} when field definition has no passthrough keys', () => {
+            expect(getFieldProps('string', {})).toEqual({});
+        });
+
+        test('extracts only matching props for string type', () => {
+            const result = getFieldProps('string', { placeholder: 'Enter name', maxLength: 100, unrelated: true });
+            expect(result).toEqual({ placeholder: 'Enter name', maxLength: 100 });
+            expect(result).not.toHaveProperty('unrelated');
+        });
+
+        test('preserves falsy values (false, 0, empty string)', () => {
+            const result = getFieldProps('string', { placeholder: '', maxLength: 0, disabled: false });
+            expect(result).toEqual({ placeholder: '', maxLength: 0, disabled: false });
+        });
+
+        test('extracts props for password type', () => {
+            expect(getFieldProps('password', { placeholder: 'Enter password', showStrength: true, minLength: 8 }))
+                .toEqual({ placeholder: 'Enter password', showStrength: true, minLength: 8 });
+        });
+
+        test('extracts props for email type', () => {
+            expect(getFieldProps('email', { placeholder: 'name@example.com', unrelated: 'x' }))
+                .toEqual({ placeholder: 'name@example.com' });
+        });
+
+        test('extracts props for searchbox type', () => {
+            expect(getFieldProps('searchbox', { placeholder: 'Search...', multiple: true, allowCreate: false }))
+                .toEqual({ placeholder: 'Search...', multiple: true, allowCreate: false });
+        });
+
+        test('extracts props for multipleupload type', () => {
+            expect(getFieldProps('multipleupload', { placeholder: 'Drop files', allowedTypes: 'image/*', maxFileSize: 10485760 }))
+                .toEqual({ placeholder: 'Drop files', allowedTypes: 'image/*', maxFileSize: 10485760 });
+        });
+
+        test('extracts updated slider props', () => {
+            const result = getFieldProps('slider', { min: 0, max: 100, step: 5, unit: '%', showValue: true, showTicks: true, color: '#3b82f6' });
+            expect(result).toEqual({ min: 0, max: 100, step: 5, unit: '%', showValue: true, showTicks: true, color: '#3b82f6' });
+        });
+
+        test('extracts updated image props', () => {
+            const result = getFieldProps('image', { width: '200px', height: '120px', alt: 'Test', lazy: true, enlargeable: true, grayscale: false, fallback: '/ph.png' });
+            expect(result).toEqual({ width: '200px', height: '120px', alt: 'Test', lazy: true, enlargeable: true, grayscale: false, fallback: '/ph.png' });
+        });
+
+        test('extracts updated label props', () => {
+            expect(getFieldProps('label', { value: 'Hello', bold: true, italic: false, fontSize: '18px', multiline: true }))
+                .toEqual({ value: 'Hello', bold: true, italic: false, fontSize: '18px', multiline: true });
+        });
+
+        test('extracts updated link props', () => {
+            const result = getFieldProps('link', { value: 'Click', href: '#', target: '_blank', icon: '🔗', iconPosition: 'left', underline: true, buttonStyle: false, disabled: false });
+            expect(result).toEqual({ value: 'Click', href: '#', target: '_blank', icon: '🔗', iconPosition: 'left', underline: true, buttonStyle: false, disabled: false });
+        });
+
+        test('extracts updated badge props', () => {
+            expect(getFieldProps('badge', { value: 'New', backgroundColor: '#3b82f6', color: '#fff' }))
+                .toEqual({ value: 'New', backgroundColor: '#3b82f6', color: '#fff' });
+        });
+
+        test('extracts updated icon props', () => {
+            expect(getFieldProps('icon', { value: '⭐', fontSize: '24px', color: '#ffc107', size: 'large' }))
+                .toEqual({ value: '⭐', fontSize: '24px', color: '#ffc107', size: 'large' });
+        });
+
+        test('extracts updated qrcode props', () => {
+            expect(getFieldProps('qrcode', { value: 'https://x.com', width: 200, height: 200, errorCorrectionLevel: 'H', margin: 2, color: '#000' }))
+                .toEqual({ value: 'https://x.com', width: 200, height: 200, errorCorrectionLevel: 'H', margin: 2, color: '#000' });
+        });
+
+        test('extracts updated date props', () => {
+            expect(getFieldProps('date', { placeholder: 'dd/mm/yyyy', min: '2024-01-01', max: '2026-12-31', disabled: false, readOnly: false }))
+                .toEqual({ placeholder: 'dd/mm/yyyy', min: '2024-01-01', max: '2026-12-31', disabled: false, readOnly: false });
+        });
+
+        test('extracts updated datepicker props', () => {
+            expect(getFieldProps('datepicker', { placeholder: 'Pick', minDate: '2024-01-01', maxDate: '2026-12-31', disabled: true }))
+                .toEqual({ placeholder: 'Pick', minDate: '2024-01-01', maxDate: '2026-12-31', disabled: true });
+        });
+
+        test('extracts updated buttongroup props', () => {
+            expect(getFieldProps('buttongroup', { orientation: 'vertical', multiple: true, disabled: false }))
+                .toEqual({ orientation: 'vertical', multiple: true, disabled: false });
+        });
+
+        test('extracts updated calendargrid props', () => {
+            expect(getFieldProps('calendargrid', { editable: true }))
+                .toEqual({ editable: true });
+        });
+
+        test('extracts updated pagination props', () => {
+            expect(getFieldProps('pagination', { maxButtons: 7, showPageInfo: true, showItemInfo: true }))
+                .toEqual({ maxButtons: 7, showPageInfo: true, showItemInfo: true });
+        });
+
+        test('extracts updated button props', () => {
+            expect(getFieldProps('button', { value: 'Submit', disabled: true }))
+                .toEqual({ value: 'Submit', disabled: true });
+        });
+
+        test('extracts rating props', () => {
+            expect(getFieldProps('rating', { maxStars: 5, allowHalf: true, color: '#ffc107', size: 'large', showLabel: true }))
+                .toEqual({ maxStars: 5, allowHalf: true, color: '#ffc107', size: 'large', showLabel: true });
+        });
+    });
+
+    describe('schemaToFormConfig — passthrough props', () => {
+        test('password field gets passthrough props in auto-generate', () => {
+            const schema = { pw: { type: 'password', label: 'Password', showStrength: true, minLength: 8, _order: 1 } };
+            const config = schemaToFormConfig(schema);
+            const ctrl = config.controls.find(c => c.databind === 'pw');
+            expect(ctrl.showStrength).toBe(true);
+            expect(ctrl.minLength).toBe(8);
+        });
+
+        test('email field gets passthrough props + inputType in auto-generate', () => {
+            const schema = { mail: { type: 'email', label: 'Email', placeholder: 'name@example.com', _order: 1 } };
+            const config = schemaToFormConfig(schema);
+            const ctrl = config.controls.find(c => c.databind === 'mail');
+            expect(ctrl.inputType).toBe('email');
+            expect(ctrl.placeholder).toBe('name@example.com');
+        });
+
+        test('searchbox field gets passthrough props in auto-generate', () => {
+            const schema = { search: { type: 'searchbox', label: 'Search', multiple: true, allowCreate: true, _order: 1 } };
+            const config = schemaToFormConfig(schema);
+            const ctrl = config.controls.find(c => c.databind === 'search');
+            expect(ctrl.multiple).toBe(true);
+            expect(ctrl.allowCreate).toBe(true);
+        });
+
+        test('multipleupload field gets passthrough props in auto-generate', () => {
+            const schema = { files: { type: 'multipleupload', label: 'Files', allowedTypes: 'image/*', maxFileSize: 10485760, _order: 1 } };
+            const config = schemaToFormConfig(schema);
+            const ctrl = config.controls.find(c => c.databind === 'files');
+            expect(ctrl.allowedTypes).toBe('image/*');
+            expect(ctrl.maxFileSize).toBe(10485760);
+        });
+
+        test('slider field gets updated passthrough props via formcfgJson', () => {
+            const schema = { vol: { type: 'slider', label: 'Volume', min: 0, max: 100, unit: '%', showValue: true, _order: 1 } };
+            const formcfg = { colnumbers: 6, controls: [{ key: 'vol', label: 'Volume', colno: 1, rowno: 1, colspan: 6 }] };
+            const config = schemaToFormConfig(schema, formcfg);
+            const ctrl = config.controls.find(c => c.databind === 'vol');
+            expect(ctrl.unit).toBe('%');
+            expect(ctrl.showValue).toBe(true);
+        });
+
+        test('does not leak non-passthrough schema keys into control output', () => {
+            const schema = { name: { type: 'string', label: 'Name', _order: 1, customMeta: 'should_not_appear' } };
+            const config = schemaToFormConfig(schema);
+            const ctrl = config.controls.find(c => c.databind === 'name');
+            expect(ctrl).not.toHaveProperty('customMeta');
+            expect(ctrl).not.toHaveProperty('_order');
         });
     });
 

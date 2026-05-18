@@ -75,6 +75,8 @@ export const CONTROL_CONFIGS = {
         { key: 'showLabel', label: 'แสดงค่า', type: 'toggle', hint: 'แสดงตัวเลขคะแนน เช่น 3.5/5' },
         { key: 'color', label: 'สี', type: 'text', hint: 'สีดาว เช่น "#ffc107", "#ef4444"' },
         { key: 'size', label: 'ขนาด', type: 'text', hint: 'small, medium, large' },
+        { key: 'disabled', label: 'Disabled', type: 'toggle', hint: 'ปิดไม่ให้แก้ไข' },
+        { key: 'readOnly', label: 'Read Only', type: 'toggle', hint: 'อ่านได้อย่างเดียว' },
     ],
     fileupload: [
         { key: 'placeholder', label: 'Placeholder', type: 'text', hint: 'ข้อความแสดงตอนยังไม่เลือกไฟล์' },
