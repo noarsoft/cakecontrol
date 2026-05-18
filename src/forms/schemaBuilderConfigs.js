@@ -2,11 +2,17 @@ export const CONTROL_CONFIGS = {
     string: [
         { key: 'placeholder', label: 'Placeholder', type: 'text', hint: 'ข้อความแสดงตอนช่องว่าง เช่น "กรอกชื่อ"' },
         { key: 'maxLength', label: 'Max Length', type: 'number', hint: 'จำกัดตัวอักษรสูงสุดที่พิมพ์ได้' },
+        { key: 'rows', label: 'Rows', type: 'number', hint: 'จำนวนบรรทัด (>1 = textarea)' },
+        { key: 'disabled', label: 'Disabled', type: 'toggle', hint: 'ปิดไม่ให้แก้ไข' },
+        { key: 'readOnly', label: 'Read Only', type: 'toggle', hint: 'อ่านได้อย่างเดียว' },
     ],
     number: [
+        { key: 'placeholder', label: 'Placeholder', type: 'text', hint: 'ข้อความแสดงตอนช่องว่าง' },
         { key: 'min', label: 'Min', type: 'number', hint: 'ค่าต่ำสุดที่อนุญาต' },
         { key: 'max', label: 'Max', type: 'number', hint: 'ค่าสูงสุดที่อนุญาต' },
         { key: 'step', label: 'Step', type: 'number', hint: 'กดปุ่ม +/- เพิ่ม-ลดครั้งละเท่าไหร่ เช่น 5' },
+        { key: 'disabled', label: 'Disabled', type: 'toggle', hint: 'ปิดไม่ให้แก้ไข' },
+        { key: 'readOnly', label: 'Read Only', type: 'toggle', hint: 'อ่านได้อย่างเดียว' },
     ],
     password: [
         { key: 'placeholder', label: 'Placeholder', type: 'text', hint: 'ข้อความแสดงตอนช่องว่าง' },
@@ -18,6 +24,8 @@ export const CONTROL_CONFIGS = {
     ],
     select: [
         { key: 'enum', label: 'Options', type: 'options', hint: 'ตัวเลือกในดรอปดาวน์' },
+        { key: 'placeholder', label: 'Placeholder', type: 'text', hint: 'ข้อความแสดงตอนยังไม่เลือก' },
+        { key: 'disabled', label: 'Disabled', type: 'toggle', hint: 'ปิดไม่ให้แก้ไข' },
     ],
     dropdown: [
         { key: 'enum', label: 'Options', type: 'options', hint: 'ตัวเลือกในดรอปดาวน์' },
@@ -28,21 +36,37 @@ export const CONTROL_CONFIGS = {
     ],
     boolean: [
         { key: 'value', label: 'Default', type: 'toggle', hint: 'ค่าเริ่มต้น checked หรือไม่' },
+        { key: 'disabled', label: 'Disabled', type: 'toggle', hint: 'ปิดไม่ให้แก้ไข' },
     ],
     toggle: [
         { key: 'value', label: 'Default', type: 'toggle', hint: 'ค่าเริ่มต้น เปิด/ปิด' },
+        { key: 'disabled', label: 'Disabled', type: 'toggle', hint: 'ปิดไม่ให้แก้ไข' },
     ],
     date: [
         { key: 'placeholder', label: 'Placeholder', type: 'text', hint: 'เช่น "วว/ดด/ปปปป"' },
+        { key: 'min', label: 'Min Date', type: 'text', hint: 'วันที่ต่ำสุด เช่น "2024-01-01"' },
+        { key: 'max', label: 'Max Date', type: 'text', hint: 'วันที่สูงสุด เช่น "2026-12-31"' },
+        { key: 'disabled', label: 'Disabled', type: 'toggle', hint: 'ปิดไม่ให้แก้ไข' },
+        { key: 'readOnly', label: 'Read Only', type: 'toggle', hint: 'อ่านได้อย่างเดียว' },
     ],
     datepicker: [
         { key: 'placeholder', label: 'Placeholder', type: 'text', hint: 'เช่น "เลือกวันที่"' },
+        { key: 'minDate', label: 'Min Date', type: 'text', hint: 'วันที่ต่ำสุด เช่น "2024-01-01"' },
+        { key: 'maxDate', label: 'Max Date', type: 'text', hint: 'วันที่สูงสุด เช่น "2026-12-31"' },
+        { key: 'disabled', label: 'Disabled', type: 'toggle', hint: 'ปิดไม่ให้แก้ไข' },
     ],
     slider: [
         { key: 'min', label: 'Min', type: 'number', hint: 'ค่าต่ำสุดของแถบเลื่อน' },
         { key: 'max', label: 'Max', type: 'number', hint: 'ค่าสูงสุดของแถบเลื่อน' },
         { key: 'step', label: 'Step', type: 'number', hint: 'เลื่อนครั้งละเท่าไหร่ เช่น 10' },
         { key: 'value', label: 'Default', type: 'number', hint: 'ค่าเริ่มต้นของแถบเลื่อน' },
+        { key: 'unit', label: 'Unit', type: 'text', hint: 'หน่วย เช่น "%" หรือ "km"' },
+        { key: 'showValue', label: 'แสดงค่า', type: 'toggle', hint: 'แสดงตัวเลขค่าปัจจุบัน' },
+        { key: 'showTicks', label: 'แสดงขีด', type: 'toggle', hint: 'แสดงขีดบนแถบเลื่อน' },
+        { key: 'showLabel', label: 'แสดง Label', type: 'toggle', hint: 'แสดง label min/max' },
+        { key: 'size', label: 'ขนาด', type: 'text', hint: 'small, medium, large' },
+        { key: 'color', label: 'สี', type: 'text', hint: 'สีแถบ เช่น "#3b82f6"' },
+        { key: 'disabled', label: 'Disabled', type: 'toggle', hint: 'ปิดไม่ให้แก้ไข' },
     ],
     rating: [
         { key: 'maxStars', label: 'Max Stars', type: 'number', hint: 'จำนวนดาวสูงสุด (default: 5)' },
@@ -65,13 +89,25 @@ export const CONTROL_CONFIGS = {
     ],
     multipleupload: [
         { key: 'placeholder', label: 'Placeholder', type: 'text', hint: 'ข้อความแสดงตอนยังไม่เลือกไฟล์' },
+        { key: 'allowedTypes', label: 'ประเภทไฟล์', type: 'text', hint: 'เช่น "image/jpeg,image/png"' },
+        { key: 'maxFileSize', label: 'ขนาดไฟล์สูงสุด (bytes)', type: 'number', hint: 'เช่น 10485760 = 10MB' },
     ],
     label: [
         { key: 'value', label: 'Text', type: 'text', hint: 'ข้อความที่แสดง (ถ้าไม่ผูก databind)' },
+        { key: 'bold', label: 'ตัวหนา', type: 'toggle', hint: 'แสดงข้อความตัวหนา' },
+        { key: 'italic', label: 'ตัวเอียง', type: 'toggle', hint: 'แสดงข้อความตัวเอียง' },
+        { key: 'fontSize', label: 'ขนาดตัวอักษร', type: 'text', hint: 'เช่น "18px", "1.5em"' },
+        { key: 'multiline', label: 'หลายบรรทัด', type: 'toggle', hint: 'อนุญาตข้อความหลายบรรทัด' },
     ],
     link: [
         { key: 'value', label: 'Text', type: 'text', hint: 'ข้อความลิงก์ที่แสดง' },
         { key: 'href', label: 'URL', type: 'text', hint: 'URL ปลายทาง เช่น "https://..."' },
+        { key: 'target', label: 'Target', type: 'text', hint: '"_blank" เปิดแท็บใหม่, "_self" เปิดแท็บเดิม' },
+        { key: 'icon', label: 'Icon', type: 'text', hint: 'ไอคอนประกอบ เช่น "🔗"' },
+        { key: 'iconPosition', label: 'Icon Position', type: 'text', hint: '"left" หรือ "right"' },
+        { key: 'underline', label: 'ขีดเส้นใต้', type: 'toggle', hint: 'แสดงเส้นใต้ลิงก์' },
+        { key: 'buttonStyle', label: 'สไตล์ปุ่ม', type: 'toggle', hint: 'แสดงเป็นปุ่มแทนลิงก์' },
+        { key: 'disabled', label: 'Disabled', type: 'toggle', hint: 'ปิดไม่ให้คลิก' },
     ],
     image: [
         { key: 'value', label: 'Image URL', type: 'text', hint: 'URL ของรูปภาพ' },
@@ -80,12 +116,22 @@ export const CONTROL_CONFIGS = {
         { key: 'borderRadius', label: 'Border Radius', type: 'text', hint: 'มุมโค้ง เช่น "50%" = วงกลม' },
         { key: 'objectFit', label: 'Object Fit', type: 'text', hint: 'วิธีแสดงรูป: cover, contain, fill' },
         { key: 'shadow', label: 'Shadow', type: 'toggle', hint: 'แสดงเงาใต้รูป' },
+        { key: 'alt', label: 'Alt Text', type: 'text', hint: 'ข้อความอธิบายรูป (accessibility)' },
+        { key: 'lazy', label: 'Lazy Load', type: 'toggle', hint: 'โหลดรูปเมื่อเลื่อนมาถึง' },
+        { key: 'enlargeable', label: 'ขยายได้', type: 'toggle', hint: 'คลิกแล้วขยายรูปเต็มจอ' },
+        { key: 'grayscale', label: 'Grayscale', type: 'toggle', hint: 'แสดงรูปขาวดำ' },
+        { key: 'fallback', label: 'Fallback URL', type: 'text', hint: 'URL รูปสำรองถ้าโหลดไม่ได้' },
     ],
     badge: [
         { key: 'value', label: 'Text', type: 'text', hint: 'ข้อความใน badge' },
+        { key: 'backgroundColor', label: 'สีพื้นหลัง', type: 'text', hint: 'เช่น "#3b82f6", "#ef4444"' },
+        { key: 'color', label: 'สีตัวอักษร', type: 'text', hint: 'เช่น "#ffffff"' },
     ],
     icon: [
         { key: 'value', label: 'Icon', type: 'text', hint: 'emoji หรือ icon เช่น "⭐"' },
+        { key: 'fontSize', label: 'ขนาด', type: 'text', hint: 'เช่น "24px", "2em"' },
+        { key: 'color', label: 'สี', type: 'text', hint: 'เช่น "#3b82f6"' },
+        { key: 'size', label: 'Size Preset', type: 'text', hint: 'small, medium, large' },
     ],
     progress: [
         { key: 'value', label: 'Value (%)', type: 'number', hint: 'เปอร์เซ็นต์ 0-100' },
@@ -96,15 +142,30 @@ export const CONTROL_CONFIGS = {
         { key: 'value', label: 'QR Data', type: 'text', hint: 'ข้อมูลที่เข้ารหัส เช่น URL' },
         { key: 'width', label: 'Width', type: 'number', hint: 'ความกว้าง (px)' },
         { key: 'height', label: 'Height', type: 'number', hint: 'ความสูง (px)' },
+        { key: 'errorCorrectionLevel', label: 'Error Correction', type: 'text', hint: 'L, M, Q, H (สูงสุด = ทนต่อความเสียหาย)' },
+        { key: 'margin', label: 'Margin', type: 'number', hint: 'ขอบรอบ QR (modules)' },
+        { key: 'color', label: 'Color', type: 'text', hint: 'สี QR เช่น "#000000"' },
     ],
     pagebreak: [],
     calendar: [],
-    calendargrid: [],
+    calendargrid: [
+        { key: 'editable', label: 'แก้ไขได้', type: 'toggle', hint: 'อนุญาตให้เพิ่ม/แก้ไขข้อมูลในปฏิทิน' },
+    ],
     button: [
         { key: 'value', label: 'Button Text', type: 'text', hint: 'ข้อความบนปุ่ม' },
+        { key: 'disabled', label: 'Disabled', type: 'toggle', hint: 'ปิดไม่ให้คลิก' },
     ],
     buttongroup: [
         { key: 'enum', label: 'Buttons', type: 'options', hint: 'รายการปุ่ม' },
+        { key: 'orientation', label: 'Orientation', type: 'text', hint: '"horizontal" หรือ "vertical"' },
+        { key: 'multiple', label: 'เลือกหลายค่า', type: 'toggle', hint: 'อนุญาตให้กดเลือกหลายปุ่มพร้อมกัน' },
+        { key: 'disabled', label: 'Disabled', type: 'toggle', hint: 'ปิดไม่ให้คลิก' },
+    ],
+    pagination: [
+        { key: 'total', label: 'Total Pages', type: 'number', hint: 'จำนวนหน้าทั้งหมด' },
+        { key: 'maxButtons', label: 'Max Buttons', type: 'number', hint: 'จำนวนปุ่มหน้าที่แสดง' },
+        { key: 'showPageInfo', label: 'แสดงข้อมูลหน้า', type: 'toggle', hint: 'แสดง "หน้า x จาก y"' },
+        { key: 'showItemInfo', label: 'แสดงข้อมูลรายการ', type: 'toggle', hint: 'แสดง "แสดง 1-10 จาก 100"' },
     ],
     accordion: [],
     tabs:     [],
@@ -125,9 +186,6 @@ export const CONTROL_CONFIGS = {
     ],
     modal: [
         { key: 'value', label: 'Button Text', type: 'text', hint: 'ข้อความปุ่มเปิด modal' },
-    ],
-    pagination: [
-        { key: 'total', label: 'Total Pages', type: 'number', hint: 'จำนวนหน้าทั้งหมด' },
     ],
     chart: [
         { key: 'chartType', label: 'Chart Type', type: 'text', hint: 'ประเภทกราฟ: bar, line, pie, doughnut, radar, area' },

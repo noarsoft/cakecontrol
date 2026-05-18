@@ -37,6 +37,8 @@ const CHART_PROPS = ['chartType', 'title', 'xAxisKey', 'yAxisKey', 'nameKey', 'd
 const PASSTHROUGH_PROPS = {
     string: ['placeholder', 'maxLength', 'rows', 'disabled', 'readOnly'],
     number: ['min', 'max', 'step', 'placeholder', 'disabled', 'readOnly'],
+    password: ['placeholder', 'showStrength', 'minLength'],
+    email: ['placeholder'],
     select: ['placeholder', 'disabled'],
     dropdown: ['placeholder', 'searchable', 'clearable', 'maxHeight'],
     date: ['placeholder', 'min', 'max', 'disabled', 'readOnly'],
@@ -45,6 +47,8 @@ const PASSTHROUGH_PROPS = {
     rating: ['maxStars', 'allowHalf', 'color', 'size', 'disabled', 'readOnly', 'showLabel'],
     progress: ['showValue', 'color', 'value'],
     fileupload: ['maxFileSize', 'allowedTypes', 'buttonLabel', 'chunkSize', 'apiUrl'],
+    searchbox: ['placeholder', 'multiple', 'allowCreate'],
+    multipleupload: ['placeholder', 'allowedTypes', 'maxFileSize'],
     qrcode: ['width', 'height', 'value', 'errorCorrectionLevel', 'margin', 'color'],
     image: ['width', 'height', 'borderRadius', 'objectFit', 'shadow', 'alt', 'lazy', 'enlargeable', 'grayscale', 'fallback'],
     boolean: ['disabled'],
