@@ -3,6 +3,7 @@
 .tableview-container {
     width: 100%;
     overflow-x: auto;
+    min-height: 240px;
 }
 
 .tableview {
@@ -23,6 +24,23 @@
     font-weight: 600;
     color: var(--text-secondary);
     font-size: 14px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 200px;
+}
+
+.tableview th:first-child,
+.tableview td:first-child {
+    position: sticky;
+    left: 0;
+    z-index: 2;
+    background-color: inherit;
+}
+
+.tableview thead th:first-child {
+    background-color: var(--bg-secondary);
+    z-index: 3;
 }
 
 .tableview tbody tr {
@@ -46,6 +64,20 @@
     text-overflow: ellipsis;
     white-space: nowrap;
     max-width: 100%;
+}
+
+.tableview-empty-row td {
+    height: 44px;
+}
+
+.tableview-empty-row:hover {
+    background-color: transparent;
+}
+
+.tableview-empty-msg-row td {
+    text-align: center;
+    color: var(--text-tertiary);
+    font-size: 14px;
 }
 
 .tableview-empty {

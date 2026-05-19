@@ -36,7 +36,7 @@ function QRCodeControl({ control = {}, rowData = {}, rowIndex = 0 }) {
     } = control;
 
     // Get value from databind or use static value
-    const qrValue = databind ? rowData[databind] : value;
+    const qrValue = (databind && rowData[databind] != null) ? rowData[databind] : value;
     
     const handleClick = (e) => {
         if (disabled) return;
@@ -77,10 +77,10 @@ function QRCodeControl({ control = {}, rowData = {}, rowIndex = 0 }) {
                     display: 'flex', 
                     alignItems: 'center', 
                     justifyContent: 'center',
-                    backgroundColor: '#f3f4f6',
-                    border: '1px dashed #d1d5db',
+                    backgroundColor: 'var(--bg-secondary)',
+                    border: '1px dashed var(--border-secondary)',
                     borderRadius: '4px',
-                    color: '#6b7280',
+                    color: 'var(--text-tertiary)',
                     fontSize: '14px',
                     cursor: onClick && !disabled ? 'pointer' : 'default',
                     opacity: disabled ? 0.5 : 1,

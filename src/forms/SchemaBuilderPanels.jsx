@@ -3,6 +3,7 @@ import { FIELD_TYPES } from '../lib/schema';
 import { FIELD_TO_CONTROL_TYPE } from '../lib/controlTypeMap';
 import { genControl } from '../components/controls/TableviewControl';
 import { CONTROL_CONFIGS } from './schemaBuilderConfigs';
+import { SHOW_WHEN_OPERATORS } from './controlConfigFields';
 import Icon from '../components/ui/Icon';
 
 export function KeyInput({ value, onCommit, hasError, onBlur }) {
@@ -116,7 +117,100 @@ function ControlPreview({ fieldKey, fieldDef }) {
     );
 }
 
-export function FieldConfigPanel({ fieldKey, fieldDef, onUpdate }) {
+function ShowWhenEditor({ fieldKey, fieldDef, allFields, onUpdate }) {
+    const sw = fieldDef.showWhen;
+    const otherFields = allFields.filter(([k, def]) => k !== fieldKey && def.type !== 'pagebreak');
+    const targetField = sw ? otherFields.find(([k]) => k === sw.field) : null;
+    const isBooleanTarget = targetField && (targetField[1].type === 'boolean');
+    const needsValue = sw && sw.op !== 'empty' && sw.op !== 'notEmpty';
+
+    const handleToggle = (checked) => {
+        if (checked) {
+            const defaultField = otherFields[0]?.[0] || '';
+            const defaultIsBool = otherFields[0]?.[1]?.type === 'boolean';
+            onUpdate({ ...fieldDef, showWhen: { field: defaultField, op: 'eq', value: defaultIsBool ? true : '' } });
+        } else {
+            onUpdate({ ...fieldDef, showWhen: undefined });
+        }
+    };
+
+    const handleChange = (patch) => {
+        const next = { ...sw, ...patch };
+        if (patch.field) {
+            const newTarget = otherFields.find(([k]) => k === patch.field);
+            const newIsBool = newTarget?.[1]?.type === 'boolean';
+            if (newIsBool && typeof next.value !== 'boolean') next.value = true;
+            if (!newIsBool && typeof next.value === 'boolean') next.value = '';
+        }
+        onUpdate({ ...fieldDef, showWhen: next });
+    };
+
+    return (
+        <div className="sb-showwhen-section">
+            <div className="sb-config-row">
+                <label className="sb-config-label">แสดงตามเงื่อนไข</label>
+                <label className="sb-config-toggle">
+                    <input type="checkbox" checked={!!sw} onChange={e => handleToggle(e.target.checked)} />
+                    <span className="sb-toggle-slider"></span>
+                </label>
+            </div>
+
+            {sw && (
+                <div className="sb-showwhen-fields">
+                    <div className="sb-config-row">
+                        <label className="sb-config-label">เมื่อช่อง</label>
+                        <select
+                            className="sb-config-input"
+                            value={sw.field || ''}
+                            onChange={e => handleChange({ field: e.target.value })}
+                        >
+                            <option value="">-- เลือก --</option>
+                            {otherFields.map(([k, def]) => (
+                                <option key={k} value={k}>{def.label || k}</option>
+                            ))}
+                        </select>
+                    </div>
+                    <div className="sb-config-row">
+                        <label className="sb-config-label">เงื่อนไข</label>
+                        <select
+                            className="sb-config-input"
+                            value={sw.op || 'eq'}
+                            onChange={e => handleChange({ op: e.target.value })}
+                        >
+                            {SHOW_WHEN_OPERATORS.map(op => (
+                                <option key={op.value} value={op.value}>{op.label}</option>
+                            ))}
+                        </select>
+                    </div>
+                    {needsValue && (
+                        <div className="sb-config-row">
+                            <label className="sb-config-label">ค่า</label>
+                            {isBooleanTarget ? (
+                                <select
+                                    className="sb-config-input"
+                                    value={String(sw.value ?? '')}
+                                    onChange={e => handleChange({ value: e.target.value === 'true' })}
+                                >
+                                    <option value="true">เปิด (true)</option>
+                                    <option value="false">ปิด (false)</option>
+                                </select>
+                            ) : (
+                                <input
+                                    className="sb-config-input"
+                                    value={sw.value ?? ''}
+                                    onChange={e => handleChange({ value: e.target.value })}
+                                    placeholder="ค่าที่ต้องเปรียบเทียบ"
+                                />
+                            )}
+                        </div>
+                    )}
+                </div>
+            )}
+        </div>
+    );
+}
+
+export function FieldConfigPanel({ fieldKey, fieldDef, allFields = [], onUpdate }) {
     const [locked, setLocked] = useState(true);
     const [pos, setPos] = useState(null);
     const dragRef = useRef(null);
@@ -231,6 +325,13 @@ export function FieldConfigPanel({ fieldKey, fieldDef, onUpdate }) {
                     {cfg.hint && <div className="sb-config-hint">{cfg.hint}</div>}
                 </div>
             ))}
+
+            <ShowWhenEditor
+                fieldKey={fieldKey}
+                fieldDef={fieldDef}
+                allFields={allFields}
+                onUpdate={(newDef) => onUpdate(fieldKey, newDef)}
+            />
         </div>
     );
 }

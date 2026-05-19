@@ -15,7 +15,7 @@ function CheckboxControl({ control, rowData, rowIndex }) {
         setIsChecked(newValue);
         
         if (control.onChange) {
-            control.onChange({ target: { checked: newValue } }, rowData, rowIndex);
+            control.onChange({ target: { type: 'checkbox', checked: newValue } }, rowData, rowIndex);
         }
     };
 

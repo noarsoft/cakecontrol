@@ -84,7 +84,12 @@ export function updateField(schemaJson, oldKey, newKey, fieldDef) {
     const result = {};
     for (const [k, v] of entries) {
         if (k === oldKey) {
-            result[newKey] = { ...v, ...fieldDef };
+            const merged = { ...v, ...fieldDef };
+            const cleaned = {};
+            for (const [mk, mv] of Object.entries(merged)) {
+                if (mv !== undefined) cleaned[mk] = mv;
+            }
+            result[newKey] = cleaned;
         } else {
             result[k] = v;
         }
@@ -120,12 +125,16 @@ export function reorderField(schemaJson, fromIndex, toIndex) {
     return result;
 }
 
+function isMetaKey(key, val) {
+    return key.startsWith('_') && (typeof val !== 'object' || val === null || !val.type);
+}
+
 export function getFieldKeys(schemaJson) {
-    return Object.keys(schemaJson || {});
+    return Object.entries(schemaJson || {}).filter(([k, v]) => !isMetaKey(k, v)).map(([k]) => k);
 }
 
 export function getFieldEntries(schemaJson) {
-    return Object.entries(schemaJson || {}).sort(([keyA, a], [keyB, b]) => {
+    return Object.entries(schemaJson || {}).filter(([k, v]) => !isMetaKey(k, v)).sort(([keyA, a], [keyB, b]) => {
         const orderDiff = (a._order || 0) - (b._order || 0);
         if (orderDiff !== 0) return orderDiff;
         const numA = parseInt(keyA.match(/(\d+)/)?.[1] || '0', 10);
@@ -137,23 +146,25 @@ export function getFieldEntries(schemaJson) {
 
 export function normalizeOrder(schemaJson) {
     if (!schemaJson) return schemaJson;
-    const hasOrder = Object.values(schemaJson).some(f => f._order);
+    const hasOrder = Object.values(schemaJson).some(f => f && typeof f === 'object' && f._order);
     if (hasOrder) return schemaJson;
     const result = {};
-    Object.entries(schemaJson).forEach(([key, def], idx) => {
-        result[key] = { ...def, _order: idx + 1 };
-    });
+    let idx = 0;
+    for (const [key, def] of Object.entries(schemaJson)) {
+        if (key.startsWith('_')) { result[key] = def; continue; }
+        result[key] = { ...def, _order: ++idx };
+    }
     return result;
 }
 
 export function validateSchema(schemaJson) {
     const errors = [];
-    const keys = Object.keys(schemaJson || {});
-    if (keys.length === 0) {
+    const entries = getFieldEntries(schemaJson);
+    if (entries.length === 0) {
         errors.push('ต้องมีอย่างน้อย 1 field');
     }
     const validTypes = FIELD_TYPES.map(t => t.value);
-    for (const [key, def] of Object.entries(schemaJson || {})) {
+    for (const [key, def] of entries) {
         if (!key.trim()) errors.push('field key ต้องไม่ว่าง');
         if (def.type !== 'pagebreak' && !def.label?.trim()) errors.push(`field "${key}": กรุณาระบุ Label`);
         if (!validTypes.includes(def.type)) errors.push(`field "${key}": type "${def.type}" ไม่ถูกต้อง`);

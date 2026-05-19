@@ -6,6 +6,11 @@ import { createElement } from 'react';
 import { getFieldEntries } from './schema';
 import { fieldTypeToGenControlType } from './controlTypeMap';
 
+const DATA_INPUT_TYPES = new Set([
+    'string', 'number', 'select', 'dropdown', 'boolean', 'toggle',
+    'date', 'datepicker', 'slider', 'rating', 'fileupload', 'buttongroup',
+]);
+
 function normalizeEnumOptions(enumArr) {
     if (!enumArr) return [];
     return enumArr.map(v => typeof v === 'object' ? { label: v.label, value: v.value } : { label: v, value: v });
@@ -29,36 +34,72 @@ function getDisplayProps(fieldType, fieldDef) {
     for (const key of Object.keys(props)) {
         if (fieldDef[key] !== undefined) props[key] = fieldDef[key];
     }
+    if (fieldType === 'image' && fieldDef.src && !fieldDef.value) {
+        props.value = fieldDef.src;
+    }
+    if (fieldType === 'icon' && !fieldDef.value && fieldDef.name) {
+        props.value = fieldDef.name;
+    }
+    if (fieldType === 'link') {
+        if (fieldDef.value && !fieldDef.href) {
+            props.href = fieldDef.value;
+        }
+        if (fieldDef.text) {
+            props.value = fieldDef.text;
+        }
+    }
     return props;
+}
+
+export function evaluateShowWhen(condition, data) {
+    if (!condition || !condition.field) return true;
+    const fieldValue = data?.[condition.field];
+    const op = condition.op || 'eq';
+    const compareValue = condition.value;
+
+    switch (op) {
+        case 'eq':
+            if (typeof fieldValue === 'boolean') return fieldValue === (compareValue === true || compareValue === 'true');
+            return fieldValue == compareValue;
+        case 'neq':
+            if (typeof fieldValue === 'boolean') return fieldValue !== (compareValue === true || compareValue === 'true');
+            return fieldValue != compareValue;
+        case 'empty': return fieldValue === '' || fieldValue === null || fieldValue === undefined;
+        case 'notEmpty': return fieldValue !== '' && fieldValue !== null && fieldValue !== undefined;
+        case 'contains': return String(fieldValue || '').includes(String(compareValue || ''));
+        case 'gt': return Number(fieldValue) > Number(compareValue);
+        case 'lt': return Number(fieldValue) < Number(compareValue);
+        default: return true;
+    }
 }
 
 const CHART_PROPS = ['chartType', 'title', 'xAxisKey', 'yAxisKey', 'nameKey', 'dataKey', 'showLegend', 'showGrid', 'colors'];
 
 export const PASSTHROUGH_PROPS = {
-    string: ['placeholder', 'maxLength', 'rows', 'disabled', 'readOnly'],
-    number: ['min', 'max', 'step', 'placeholder', 'disabled', 'readOnly'],
-    password: ['placeholder', 'showStrength', 'minLength'],
-    email: ['placeholder'],
-    select: ['placeholder', 'disabled'],
-    dropdown: ['placeholder', 'searchable', 'clearable', 'maxHeight'],
-    date: ['placeholder', 'min', 'max', 'disabled', 'readOnly'],
-    datepicker: ['placeholder', 'minDate', 'maxDate', 'disabled'],
-    slider: ['min', 'max', 'step', 'unit', 'disabled', 'showLabel', 'showValue', 'showTicks', 'size', 'color'],
-    rating: ['maxStars', 'allowHalf', 'color', 'size', 'disabled', 'readOnly', 'showLabel'],
+    string: ['required', 'placeholder', 'maxLength', 'rows', 'disabled', 'readOnly'],
+    number: ['required', 'min', 'max', 'step', 'placeholder', 'disabled', 'readOnly'],
+    password: ['required', 'placeholder', 'showStrength', 'minLength'],
+    email: ['required', 'placeholder'],
+    select: ['required', 'placeholder', 'disabled'],
+    dropdown: ['required', 'placeholder', 'searchable', 'clearable', 'maxHeight'],
+    date: ['required', 'placeholder', 'min', 'max', 'disabled', 'readOnly'],
+    datepicker: ['required', 'placeholder', 'minDate', 'maxDate', 'disabled'],
+    slider: ['required', 'min', 'max', 'step', 'unit', 'disabled', 'showLabel', 'showValue', 'showTicks', 'size', 'color'],
+    rating: ['required', 'maxStars', 'allowHalf', 'color', 'size', 'disabled', 'readOnly', 'showLabel'],
     progress: ['showValue', 'color', 'value'],
-    fileupload: ['maxFileSize', 'allowedTypes', 'buttonLabel', 'chunkSize', 'apiUrl'],
-    searchbox: ['placeholder', 'multiple', 'allowCreate'],
-    multipleupload: ['placeholder', 'allowedTypes', 'maxFileSize'],
+    fileupload: ['required', 'maxFileSize', 'allowedTypes', 'buttonLabel', 'chunkSize', 'apiUrl'],
+    searchbox: ['required', 'placeholder', 'multiple', 'allowCreate'],
+    multipleupload: ['required', 'placeholder', 'allowedTypes', 'maxFileSize'],
     qrcode: ['width', 'height', 'value', 'errorCorrectionLevel', 'margin', 'color'],
     image: ['width', 'height', 'borderRadius', 'objectFit', 'shadow', 'alt', 'lazy', 'enlargeable', 'grayscale', 'fallback'],
     boolean: ['disabled'],
     toggle: ['disabled'],
     label: ['value', 'bold', 'italic', 'fontSize', 'multiline'],
-    link: ['value', 'href', 'target', 'icon', 'iconPosition', 'underline', 'buttonStyle', 'disabled'],
+    link: ['href', 'target', 'icon', 'iconPosition', 'underline', 'buttonStyle', 'disabled'],
     badge: ['value', 'backgroundColor', 'color'],
     icon: ['value', 'fontSize', 'color', 'size'],
     button: ['value', 'disabled'],
-    buttongroup: ['orientation', 'multiple', 'disabled'],
+    buttongroup: ['required', 'orientation', 'multiple', 'disabled'],
     calendargrid: ['editable'],
     accordion: ['allowMultiple', 'defaultOpen'],
     tabs: ['tabPosition', 'activeTab'],
@@ -101,10 +142,13 @@ export function getFieldProps(fieldType, fieldDef) {
 export function schemaToColumnsConfig(schemaJson, viewJson = null) {
     let columns;
     if (viewJson && viewJson.columns && viewJson.columns.length > 0) {
-        columns = viewJson.columns;
+        columns = viewJson.columns.filter(col => {
+            const def = (schemaJson || {})[col.key];
+            return def && DATA_INPUT_TYPES.has(def.type);
+        });
     } else {
         columns = getFieldEntries(schemaJson)
-            .filter(([, def]) => def.type !== 'pagebreak')
+            .filter(([, def]) => DATA_INPUT_TYPES.has(def.type))
             .map(([key, def]) => {
                 const col = { key, header: def.label || key, sortable: true, width: 'auto' };
                 if (def.type === 'boolean') col.type = 'badge';
@@ -176,7 +220,7 @@ export function schemaToFormConfig(schemaJson, formcfgJson = null) {
                         keyField: 'id',
                         displayField: 'label',
                     } : {}),
-                    ...(fieldDef.type === 'buttongroup' && fieldDef.buttons ? { options: fieldDef.buttons } : {}),
+                    ...(fieldDef.type === 'buttongroup' && (fieldDef.buttons || fieldDef.enum) ? { options: normalizeEnumOptions(fieldDef.buttons || fieldDef.enum) } : {}),
                     ...(fieldDef.type === 'accordion' && fieldDef.items ? { items: fieldDef.items } : {}),
                     ...(fieldDef.type === 'tabs' && fieldDef.tabs ? { tabs: fieldDef.tabs } : {}),
                     ...(fieldDef.type === 'tree' && fieldDef.data ? { data: fieldDef.data } : {}),
@@ -190,6 +234,7 @@ export function schemaToFormConfig(schemaJson, formcfgJson = null) {
                     ...(['chart', 'chartsbar', 'chartsline', 'chartspie', 'chartsdoughnut', 'chartsradar', 'chartsarea', 'chartsbubble', 'chartsmixed'].includes(fieldDef.type) && fieldDef.labels ? { labels: fieldDef.labels, datasets: fieldDef.datasets } : {}),
                     ...getDisplayProps(fieldDef.type, fieldDef),
                     ...getFieldProps(fieldDef.type, fieldDef),
+                    ...(fieldDef.showWhen ? { showWhen: fieldDef.showWhen } : {}),
                 };
             }),
         };
@@ -213,7 +258,7 @@ export function schemaToFormConfig(schemaJson, formcfgJson = null) {
                 keyField: 'id',
                 displayField: 'label',
             } : {}),
-            ...(def.type === 'buttongroup' && def.buttons ? { options: def.buttons } : {}),
+            ...(def.type === 'buttongroup' && (def.buttons || def.enum) ? { options: normalizeEnumOptions(def.buttons || def.enum) } : {}),
             ...(def.type === 'accordion' && def.items ? { items: def.items } : {}),
             ...(def.type === 'tabs' && def.tabs ? { tabs: def.tabs } : {}),
             ...(def.type === 'tree' && def.data ? { data: def.data } : {}),
@@ -228,6 +273,7 @@ export function schemaToFormConfig(schemaJson, formcfgJson = null) {
             ...(def.type === 'email' ? { inputType: 'email' } : {}),
             ...getDisplayProps(def.type, def),
             ...getFieldProps(def.type, def),
+            ...(def.showWhen ? { showWhen: def.showWhen } : {}),
         }));
 
     return { colnumbers, controls };
@@ -239,6 +285,23 @@ export function schemaToFormConfig(schemaJson, formcfgJson = null) {
 export function buildCrudConfig({ schemaJson, viewJson, formcfgJson, data, keyField = 'id' }) {
     const columns = schemaToColumnsConfig(schemaJson, viewJson);
     const formConfig = schemaToFormConfig(schemaJson, formcfgJson);
+
+    columns.push({
+        key: '_submitted_at',
+        header: 'เวลาที่ตอบ',
+        sortable: true,
+        width: '160',
+        type: 'custom',
+        controlProps: {
+            render: (rowData) => {
+                const v = rowData._submitted_at;
+                if (!v) return '-';
+                try {
+                    return new Date(v).toLocaleString('th-TH', { dateStyle: 'short', timeStyle: 'short' });
+                } catch { return v; }
+            },
+        },
+    });
 
     return {
         data,
@@ -279,7 +342,7 @@ export function getSchemaPages(schemaJson) {
 export function generateDefaultView(schemaJson) {
     return {
         columns: getFieldEntries(schemaJson)
-            .filter(([, def]) => def.type !== 'pagebreak')
+            .filter(([, def]) => DATA_INPUT_TYPES.has(def.type))
             .map(([key, def]) => {
                 const col = { key, header: def.label || key, width: 'auto', sortable: true };
                 if (def.type === 'boolean') col.type = 'badge';

@@ -3,7 +3,7 @@ import ModalControl from '../components/controls/ModalControl';
 import { useToast } from '../contexts/ToastContext';
 import { FIELD_TYPES } from '../lib/schema';
 import { CONTROL_TYPES, CONTROL_TO_FIELD_TYPE, FIELD_TO_CONTROL_TYPE } from '../lib/controlTypeMap';
-import { CONTROL_CONFIG_FIELDS, getConfigKeys, extractConfig } from './controlConfigFields';
+import { CONTROL_CONFIG_FIELDS, getConfigKeys, extractConfig, SHOW_WHEN_OPERATORS } from './controlConfigFields';
 import './ControlDesignerModal.css';
 
 const DISABLED_FIELD_VALUES = new Set(
@@ -30,7 +30,7 @@ function schemaToControls(schemaJson, formcfgJson) {
     if (!schemaJson || Object.keys(schemaJson).length === 0) return [createEmptyControl()];
 
     const formControls = formcfgJson?.controls || [];
-    const sortedSchema = Object.entries(schemaJson).sort(([keyA, a], [keyB, b]) => {
+    const sortedSchema = Object.entries(schemaJson).filter(([k]) => !k.startsWith('_')).sort(([keyA, a], [keyB, b]) => {
         const orderDiff = (a._order || 0) - (b._order || 0);
         if (orderDiff !== 0) return orderDiff;
         const numA = parseInt(keyA.match(/(\d+)/)?.[1] || '0', 10);
@@ -145,6 +145,17 @@ function ControlDesignerModal({ isOpen, onClose, onSave, schemaName, schemaJson,
         setControls(prev => prev.map((c, i) => {
             if (i !== idx) return c;
             return { ...c, config: { ...c.config, [key]: value } };
+        }));
+    };
+
+    const updateShowWhen = (idx, showWhenOrNull) => {
+        setControls(prev => prev.map((c, i) => {
+            if (i !== idx) return c;
+            if (showWhenOrNull) {
+                return { ...c, config: { ...c.config, showWhen: showWhenOrNull } };
+            }
+            const { showWhen: _, ...restConfig } = c.config;
+            return { ...c, config: restConfig };
         }));
     };
 
@@ -272,9 +283,14 @@ function ControlDesignerModal({ isOpen, onClose, onSave, schemaName, schemaJson,
                     const touched = touchedFields[ctrl.id] || {};
                     const labelError = touched.label && !ctrl.label.trim();
                     const keyError = touched.databind && !ctrl.databind.trim();
+                    const showWhen = ctrl.config?.showWhen;
+                    const otherControls = controls.filter((c, i) => i !== idx && c.databind.trim());
+                    const targetCtrl = showWhen ? controls.find(c => c.databind === showWhen.field) : null;
+                    const isBooleanTarget = targetCtrl && (targetCtrl.controlType === 'checkbox' || targetCtrl.controlType === 'toggle');
+                    const needsValue = showWhen && showWhen.op !== 'empty' && showWhen.op !== 'notEmpty';
 
                     return (
-                        <div key={ctrl.id} className="cd-control-row">
+                        <div key={ctrl.id} className={`cd-control-row ${labelError || keyError ? 'has-error' : ''}`}>
                             <div className="cd-control-main">
                                 <span className="cd-row-num">{idx + 1}</span>
                                 <div className="cd-field-wrapper cd-col-label">
@@ -418,6 +434,91 @@ function ControlDesignerModal({ isOpen, onClose, onSave, schemaName, schemaJson,
                                             </div>
                                         ))}
                                     </div>
+                                </div>
+                            )}
+
+                            {!isLayoutMode && (
+                                <div className="cd-showwhen-panel">
+                                    <div className="cd-showwhen-toggle">
+                                        <input
+                                            type="checkbox"
+                                            checked={!!showWhen}
+                                            onChange={e => {
+                                                if (e.target.checked) {
+                                                    const firstOther = otherControls[0];
+                                                    const firstIsBool = firstOther && (firstOther.controlType === 'checkbox' || firstOther.controlType === 'toggle');
+                                                    updateShowWhen(idx, { field: firstOther?.databind || '', op: 'eq', value: firstIsBool ? true : '' });
+                                                } else {
+                                                    updateShowWhen(idx, null);
+                                                }
+                                            }}
+                                        />
+                                        <span className="cd-showwhen-text">แสดงตามเงื่อนไข (showWhen)</span>
+                                    </div>
+
+                                    {showWhen && (
+                                        <div className="cd-showwhen-fields">
+                                            <div className="cd-showwhen-field">
+                                                <label className="cd-config-label">เมื่อช่อง</label>
+                                                <select
+                                                    className="cd-select"
+                                                    value={showWhen.field || ''}
+                                                    onChange={e => {
+                                                        const newField = e.target.value;
+                                                        const newTarget = controls.find(c => c.databind === newField);
+                                                        const newIsBool = newTarget && (newTarget.controlType === 'checkbox' || newTarget.controlType === 'toggle');
+                                                        const val = newIsBool && typeof showWhen.value !== 'boolean' ? true
+                                                            : !newIsBool && typeof showWhen.value === 'boolean' ? ''
+                                                            : showWhen.value;
+                                                        updateShowWhen(idx, { ...showWhen, field: newField, value: val });
+                                                    }}
+                                                >
+                                                    <option value="">-- เลือกช่อง --</option>
+                                                    {otherControls.map(c => (
+                                                        <option key={c.databind} value={c.databind}>
+                                                            {c.label || c.databind}
+                                                        </option>
+                                                    ))}
+                                                </select>
+                                            </div>
+
+                                            <div className="cd-showwhen-field">
+                                                <label className="cd-config-label">เงื่อนไข</label>
+                                                <select
+                                                    className="cd-select"
+                                                    value={showWhen.op || 'eq'}
+                                                    onChange={e => updateShowWhen(idx, { ...showWhen, op: e.target.value })}
+                                                >
+                                                    {SHOW_WHEN_OPERATORS.map(op => (
+                                                        <option key={op.value} value={op.value}>{op.label}</option>
+                                                    ))}
+                                                </select>
+                                            </div>
+
+                                            {needsValue && (
+                                                <div className="cd-showwhen-field">
+                                                    <label className="cd-config-label">ค่า</label>
+                                                    {isBooleanTarget ? (
+                                                        <select
+                                                            className="cd-select"
+                                                            value={String(showWhen.value ?? '')}
+                                                            onChange={e => updateShowWhen(idx, { ...showWhen, value: e.target.value === 'true' })}
+                                                        >
+                                                            <option value="true">เปิด (true)</option>
+                                                            <option value="false">ปิด (false)</option>
+                                                        </select>
+                                                    ) : (
+                                                        <input
+                                                            className="cd-input"
+                                                            value={showWhen.value ?? ''}
+                                                            onChange={e => updateShowWhen(idx, { ...showWhen, value: e.target.value })}
+                                                            placeholder="ค่าที่ต้องเปรียบเทียบ"
+                                                        />
+                                                    )}
+                                                </div>
+                                            )}
+                                        </div>
+                                    )}
                                 </div>
                             )}
                         </div>

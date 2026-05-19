@@ -1,6 +1,7 @@
 // FormControl.jsx
 import React, { useState } from 'react';
 import { genControl } from './TableviewControl';
+import { evaluateShowWhen } from '../../lib/schemaTransform';
 import './FormControl.css';
 
 function FormControl({ config }) {
@@ -60,6 +61,10 @@ function FormControl({ config }) {
     };
 
     const renderControl = (controlConfig, index) => {
+        if (controlConfig.showWhen && !evaluateShowWhen(controlConfig.showWhen, formData)) {
+            return null;
+        }
+
         // Resolve label
         let label = controlConfig.label;
         if (label && typeof label === 'object' && label.databind) {
@@ -71,7 +76,8 @@ function FormControl({ config }) {
         if (value && typeof value === 'object' && value.databind) {
             value = resolveDataBind(value.databind, formData);
         } else if (controlConfig.databind) {
-            value = resolveDataBind(controlConfig.databind, formData);
+            const resolved = resolveDataBind(controlConfig.databind, formData);
+            value = resolved != null ? resolved : controlConfig.value;
         }
 
         // Create control configuration for genControl
@@ -118,11 +124,15 @@ function FormControl({ config }) {
                         }}
                     >
                         {label}
+                        {controlConfig.required && <span className="form-grid-required">*</span>}
                     </label>
                 )}
                 <div className="form-grid-wrapper">
                     {genControl(control, formData, index)}
                 </div>
+                {controlConfig.error && (
+                    <div className="form-grid-error">{controlConfig.error}</div>
+                )}
             </div>
         );
     };

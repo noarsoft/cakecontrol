@@ -262,12 +262,12 @@ function TableviewControl({ config }) {
                 itemType={schemaType ? `https://schema.org/${schemaType}` : undefined}
             >
                 {/* Table Caption (SEO friendly) */}
-                {caption && <caption style={{ 
+                {caption && <caption style={{
                     padding: '12px',
                     fontWeight: 'bold',
                     fontSize: '16px',
                     textAlign: 'left',
-                    color: '#374151',
+                    color: 'var(--text-primary)',
                     captionSide: 'top'
                 }}>{caption}</caption>}
                 {/* Header Row (optional) */}
@@ -275,13 +275,14 @@ function TableviewControl({ config }) {
                     <thead>
                         <tr>
                             {headers.map((header, idx) => (
-                                <th 
+                                <th
                                     key={idx}
                                     scope="col"
                                     style={{ width: colwidths[idx] || 'auto', cursor: onHeaderClick ? 'pointer' : 'auto' }}
                                     aria-label={typeof header === 'string' ? header : `Column ${idx + 1}`}
-                                    onClick={() => onHeaderClick && onHeaderClick({ 
-                                        columnIndex: idx, 
+                                    title={typeof header === 'string' ? header : undefined}
+                                    onClick={() => onHeaderClick && onHeaderClick({
+                                        columnIndex: idx,
                                         columnName: header,
                                         columnControl: controls[idx]
                                     })}
@@ -296,7 +297,7 @@ function TableviewControl({ config }) {
                 {/* Data Rows */}
                 <tbody>
                     {paginatedData.map((rowData, rowIndex) => (
-                        <tr 
+                        <tr
                             key={rowIndex}
                             itemProp={schemaType === 'ItemList' ? 'itemListElement' : undefined}
                             itemScope={schemaType === 'ItemList' ? true : false}
@@ -306,7 +307,7 @@ function TableviewControl({ config }) {
                                 // First column with data could be row header
                                 const isRowHeader = colIndex === 0 && control.type === 'label';
                                 const TagName = isRowHeader ? 'th' : 'td';
-                                
+
                                 return (
                                     <TagName
                                         key={`${rowIndex}-${colIndex}`}
@@ -318,6 +319,18 @@ function TableviewControl({ config }) {
                                     </TagName>
                                 );
                             })}
+                        </tr>
+                    ))}
+                    {paginatedData.length === 0 && (
+                        <tr className="tableview-empty-row tableview-empty-msg-row">
+                            <td colSpan={controls.length}>ยังไม่มีข้อมูล</td>
+                        </tr>
+                    )}
+                    {paginatedData.length < 4 && Array.from({ length: Math.max(0, 4 - paginatedData.length - (paginatedData.length === 0 ? 1 : 0)) }, (_, i) => (
+                        <tr key={`empty-${i}`} className="tableview-empty-row">
+                            {controls.map((_, colIndex) => (
+                                <td key={colIndex}>&nbsp;</td>
+                            ))}
                         </tr>
                     ))}
                 </tbody>
@@ -379,16 +392,10 @@ function TableviewControl({ config }) {
                 </div>
             )}
             
-            {/* Empty State */}
-            {data.length === 0 && (
-                <div className="tableview-empty">
-                    <p>No data available</p>
-                </div>
-            )}
 
             {/* Pagination Controls - Footer (outside table) */}
             {pagination && totalPages > 1 && (
-                <div style={{ borderTop: '1px solid #e5e7eb', paddingTop: '15px' }}>
+                <div style={{ borderTop: '1px solid var(--border-secondary)', paddingTop: '15px' }}>
                     <PaginationControl
                         control={{
                             currentPage: currentPage,

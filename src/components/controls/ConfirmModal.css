@@ -197,8 +197,8 @@
 }
 
 .confirm-modal-close:hover {
-    background-color: #f3f4f6;
-    color: #111827;
+    background-color: var(--error-light);
+    color: var(--error);
 }
 
 .confirm-modal-close:active {
@@ -247,8 +247,8 @@
 }
 
 :root[data-theme="dark"] .confirm-modal-close:hover {
-    background-color: #374151;
-    color: #f3f4f6;
+    background-color: var(--error-light);
+    color: var(--error);
 }
 
 :root[data-theme="dark"] .confirm-modal-normal .confirm-modal-header {

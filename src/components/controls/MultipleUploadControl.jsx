@@ -10,7 +10,8 @@ function MultipleUploadControl({ control = {}, onUploadComplete, onUploadError, 
 
     // Configuration - merge control prop with direct props (direct props take precedence)
     const MAX_FILE_SIZE = maxFileSize || control.maxFileSize || 50 * 1024 * 1024; // 50MB default
-    const ALLOWED_TYPES = allowedTypes || control.allowedTypes || ['image/jpeg', 'image/png', 'application/pdf'];
+    const rawAllowedTypes = allowedTypes || control.allowedTypes || ['image/jpeg', 'image/png', 'application/pdf'];
+    const ALLOWED_TYPES = Array.isArray(rawAllowedTypes) ? rawAllowedTypes : String(rawAllowedTypes).split(',').map(s => s.trim());
     const CHUNK_SIZE = chunkSize || control.chunkSize || 1024 * 1024; // 1MB chunks default
     const API_URL = apiUrl || control.apiUrl || 'http://localhost:3002';
     const TOKEN = token || control.token || localStorage.getItem('accessToken');

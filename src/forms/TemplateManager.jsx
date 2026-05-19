@@ -63,7 +63,7 @@ function TemplateManager({ schemas, onSelectSchema, onCreateSchema, onUpdateSche
         data: paged.map(s => ({
             ...s,
             _displayDate: formatDate(s.modify_datetime),
-            _fieldCount: s.json ? Object.keys(s.json).length : 0,
+            _fieldCount: s.json ? Object.entries(s.json).filter(([k, v]) => k.startsWith('_') ? false : v?.type !== 'pagebreak').length : 0,
         })),
         headers: ['ชื่อแม่แบบ', 'Fields', 'วันที่แก้ไข', 'จัดการ'],
         colwidths: ['auto', '80', '160', '60'],

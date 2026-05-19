@@ -34,7 +34,7 @@ function ImageControl({ control = {}, rowData = {}, rowIndex = 0 }) {
         disabled = false
     } = control;
 
-    const imgSrc = databind ? rowData[databind] : value;
+    const imgSrc = (databind && rowData[databind] != null) ? rowData[databind] : value;
     const [isLoading, setIsLoading] = useState(true);
     const [hasError, setHasError] = useState(false);
     const [isEnlarged, setIsEnlarged] = useState(false);

@@ -80,8 +80,12 @@
     border-radius: 8px;
     margin-bottom: 8px;
     background: var(--bg-secondary);
-    overflow: hidden;
+    overflow: visible;
     transition: box-shadow 0.2s, border-color 0.2s;
+}
+
+.cd-control-row.has-error .cd-control-main {
+    padding-bottom: 20px;
 }
 
 .cd-control-row:hover {
@@ -132,7 +136,7 @@
 }
 
 .cd-row-actions button:disabled {
-    opacity: 0.3;
+    opacity: 0.4;
     cursor: default;
 }
 
@@ -295,6 +299,54 @@
 
 .cd-config-field input[type="color"]:hover {
     border-color: var(--accent-primary);
+}
+
+/* ─── ShowWhen conditional panel ─── */
+.cd-showwhen-panel {
+    padding: 10px 16px 12px 44px;
+    border-top: 1px solid var(--border-secondary);
+    background: var(--bg-primary);
+}
+
+.cd-showwhen-toggle {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.cd-showwhen-toggle input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    cursor: pointer;
+    accent-color: var(--accent-primary);
+}
+
+.cd-showwhen-text {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-secondary);
+}
+
+.cd-showwhen-fields {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px 16px;
+    margin-top: 10px;
+    padding-left: 24px;
+}
+
+.cd-showwhen-field {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 180px;
+    flex: 1 1 calc(33% - 11px);
+}
+
+.cd-showwhen-field .cd-input,
+.cd-showwhen-field .cd-select {
+    flex: 1;
+    min-width: 0;
 }
 
 /* ─── Add control button ─── */

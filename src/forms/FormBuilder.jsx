@@ -1,8 +1,8 @@
+import { useState, useEffect, useRef } from 'react';
 import CRUDControl from '../components/controls/CRUDControl';
 import ConfirmModal from '../components/controls/ConfirmModal';
 import ModalControl from '../components/controls/ModalControl';
 import Icon from '../components/ui/Icon';
-import EmptyState from '../components/ui/EmptyState';
 import SchemaBuilder from './SchemaBuilder';
 import SchemaNameInput from './SchemaNameInput';
 import FormFiller from './FormFiller';
@@ -10,9 +10,104 @@ import ThemeSwitcher from '../ThemeSwitcher';
 import { useFormBuilder } from './useFormBuilder';
 import './FormBuilder.css';
 
+function ColumnToggle({ columns, visibleKeys, onChange }) {
+    const [open, setOpen] = useState(false);
+    const [search, setSearch] = useState('');
+    const ref = useRef(null);
+
+    useEffect(() => {
+        if (!open) { setSearch(''); return; }
+        const handler = (e) => {
+            if (!ref.current?.contains(e.target)) setOpen(false);
+        };
+        document.addEventListener('mousedown', handler);
+        document.addEventListener('touchstart', handler);
+        return () => {
+            document.removeEventListener('mousedown', handler);
+            document.removeEventListener('touchstart', handler);
+        };
+    }, [open]);
+
+    const handleKeyDown = (e) => {
+        if (e.key === 'Escape') setOpen(false);
+    };
+
+    const handleSelectAll = () => {
+        onChange(new Set(columns.map(c => c.key)));
+    };
+
+    const handleResetDefault = () => {
+        onChange(null);
+    };
+
+    const handleToggle = (key, checked) => {
+        const next = new Set(visibleKeys);
+        if (checked) {
+            next.add(key);
+        } else {
+            next.delete(key);
+        }
+        if (next.size === 0) { onChange(null); return; }
+        onChange(next);
+    };
+
+    const filtered = search
+        ? columns.filter(c => c.header.toLowerCase().includes(search.toLowerCase()))
+        : columns;
+
+    return (
+        <div className="fb-col-toggle" ref={ref} onKeyDown={handleKeyDown}>
+            <button
+                onClick={() => setOpen(prev => !prev)}
+                className="fb-col-toggle-btn"
+                type="button"
+                aria-expanded={open}
+                aria-haspopup="true"
+            >
+                <Icon name="columns" size="sm" />
+                คอลัมน์ ({visibleKeys.size}/{columns.length})
+            </button>
+            {open && (
+                <div className="fb-col-toggle-dropdown" role="group" aria-label="เลือกคอลัมน์ที่จะแสดง">
+                    <div className="fb-col-toggle-search">
+                        <input
+                            type="text"
+                            value={search}
+                            onChange={e => setSearch(e.target.value)}
+                            placeholder="ค้นหาคอลัมน์..."
+                            autoFocus
+                            className="fb-col-toggle-search-input"
+                        />
+                    </div>
+                    <div className="fb-col-toggle-actions">
+                        <button type="button" onClick={handleSelectAll}>เลือกทั้งหมด</button>
+                        <button type="button" onClick={handleResetDefault}>คืนค่าเริ่มต้น</button>
+                    </div>
+                    <div className="fb-col-toggle-list">
+                        {filtered.map(col => (
+                            <label key={col.key} className="fb-col-toggle-item">
+                                <input
+                                    type="checkbox"
+                                    checked={visibleKeys.has(col.key)}
+                                    onChange={(e) => handleToggle(col.key, e.target.checked)}
+                                />
+                                {col.header}
+                            </label>
+                        ))}
+                        {filtered.length === 0 && (
+                            <div className="fb-col-toggle-empty">ไม่พบคอลัมน์</div>
+                        )}
+                    </div>
+                </div>
+            )}
+        </div>
+    );
+}
+
 function FormBuilder() {
     const {
         activeSchema, mode, schemaData, crudConfig,
+        allDataColumns, visibleColumns, setVisibleColumns,
         oldSchemaInfo, showLogModal, setShowLogModal, migrating,
         deleteConfirm, setDeleteConfirm,
         pendingMode, setPendingMode,
@@ -39,9 +134,9 @@ function FormBuilder() {
                         </div>
                         <div className="fb-topbar-center">
                             <div className="fb-mode-group">
-                                <button className={`fb-mode-btn ${mode === 'data' ? 'active' : ''}`} onClick={() => handleModeChange('data')}>ข้อมูล</button>
+                                <button className={`fb-mode-btn ${mode === 'data' ? 'active' : ''}`} onClick={() => handleModeChange('data')}>ข้อมูลฟอร์ม</button>
                                 <button className={`fb-mode-btn ${mode === 'builder' ? 'active' : ''}`} onClick={() => handleModeChange('builder')}>แก้ไขฟอร์ม</button>
-                                <button className={`fb-mode-btn ${mode === 'fill' ? 'active' : ''}`} onClick={() => handleModeChange('fill')}>เพิ่มข้อมูล</button>
+                                <button className={`fb-mode-btn ${mode === 'fill' ? 'active' : ''}`} onClick={() => handleModeChange('fill')}>จำลองฟอร์ม</button>
                             </div>
                         </div>
                         <div className="fb-topbar-right">
@@ -88,22 +183,19 @@ function FormBuilder() {
                                             <Icon name="plus" />
                                             เพิ่มข้อมูล
                                         </button>
+                                        {allDataColumns.length > 0 && (
+                                            <ColumnToggle
+                                                columns={allDataColumns}
+                                                visibleKeys={visibleColumns}
+                                                onChange={setVisibleColumns}
+                                            />
+                                        )}
                                         <button className="fb-export-btn" onClick={handleExportExcel} disabled={!schemaData?.data?.length} title="ส่งออกข้อมูลเป็น Excel">
                                             <Icon name="download" />
                                             Export Excel
                                         </button>
                                     </div>
-                                    {schemaData?.data?.length === 0 ? (
-                                        <EmptyState
-                                            icon="file-plus"
-                                            title="ยังไม่มีข้อมูล"
-                                            subtitle="เริ่มเก็บข้อมูลโดยกรอกฟอร์มแรกของคุณ"
-                                            ctaLabel="เพิ่มข้อมูลแรก"
-                                            onAction={() => handleModeChange('fill')}
-                                        />
-                                    ) : (
-                                        <CRUDControl config={crudConfig} />
-                                    )}
+                                    <CRUDControl config={crudConfig} />
 
                                     <ModalControl
                                         isOpen={showLogModal}

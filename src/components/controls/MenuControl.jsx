@@ -58,7 +58,7 @@ function MenuControl({
     }
   };
 
-  const renderMenuItem = (item, level = 0) => {
+  const renderMenuItem = (item, level = 0, idx = 0) => {
     // Check if this menu item is invisible
     if (invisible_menu_name.includes(item.menu_name)) {
       return null;
@@ -73,7 +73,7 @@ function MenuControl({
 
     return (
       <li
-        key={item.menu_name}
+        key={item.menu_name || `menu-${level}-${idx}`}
         className={`menu-item level-${level} ${hasSubmenu ? 'has-submenu' : ''} ${isActive ? 'active' : ''} ${isExpanded ? 'expanded' : ''}`}
       >
         <a
@@ -98,7 +98,7 @@ function MenuControl({
 
         {hasSubmenu && isExpanded && (
           <ul className="submenu">
-            {item.submenu.map(submenuItem => renderMenuItem(submenuItem, level + 1))}
+            {item.submenu.map((submenuItem, subIdx) => renderMenuItem(submenuItem, level + 1, subIdx))}
           </ul>
         )}
       </li>
@@ -108,7 +108,7 @@ function MenuControl({
   return (
     <nav className={`menu-control ${orientation} ${className}`}>
       <ul className="menu-list">
-        {data.map(item => renderMenuItem(item))}
+        {data.map((item, idx) => renderMenuItem(item, 0, idx))}
       </ul>
     </nav>
   );

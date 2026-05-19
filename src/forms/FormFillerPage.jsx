@@ -164,26 +164,38 @@ function FormFillerPage() {
             <div className="fb-filler">
                 <div className="fb-filler-header">
                     <h2>{schema.name}</h2>
-                    <p>กรอกข้อมูลให้ครบแล้วกดบันทึก</p>
+                    {schema.json?._description ? (
+                        <p className="fb-filler-description">{schema.json._description}</p>
+                    ) : (
+                        <p>กรอกข้อมูลให้ครบแล้วกดบันทึก</p>
+                    )}
                 </div>
 
                 {hasPages && (
-                    <div className="fb-filler-pages">
-                        {pages.map((page, idx) => (
-                            <button
-                                key={idx}
-                                className={`fb-filler-page-dot ${idx === currentPage ? 'active' : ''} ${idx < currentPage ? 'done' : ''}`}
-                                onClick={() => setCurrentPage(idx)}
-                                title={page.label || `หน้า ${idx + 1}`}
-                            >
-                                {idx < currentPage ? '✓' : idx + 1}
-                            </button>
-                        ))}
+                    <div className="fb-filler-stepper">
+                        <div className="fb-filler-stepper-track">
+                            {pages.map((page, idx) => (
+                                <div key={idx} className="fb-filler-step-wrapper">
+                                    <button
+                                        className={`fb-filler-step ${idx === currentPage ? 'active' : ''} ${idx < currentPage ? 'done' : ''}`}
+                                        onClick={() => setCurrentPage(idx)}
+                                        title={page.label || `หน้า ${idx + 1}`}
+                                    >
+                                        {idx < currentPage ? '✓' : idx + 1}
+                                    </button>
+                                    {idx < totalPages - 1 && (
+                                        <div className={`fb-filler-step-line ${idx < currentPage ? 'done' : ''}`} />
+                                    )}
+                                </div>
+                            ))}
+                        </div>
+                        <div className="fb-filler-progress">
+                            <div className="fb-filler-progress-bar" style={{ width: `${(currentPage / (totalPages - 1)) * 100}%` }} />
+                        </div>
+                        <div className="fb-filler-page-info">
+                            {pages[currentPage]?.label || `หน้า ${currentPage + 1} จาก ${totalPages}`}
+                        </div>
                     </div>
-                )}
-
-                {hasPages && pages[currentPage]?.label && (
-                    <div className="fb-filler-page-title">{pages[currentPage].label}</div>
                 )}
 
                 <div className="fb-filler-body">

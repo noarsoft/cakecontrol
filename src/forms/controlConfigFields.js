@@ -19,6 +19,7 @@ export const CHART_CONFIG = [
 
 export const CONTROL_CONFIG_FIELDS = {
     textbox: [
+        { key: 'required', label: 'จำเป็น', inputType: 'checkbox' },
         { key: 'placeholder', label: 'Placeholder', inputType: 'text' },
         { key: 'maxLength', label: 'ความยาวสูงสุด', inputType: 'number' },
         { key: 'rows', label: 'บรรทัด (textarea)', inputType: 'number', placeholder: 'ปล่อยว่าง = 1 บรรทัด' },
@@ -26,6 +27,7 @@ export const CONTROL_CONFIG_FIELDS = {
         { key: 'readOnly', label: 'อ่านอย่างเดียว', inputType: 'checkbox' },
     ],
     number: [
+        { key: 'required', label: 'จำเป็น', inputType: 'checkbox' },
         { key: 'placeholder', label: 'Placeholder', inputType: 'text' },
         { key: 'min', label: 'ค่าต่ำสุด', inputType: 'number' },
         { key: 'max', label: 'ค่าสูงสุด', inputType: 'number' },
@@ -34,6 +36,7 @@ export const CONTROL_CONFIG_FIELDS = {
         { key: 'readOnly', label: 'อ่านอย่างเดียว', inputType: 'checkbox' },
     ],
     slider: [
+        { key: 'required', label: 'จำเป็น', inputType: 'checkbox' },
         { key: 'min', label: 'ค่าต่ำสุด', inputType: 'number' },
         { key: 'max', label: 'ค่าสูงสุด', inputType: 'number' },
         { key: 'step', label: 'Step', inputType: 'number' },
@@ -50,6 +53,7 @@ export const CONTROL_CONFIG_FIELDS = {
         { key: 'disabled', label: 'ปิดใช้งาน', inputType: 'checkbox' },
     ],
     rating: [
+        { key: 'required', label: 'จำเป็น', inputType: 'checkbox' },
         { key: 'maxStars', label: 'จำนวนดาว', inputType: 'number' },
         { key: 'allowHalf', label: 'อนุญาตครึ่งดาว', inputType: 'checkbox' },
         { key: 'color', label: 'สี', inputType: 'color' },
@@ -125,10 +129,12 @@ export const CONTROL_CONFIG_FIELDS = {
         { key: 'margin', label: 'ขอบ (px)', inputType: 'number', placeholder: 'เช่น 4' },
     ],
     select: [
+        { key: 'required', label: 'จำเป็น', inputType: 'checkbox' },
         { key: 'placeholder', label: 'Placeholder', inputType: 'text' },
         { key: 'disabled', label: 'ปิดใช้งาน', inputType: 'checkbox' },
     ],
     date: [
+        { key: 'required', label: 'จำเป็น', inputType: 'checkbox' },
         { key: 'placeholder', label: 'Placeholder', inputType: 'text', placeholder: 'เช่น เลือกวันที่' },
         { key: 'min', label: 'วันที่ต่ำสุด', inputType: 'text', placeholder: 'เช่น 2024-01-01' },
         { key: 'max', label: 'วันที่สูงสุด', inputType: 'text', placeholder: 'เช่น 2030-12-31' },
@@ -136,6 +142,7 @@ export const CONTROL_CONFIG_FIELDS = {
         { key: 'readOnly', label: 'อ่านอย่างเดียว', inputType: 'checkbox' },
     ],
     datepicker: [
+        { key: 'required', label: 'จำเป็น', inputType: 'checkbox' },
         { key: 'placeholder', label: 'Placeholder', inputType: 'text', placeholder: 'เช่น เลือกวันที่' },
         { key: 'minDate', label: 'วันที่ต่ำสุด', inputType: 'text', placeholder: 'เช่น 2024-01-01' },
         { key: 'maxDate', label: 'วันที่สูงสุด', inputType: 'text', placeholder: 'เช่น 2030-12-31' },
@@ -148,6 +155,7 @@ export const CONTROL_CONFIG_FIELDS = {
         { key: 'disabled', label: 'ปิดใช้งาน', inputType: 'checkbox' },
     ],
     dropdown: [
+        { key: 'required', label: 'จำเป็น', inputType: 'checkbox' },
         { key: 'placeholder', label: 'Placeholder', inputType: 'text' },
         { key: 'searchable', label: 'ค้นหาได้', inputType: 'checkbox' },
         { key: 'clearable', label: 'ล้างค่าได้', inputType: 'checkbox' },
@@ -155,6 +163,7 @@ export const CONTROL_CONFIG_FIELDS = {
         { key: 'displayField', label: 'แสดงผลจาก field', inputType: 'text', placeholder: 'เช่น label' },
     ],
     fileupload: [
+        { key: 'required', label: 'จำเป็น', inputType: 'checkbox' },
         { key: 'maxFileSize', label: 'ขนาดไฟล์สูงสุด (bytes)', inputType: 'number', placeholder: 'เช่น 52428800 (50MB)' },
         { key: 'allowedTypes', label: 'ประเภทไฟล์ (comma)', inputType: 'text', placeholder: 'image/jpeg,image/png,application/pdf' },
         { key: 'buttonLabel', label: 'ข้อความปุ่ม', inputType: 'text', placeholder: 'Choose Files to Upload' },
@@ -166,6 +175,7 @@ export const CONTROL_CONFIG_FIELDS = {
         { key: 'disabled', label: 'ปิดใช้งาน', inputType: 'checkbox' },
     ],
     buttongroup: [
+        { key: 'required', label: 'จำเป็น', inputType: 'checkbox' },
         { key: 'orientation', label: 'ทิศทาง', inputType: 'select', selectOptions: [
             { value: 'horizontal', label: 'แนวนอน' },
             { value: 'vertical', label: 'แนวตั้ง' },
@@ -293,5 +303,16 @@ export function extractConfig(def, controlType) {
     for (const k of keys) {
         if (def[k] !== undefined) config[k] = def[k];
     }
+    if (def.showWhen) config.showWhen = def.showWhen;
     return config;
 }
+
+export const SHOW_WHEN_OPERATORS = [
+    { value: 'eq', label: 'เท่ากับ' },
+    { value: 'neq', label: 'ไม่เท่ากับ' },
+    { value: 'notEmpty', label: 'มีค่า' },
+    { value: 'empty', label: 'ว่าง' },
+    { value: 'contains', label: 'มีคำว่า' },
+    { value: 'gt', label: 'มากกว่า' },
+    { value: 'lt', label: 'น้อยกว่า' },
+];

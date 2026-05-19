@@ -1,5 +1,6 @@
 export const CONTROL_CONFIGS = {
     string: [
+        { key: 'required', label: 'จำเป็น', type: 'toggle', hint: 'ต้องกรอกข้อมูลก่อนส่งฟอร์ม' },
         { key: 'placeholder', label: 'Placeholder', type: 'text', hint: 'ข้อความแสดงตอนช่องว่าง เช่น "กรอกชื่อ"' },
         { key: 'maxLength', label: 'Max Length', type: 'number', hint: 'จำกัดตัวอักษรสูงสุดที่พิมพ์ได้' },
         { key: 'rows', label: 'Rows', type: 'number', hint: 'จำนวนบรรทัด (>1 = textarea)' },
@@ -7,6 +8,7 @@ export const CONTROL_CONFIGS = {
         { key: 'readOnly', label: 'Read Only', type: 'toggle', hint: 'อ่านได้อย่างเดียว' },
     ],
     number: [
+        { key: 'required', label: 'จำเป็น', type: 'toggle', hint: 'ต้องกรอกข้อมูลก่อนส่งฟอร์ม' },
         { key: 'placeholder', label: 'Placeholder', type: 'text', hint: 'ข้อความแสดงตอนช่องว่าง' },
         { key: 'min', label: 'Min', type: 'number', hint: 'ค่าต่ำสุดที่อนุญาต' },
         { key: 'max', label: 'Max', type: 'number', hint: 'ค่าสูงสุดที่อนุญาต' },
@@ -15,19 +17,23 @@ export const CONTROL_CONFIGS = {
         { key: 'readOnly', label: 'Read Only', type: 'toggle', hint: 'อ่านได้อย่างเดียว' },
     ],
     password: [
+        { key: 'required', label: 'จำเป็น', type: 'toggle', hint: 'ต้องกรอกข้อมูลก่อนส่งฟอร์ม' },
         { key: 'placeholder', label: 'Placeholder', type: 'text', hint: 'ข้อความแสดงตอนช่องว่าง' },
         { key: 'showStrength', label: 'Show Strength', type: 'toggle', hint: 'แสดงแถบวัดความแข็งแรงของรหัสผ่าน' },
         { key: 'minLength', label: 'Min Length', type: 'number', hint: 'จำนวนตัวอักษรขั้นต่ำ' },
     ],
     email: [
+        { key: 'required', label: 'จำเป็น', type: 'toggle', hint: 'ต้องกรอกข้อมูลก่อนส่งฟอร์ม' },
         { key: 'placeholder', label: 'Placeholder', type: 'text', hint: 'เช่น "name@example.com"' },
     ],
     select: [
+        { key: 'required', label: 'จำเป็น', type: 'toggle', hint: 'ต้องเลือกค่าก่อนส่งฟอร์ม' },
         { key: 'enum', label: 'Options', type: 'options', hint: 'ตัวเลือกในดรอปดาวน์' },
         { key: 'placeholder', label: 'Placeholder', type: 'text', hint: 'ข้อความแสดงตอนยังไม่เลือก' },
         { key: 'disabled', label: 'Disabled', type: 'toggle', hint: 'ปิดไม่ให้แก้ไข' },
     ],
     dropdown: [
+        { key: 'required', label: 'จำเป็น', type: 'toggle', hint: 'ต้องเลือกค่าก่อนส่งฟอร์ม' },
         { key: 'enum', label: 'Options', type: 'options', hint: 'ตัวเลือกในดรอปดาวน์' },
         { key: 'placeholder', label: 'Placeholder', type: 'text', hint: 'ข้อความแสดงตอนยังไม่เลือก เช่น "เลือกรายการ..."' },
         { key: 'searchable', label: 'ค้นหาได้', type: 'toggle', hint: 'เปิดให้พิมพ์ค้นหาตัวเลือกได้' },
@@ -43,6 +49,7 @@ export const CONTROL_CONFIGS = {
         { key: 'disabled', label: 'Disabled', type: 'toggle', hint: 'ปิดไม่ให้แก้ไข' },
     ],
     date: [
+        { key: 'required', label: 'จำเป็น', type: 'toggle', hint: 'ต้องเลือกวันที่ก่อนส่งฟอร์ม' },
         { key: 'placeholder', label: 'Placeholder', type: 'text', hint: 'เช่น "วว/ดด/ปปปป"' },
         { key: 'min', label: 'Min Date', type: 'text', hint: 'วันที่ต่ำสุด เช่น "2024-01-01"' },
         { key: 'max', label: 'Max Date', type: 'text', hint: 'วันที่สูงสุด เช่น "2026-12-31"' },
@@ -50,12 +57,14 @@ export const CONTROL_CONFIGS = {
         { key: 'readOnly', label: 'Read Only', type: 'toggle', hint: 'อ่านได้อย่างเดียว' },
     ],
     datepicker: [
+        { key: 'required', label: 'จำเป็น', type: 'toggle', hint: 'ต้องเลือกวันที่ก่อนส่งฟอร์ม' },
         { key: 'placeholder', label: 'Placeholder', type: 'text', hint: 'เช่น "เลือกวันที่"' },
         { key: 'minDate', label: 'Min Date', type: 'text', hint: 'วันที่ต่ำสุด เช่น "2024-01-01"' },
         { key: 'maxDate', label: 'Max Date', type: 'text', hint: 'วันที่สูงสุด เช่น "2026-12-31"' },
         { key: 'disabled', label: 'Disabled', type: 'toggle', hint: 'ปิดไม่ให้แก้ไข' },
     ],
     slider: [
+        { key: 'required', label: 'จำเป็น', type: 'toggle', hint: 'ต้องเลื่อนค่าก่อนส่งฟอร์ม' },
         { key: 'min', label: 'Min', type: 'number', hint: 'ค่าต่ำสุดของแถบเลื่อน' },
         { key: 'max', label: 'Max', type: 'number', hint: 'ค่าสูงสุดของแถบเลื่อน' },
         { key: 'step', label: 'Step', type: 'number', hint: 'เลื่อนครั้งละเท่าไหร่ เช่น 10' },
@@ -69,6 +78,7 @@ export const CONTROL_CONFIGS = {
         { key: 'disabled', label: 'Disabled', type: 'toggle', hint: 'ปิดไม่ให้แก้ไข' },
     ],
     rating: [
+        { key: 'required', label: 'จำเป็น', type: 'toggle', hint: 'ต้องให้คะแนนก่อนส่งฟอร์ม' },
         { key: 'maxStars', label: 'Max Stars', type: 'number', hint: 'จำนวนดาวสูงสุด (default: 5)' },
         { key: 'value', label: 'Default', type: 'number', hint: 'จำนวนดาวเริ่มต้น' },
         { key: 'allowHalf', label: 'ครึ่งดาว', type: 'toggle', hint: 'อนุญาตให้เลือกครึ่งดาว (0.5)' },
@@ -79,17 +89,20 @@ export const CONTROL_CONFIGS = {
         { key: 'readOnly', label: 'Read Only', type: 'toggle', hint: 'อ่านได้อย่างเดียว' },
     ],
     fileupload: [
+        { key: 'required', label: 'จำเป็น', type: 'toggle', hint: 'ต้องอัปโหลดไฟล์ก่อนส่งฟอร์ม' },
         { key: 'placeholder', label: 'Placeholder', type: 'text', hint: 'ข้อความแสดงตอนยังไม่เลือกไฟล์' },
         { key: 'maxFileSize', label: 'ขนาดไฟล์สูงสุด (bytes)', type: 'number', hint: 'เช่น 52428800 = 50MB' },
         { key: 'allowedTypes', label: 'ประเภทไฟล์', type: 'text', hint: 'เช่น "image/jpeg,image/png,application/pdf"' },
         { key: 'buttonLabel', label: 'ข้อความปุ่ม', type: 'text', hint: 'เช่น "Choose Files to Upload"' },
     ],
     searchbox: [
+        { key: 'required', label: 'จำเป็น', type: 'toggle', hint: 'ต้องเลือกค่าก่อนส่งฟอร์ม' },
         { key: 'placeholder', label: 'Placeholder', type: 'text', hint: 'เช่น "ค้นหาและเลือก..."' },
         { key: 'multiple', label: 'Multiple', type: 'toggle', hint: 'เลือกได้หลายค่า' },
         { key: 'allowCreate', label: 'Allow Create', type: 'toggle', hint: 'อนุญาตให้สร้างค่าใหม่ที่ไม่มีในรายการ' },
     ],
     multipleupload: [
+        { key: 'required', label: 'จำเป็น', type: 'toggle', hint: 'ต้องอัปโหลดไฟล์ก่อนส่งฟอร์ม' },
         { key: 'placeholder', label: 'Placeholder', type: 'text', hint: 'ข้อความแสดงตอนยังไม่เลือกไฟล์' },
         { key: 'allowedTypes', label: 'ประเภทไฟล์', type: 'text', hint: 'เช่น "image/jpeg,image/png"' },
         { key: 'maxFileSize', label: 'ขนาดไฟล์สูงสุด (bytes)', type: 'number', hint: 'เช่น 10485760 = 10MB' },
@@ -158,6 +171,7 @@ export const CONTROL_CONFIGS = {
         { key: 'disabled', label: 'Disabled', type: 'toggle', hint: 'ปิดไม่ให้คลิก' },
     ],
     buttongroup: [
+        { key: 'required', label: 'จำเป็น', type: 'toggle', hint: 'ต้องเลือกค่าก่อนส่งฟอร์ม' },
         { key: 'enum', label: 'Buttons', type: 'options', hint: 'รายการปุ่ม' },
         { key: 'orientation', label: 'Orientation', type: 'text', hint: '"horizontal" หรือ "vertical"' },
         { key: 'multiple', label: 'เลือกหลายค่า', type: 'toggle', hint: 'อนุญาตให้กดเลือกหลายปุ่มพร้อมกัน' },

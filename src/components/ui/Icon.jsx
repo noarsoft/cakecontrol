@@ -46,6 +46,9 @@ const STROKE_ICONS = {
     unlock: (
         <><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 9.9-1"/></>
     ),
+    columns: (
+        <><rect x="3" y="3" width="7" height="18" rx="1"/><rect x="14" y="3" width="7" height="18" rx="1"/></>
+    ),
 };
 
 export default function Icon({ name, size = 'md', className = '', style }) {

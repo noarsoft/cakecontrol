@@ -165,7 +165,7 @@
 
 .fb-mode-btn.active {
     background: var(--accent-primary);
-    color: #fff;
+    color: var(--text-on-accent);
     border-color: var(--accent-primary);
     box-shadow: 0 2px 8px var(--accent-primary-light);
     font-weight: 700;
@@ -210,7 +210,7 @@
     border: 1px solid var(--border-primary);
     border-radius: var(--radius-md);
     background: transparent;
-    color: var(--text-tertiary);
+    color: var(--text-secondary);
     cursor: pointer;
     transition: all 0.15s;
 }
@@ -349,6 +349,11 @@
     margin-bottom: 8px;
     background: var(--bg-primary);
     transition: all 0.2s ease;
+    overflow: visible;
+}
+
+.fb-field-card.has-error {
+    padding-bottom: 22px;
 }
 
 .fb-field-card:hover {
@@ -379,7 +384,7 @@
 
 .fb-field-card .field-drag {
     cursor: grab;
-    opacity: 0.3;
+    opacity: 0.5;
     font-size: 18px;
     user-select: none;
 }
@@ -389,13 +394,13 @@
 }
 
 .fb-field-card:hover .field-drag {
-    opacity: 0.7;
+    opacity: 0.8;
 }
 
 .fb-field-actions .fb-delete-btn {
     background: none;
     border: 1px solid transparent;
-    color: var(--text-tertiary);
+    color: var(--text-secondary);
     cursor: pointer;
     padding: 4px 8px;
     border-radius: var(--radius-sm);
@@ -404,7 +409,7 @@
 }
 
 .fb-field-actions .fb-delete-btn:hover {
-    color: #fff;
+    color: var(--text-on-accent);
     background: var(--error);
     border-color: var(--error);
 }
@@ -412,7 +417,7 @@
 .fb-field-actions .fb-move-btn {
     background: none;
     border: 1px solid transparent;
-    color: var(--text-tertiary);
+    color: var(--text-secondary);
     cursor: pointer;
     padding: 4px 6px;
     border-radius: var(--radius-sm);
@@ -426,14 +431,14 @@
 }
 
 .fb-field-actions .fb-move-btn:disabled {
-    opacity: 0.3;
+    opacity: 0.4;
     cursor: not-allowed;
 }
 
 .fb-field-actions .fb-config-btn {
     background: none;
     border: 1px solid transparent;
-    color: var(--text-tertiary);
+    color: var(--text-secondary);
     cursor: pointer;
     padding: 4px 6px;
     border-radius: var(--radius-sm);
@@ -612,6 +617,33 @@
     flex: 1;
     min-width: 480px;
     max-width: 720px;
+}
+
+.sb-description-section {
+    margin-bottom: 16px;
+}
+
+.sb-description-input {
+    width: 100%;
+    padding: 8px 12px;
+    border: 1px solid var(--border-primary);
+    border-radius: var(--radius-md);
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    font-size: 14px;
+    font-family: inherit;
+    resize: vertical;
+    min-height: 40px;
+    transition: border-color 0.2s;
+}
+
+.sb-description-input::placeholder {
+    color: var(--text-tertiary);
+}
+
+.sb-description-input:focus {
+    outline: none;
+    border-color: var(--accent-primary);
 }
 
 .fb-field-card.selected {
@@ -795,6 +827,19 @@
     padding: 16px 0;
 }
 
+/* ─── ShowWhen Section ─── */
+.sb-showwhen-section {
+    margin-top: 16px;
+    padding-top: 16px;
+    border-top: 1px dashed var(--border-secondary);
+}
+
+.sb-showwhen-fields {
+    margin-top: 8px;
+    padding-left: 8px;
+    border-left: 3px solid var(--accent-primary);
+}
+
 /* ─── Toggle Switch ─── */
 .sb-config-toggle {
     position: relative;
@@ -825,7 +870,7 @@
     height: 16px;
     left: 3px;
     top: 3px;
-    background: #fff;
+    background: var(--bg-primary);
     border-radius: 50%;
     transition: transform 0.2s;
 }
@@ -884,7 +929,7 @@
 }
 
 .sb-option-remove:hover {
-    color: #fff;
+    color: var(--text-on-accent);
     background: var(--error);
 }
 
@@ -939,6 +984,11 @@
     width: 100%;
 }
 
+.sb-preview-content > .toggle-switch,
+.sb-preview-content > .btn-control {
+    width: auto;
+}
+
 /* ─── Standalone Form Page ─── */
 .fb-standalone-page {
     min-height: 100vh;
@@ -954,16 +1004,24 @@
     padding: 24px;
 }
 
-/* Page indicators */
-.fb-filler-pages {
+/* Stepper + Progress bar */
+.fb-filler-stepper {
+    margin-bottom: 24px;
+}
+
+.fb-filler-stepper-track {
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 8px;
-    margin-bottom: 20px;
+    margin-bottom: 12px;
 }
 
-.fb-filler-page-dot {
+.fb-filler-step-wrapper {
+    display: flex;
+    align-items: center;
+}
+
+.fb-filler-step {
     width: 32px;
     height: 32px;
     border-radius: 50%;
@@ -977,32 +1035,60 @@
     align-items: center;
     justify-content: center;
     transition: all 0.2s;
+    flex-shrink: 0;
 }
 
-.fb-filler-page-dot:hover {
+.fb-filler-step:hover {
     border-color: var(--accent-primary);
     color: var(--accent-primary);
 }
 
-.fb-filler-page-dot.active {
+.fb-filler-step.active {
     background: var(--accent-primary);
     border-color: var(--accent-primary);
-    color: #fff;
+    color: var(--text-on-accent, #fff);
 }
 
-.fb-filler-page-dot.done {
-    background: var(--success, #10b981);
-    border-color: var(--success, #10b981);
-    color: #fff;
+.fb-filler-step.done {
+    background: var(--success);
+    border-color: var(--success);
+    color: var(--text-on-accent);
     font-size: 12px;
 }
 
-.fb-filler-page-title {
+.fb-filler-step-line {
+    width: 40px;
+    height: 2px;
+    background: var(--border-primary);
+    transition: background 0.3s;
+}
+
+.fb-filler-step-line.done {
+    background: var(--success, #10b981);
+}
+
+.fb-filler-progress {
+    width: 100%;
+    height: 4px;
+    background: var(--border-primary);
+    border-radius: 2px;
+    overflow: hidden;
+}
+
+.fb-filler-progress-bar {
+    height: 100%;
+    background: var(--accent-primary);
+    border-radius: 2px;
+    transition: width 0.3s ease;
+    min-width: 0;
+}
+
+.fb-filler-page-info {
     text-align: center;
-    font-size: 16px;
-    font-weight: 600;
-    color: var(--text-primary);
-    margin-bottom: 16px;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-secondary);
+    margin-top: 8px;
 }
 
 .fb-filler-header {
@@ -1019,6 +1105,11 @@
     margin: 0;
     font-size: 14px;
     color: var(--text-secondary);
+}
+
+.fb-filler-description {
+    white-space: pre-line;
+    line-height: 1.5;
 }
 
 .fb-filler-body {
@@ -1063,8 +1154,8 @@
     width: 56px;
     height: 56px;
     border-radius: 50%;
-    background: var(--success, #10b981);
-    color: #fff;
+    background: var(--success);
+    color: var(--text-on-accent);
     font-size: 28px;
     margin-bottom: 16px;
 }
@@ -1137,7 +1228,7 @@
     border: none;
     border-radius: var(--radius-sm);
     background: var(--accent-primary);
-    color: #fff;
+    color: var(--text-on-accent);
     font-size: 12px;
     font-weight: 600;
     cursor: pointer;
@@ -1253,4 +1344,279 @@
     font-weight: 600;
     background: rgba(245, 158, 11, 0.1);
     color: var(--warning, #f59e0b);
+}
+
+/* ─── Data tab: wider layout for table ─── */
+.fb-content .fb-data-toolbar,
+.fb-content .crud-control {
+    max-width: none;
+}
+
+.fb-content .crud-control {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.fb-content .crud-table-wrapper {
+    flex: 1;
+}
+
+.fb-content .crud-toolbar-left {
+    flex: 1;
+    flex-wrap: nowrap;
+}
+
+.fb-content .crud-toolbar-left .crud-search {
+    margin-left: auto;
+    width: 220px;
+    flex-shrink: 0;
+}
+
+/* ─── Column Visibility Toggle ─── */
+.fb-col-toggle {
+    position: relative;
+}
+
+.fb-col-toggle-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 14px;
+    background: var(--bg-primary);
+    border: 1px solid var(--border-primary);
+    border-radius: var(--radius-md);
+    font-size: 13px;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all 0.15s;
+}
+
+.fb-col-toggle-btn:hover {
+    border-color: var(--accent-primary);
+    color: var(--text-primary);
+}
+
+.fb-col-toggle-dropdown {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    margin-top: 4px;
+    min-width: 260px;
+    max-height: min(440px, 60vh);
+    display: flex;
+    flex-direction: column;
+    background: var(--bg-primary);
+    border: 1px solid var(--border-primary);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-lg);
+    z-index: 100;
+    padding: 8px 0;
+}
+
+.fb-col-toggle-actions {
+    display: flex;
+    gap: 8px;
+    padding: 4px 12px 8px;
+    border-bottom: 1px solid var(--border-secondary);
+    margin-bottom: 4px;
+}
+
+.fb-col-toggle-actions button {
+    background: none;
+    border: none;
+    color: var(--accent-primary);
+    font-size: 12px;
+    cursor: pointer;
+    padding: 2px 0;
+}
+
+.fb-col-toggle-actions button:hover {
+    text-decoration: underline;
+}
+
+.fb-col-toggle-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 12px;
+    font-size: 13px;
+    color: var(--text-primary);
+    cursor: pointer;
+    transition: background 0.1s;
+}
+
+.fb-col-toggle-item:hover {
+    background: var(--bg-hover);
+}
+
+.fb-col-toggle-item input[type="checkbox"] {
+    accent-color: var(--accent-primary);
+}
+
+.fb-col-toggle-search {
+    padding: 4px 8px 8px;
+}
+
+.fb-col-toggle-search-input {
+    width: 100%;
+    padding: 6px 10px;
+    border: 1px solid var(--border-primary);
+    border-radius: var(--radius-md);
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    font-size: 13px;
+    outline: none;
+}
+
+.fb-col-toggle-search-input:focus {
+    border-color: var(--accent-primary);
+}
+
+.fb-col-toggle-list {
+    overflow-y: auto;
+    flex: 1;
+    min-height: 0;
+}
+
+.fb-col-toggle-empty {
+    padding: 12px;
+    text-align: center;
+    font-size: 13px;
+    color: var(--text-tertiary);
+}
+
+/* ─── SchemaBuilder Field Pagination ─── */
+.sb-field-pagination {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    padding: 12px 0;
+}
+
+.sb-field-page-btn {
+    min-width: 32px;
+    height: 32px;
+    padding: 0 8px;
+    border: 1px solid var(--border-primary);
+    border-radius: var(--radius-md);
+    background: var(--bg-primary);
+    color: var(--text-secondary);
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.15s;
+}
+
+.sb-field-page-btn:hover:not(:disabled) {
+    border-color: var(--accent-primary);
+    color: var(--accent-primary);
+}
+
+.sb-field-page-btn.active {
+    background: var(--accent-primary);
+    color: var(--text-on-accent, #fff);
+    border-color: var(--accent-primary);
+}
+
+.sb-field-page-btn:disabled {
+    opacity: 0.4;
+    cursor: default;
+}
+
+.sb-field-page-info {
+    font-size: 13px;
+    color: var(--text-tertiary);
+    margin-bottom: 8px;
+}
+
+.sb-field-page-ellipsis {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 32px;
+    height: 32px;
+    color: var(--text-tertiary);
+    font-size: 14px;
+    user-select: none;
+}
+
+/* ─── SchemaBuilder Field Search ─── */
+.sb-field-search {
+    position: relative;
+    margin-bottom: 12px;
+}
+
+.sb-field-search-input {
+    width: 100%;
+    padding: 8px 32px 8px 12px;
+    border: 1px solid var(--border-primary);
+    border-radius: var(--radius-md);
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    font-size: 13px;
+    outline: none;
+    box-sizing: border-box;
+}
+
+.sb-field-search-input:focus {
+    border-color: var(--accent-primary);
+}
+
+.sb-field-search-input::placeholder {
+    color: var(--text-tertiary);
+}
+
+.sb-field-search-clear {
+    position: absolute;
+    right: 6px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    color: var(--text-tertiary);
+    cursor: pointer;
+    font-size: 14px;
+    padding: 4px;
+    line-height: 1;
+}
+
+.sb-field-search-clear:hover {
+    color: var(--text-primary);
+}
+
+/* ─── SchemaBuilder Header ─── */
+.sb-field-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+}
+
+.sb-field-header-title {
+    margin: 0;
+}
+
+.sb-field-dirty-indicator {
+    font-size: 12px;
+    color: var(--accent-primary);
+}
+
+.sb-field-add-buttons {
+    display: flex;
+    gap: 8px;
+}
+
+/* ─── SchemaBuilder Validation Errors ─── */
+.sb-validation-errors {
+    margin-top: 12px;
+    padding: 12px;
+    border-radius: var(--radius-md);
+    background: var(--error-light);
+    border: 1px solid var(--error);
+    font-size: 13px;
+}
+
+.sb-validation-error {
+    color: var(--error);
 }

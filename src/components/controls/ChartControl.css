@@ -131,6 +131,20 @@
     white-space: nowrap;
 }
 
+/* Recharts SVG theme overrides — CSS variables can't be passed as JSX SVG attributes */
+.chart-control .recharts-cartesian-grid line {
+    stroke: var(--border-secondary);
+}
+
+.chart-control .recharts-cartesian-axis-line,
+.chart-control .recharts-cartesian-axis-tick-line {
+    stroke: var(--border-primary);
+}
+
+.chart-control .recharts-cartesian-axis-tick-value {
+    fill: var(--text-secondary);
+}
+
 /* Chart Cell Interactions */
 .chart-cell {
     cursor: pointer;

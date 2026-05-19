@@ -1,7 +1,13 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useCallback } from 'react';
 import FormControl from '../components/controls/FormControl';
-import { schemaToFormConfig, getSchemaPages } from '../lib/schemaTransform';
+import { schemaToFormConfig, getSchemaPages, evaluateShowWhen } from '../lib/schemaTransform';
 import { createFormData } from '../lib/schemaService';
+
+function isFieldEmpty(value) {
+    if (value === '' || value === null || value === undefined) return true;
+    if (Array.isArray(value) && value.length === 0) return true;
+    return false;
+}
 
 function FormFiller({ schema, formcfgJson, onSubmit, onDirtyChange }) {
     const [formData, setFormData] = useState({});
@@ -9,15 +15,38 @@ function FormFiller({ schema, formcfgJson, onSubmit, onDirtyChange }) {
     const [resetKey, setResetKey] = useState(0);
     const [showDebug, setShowDebug] = useState(false);
     const [currentPage, setCurrentPage] = useState(0);
+    const [errors, setErrors] = useState({});
 
     const fullFormConfig = useMemo(
         () => schemaToFormConfig(schema.json, formcfgJson),
         [schema.json, formcfgJson]
     );
 
+    const requiredFields = useMemo(() => {
+        const fields = {};
+        const json = schema.json;
+        for (const [key, def] of Object.entries(json)) {
+            if (key.startsWith('_')) continue;
+            if (def.required) fields[key] = def.label || key;
+        }
+        return fields;
+    }, [schema.json]);
+
     const pages = useMemo(() => getSchemaPages(schema.json), [schema.json]);
     const totalPages = pages.length;
     const hasPages = totalPages > 1;
+
+    const validateFields = useCallback((fieldKeys) => {
+        const newErrors = {};
+        for (const key of fieldKeys) {
+            const fieldDef = schema.json[key];
+            if (fieldDef?.showWhen && !evaluateShowWhen(fieldDef.showWhen, formData)) continue;
+            if (requiredFields[key] && isFieldEmpty(formData[key])) {
+                newErrors[key] = 'กรุณากรอกข้อมูล';
+            }
+        }
+        return newErrors;
+    }, [requiredFields, formData, schema.json]);
 
     const pageConfig = useMemo(() => {
         if (!hasPages) return fullFormConfig;
@@ -31,11 +60,24 @@ function FormFiller({ schema, formcfgJson, onSubmit, onDirtyChange }) {
     const config = useMemo(() => ({
         ...pageConfig,
         data: [formData],
+        controls: pageConfig.controls.map(c => ({
+            ...c,
+            error: errors[c.databind] || undefined,
+        })),
         onChange: (e) => {
             const val = e?.target?.value;
-            if (val && typeof val === 'object') setFormData(val);
+            if (val && typeof val === 'object') {
+                setFormData(val);
+                setErrors(prev => {
+                    const next = { ...prev };
+                    for (const [k, v] of Object.entries(val)) {
+                        if (next[k] && !isFieldEmpty(v)) delete next[k];
+                    }
+                    return next;
+                });
+            }
         },
-    }), [pageConfig, formData]);
+    }), [pageConfig, formData, errors]);
 
     const hasData = Object.values(formData).some(v => v !== '' && v !== null && v !== undefined);
     const isLastPage = !hasPages || currentPage === totalPages - 1;
@@ -45,7 +87,12 @@ function FormFiller({ schema, formcfgJson, onSubmit, onDirtyChange }) {
     }, [hasData, submitted, onDirtyChange]);
 
     const handleSubmit = async () => {
-        if (!hasData) return;
+        const allFieldKeys = Object.entries(schema.json).filter(([k, v]) => !k.startsWith('_') || (typeof v === 'object' && v !== null && v.type)).filter(([, v]) => v.type !== 'pagebreak').map(([k]) => k);
+        const validationErrors = validateFields(allFieldKeys);
+        if (Object.keys(validationErrors).length > 0) {
+            setErrors(validationErrors);
+            return;
+        }
         await createFormData(schema.id, formData);
         setSubmitted(true);
         onDirtyChange?.(false);
@@ -57,9 +104,20 @@ function FormFiller({ schema, formcfgJson, onSubmit, onDirtyChange }) {
         setSubmitted(false);
         setResetKey(k => k + 1);
         setCurrentPage(0);
+        setErrors({});
     };
 
-    const handleNext = () => { if (currentPage < totalPages - 1) setCurrentPage(p => p + 1); };
+    const handleNext = () => {
+        if (currentPage < totalPages - 1) {
+            const pageFieldKeys = pages[currentPage]?.fieldKeys || [];
+            const pageErrors = validateFields(pageFieldKeys);
+            if (Object.keys(pageErrors).length > 0) {
+                setErrors(prev => ({ ...prev, ...pageErrors }));
+                return;
+            }
+            setCurrentPage(p => p + 1);
+        }
+    };
     const handlePrev = () => { if (currentPage > 0) setCurrentPage(p => p - 1); };
 
     if (submitted) {
@@ -80,26 +138,38 @@ function FormFiller({ schema, formcfgJson, onSubmit, onDirtyChange }) {
         <div className="fb-filler">
             <div className="fb-filler-header">
                 <h2>{schema.name}</h2>
-                <p>กรอกข้อมูลแล้วกดบันทึก</p>
+                {schema.json?._description ? (
+                    <p className="fb-filler-description">{schema.json._description}</p>
+                ) : (
+                    <p>กรอกข้อมูลแล้วกดบันทึก</p>
+                )}
             </div>
 
             {hasPages && (
-                <div className="fb-filler-pages">
-                    {pages.map((page, idx) => (
-                        <button
-                            key={idx}
-                            className={`fb-filler-page-dot ${idx === currentPage ? 'active' : ''} ${idx < currentPage ? 'done' : ''}`}
-                            onClick={() => setCurrentPage(idx)}
-                            title={page.label || `หน้า ${idx + 1}`}
-                        >
-                            {idx < currentPage ? '✓' : idx + 1}
-                        </button>
-                    ))}
+                <div className="fb-filler-stepper">
+                    <div className="fb-filler-stepper-track">
+                        {pages.map((page, idx) => (
+                            <div key={idx} className="fb-filler-step-wrapper">
+                                <button
+                                    className={`fb-filler-step ${idx === currentPage ? 'active' : ''} ${idx < currentPage ? 'done' : ''}`}
+                                    onClick={() => setCurrentPage(idx)}
+                                    title={page.label || `หน้า ${idx + 1}`}
+                                >
+                                    {idx < currentPage ? '✓' : idx + 1}
+                                </button>
+                                {idx < totalPages - 1 && (
+                                    <div className={`fb-filler-step-line ${idx < currentPage ? 'done' : ''}`} />
+                                )}
+                            </div>
+                        ))}
+                    </div>
+                    <div className="fb-filler-progress">
+                        <div className="fb-filler-progress-bar" style={{ width: `${(currentPage / (totalPages - 1)) * 100}%` }} />
+                    </div>
+                    <div className="fb-filler-page-info">
+                        {pages[currentPage]?.label || `หน้า ${currentPage + 1} จาก ${totalPages}`}
+                    </div>
                 </div>
-            )}
-
-            {hasPages && pages[currentPage]?.label && (
-                <div className="fb-filler-page-title">{pages[currentPage].label}</div>
             )}
 
             <div className="fb-filler-body">
@@ -137,7 +207,7 @@ function FormFiller({ schema, formcfgJson, onSubmit, onDirtyChange }) {
                 )}
 
                 {isLastPage && (
-                    <button className="fb-mode-btn active" onClick={handleSubmit} disabled={!hasData}>บันทึก</button>
+                    <button className="fb-mode-btn active" onClick={handleSubmit}>บันทึก</button>
                 )}
             </div>
         </div>

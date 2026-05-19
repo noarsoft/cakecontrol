@@ -47,13 +47,11 @@
     color: var(--text-tertiary);
     cursor: pointer;
     transition: all 0.15s;
-    opacity: 0.4;
 }
 
 .tm-delete-btn:hover {
     background: var(--error-light);
     color: var(--error);
-    opacity: 1;
 }
 
 .tm-empty {

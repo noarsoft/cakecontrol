@@ -29,11 +29,14 @@ coverage
 .env
 .env.local
 
-# Playwright artifacts
+# Playwright / testing artifacts
 .playwright-mcp/
 e2e/
 playwright.config.js
 *.png
+
+# Generated docs (test cases etc.)
+docs/
 
 # SQLite
 *.db

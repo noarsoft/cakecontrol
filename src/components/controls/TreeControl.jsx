@@ -298,7 +298,7 @@ function TreeControl({ control = {}, rowData = {}, rowIndex = 0, ...propOverride
     if (!data || data.length === 0) {
         return (
             <div className={`tree-control tree-control-empty ${className}`}>
-                <div style={{ textAlign: 'center', padding: '40px 20px', color: '#9ca3af' }}>
+                <div style={{ textAlign: 'center', padding: '40px 20px', color: 'var(--text-tertiary)' }}>
                     <div style={{ fontSize: '48px', marginBottom: '10px' }}>🌳</div>
                     <div>No data available</div>
                 </div>

@@ -130,8 +130,7 @@ export default function Dashboard() {
     const totalForms = schemas.length;
     const totalRecords = Object.values(dataCounts).reduce((a, b) => a + b, 0);
     const totalFields = schemas.reduce((sum, s) => {
-        const json = s.json || {};
-        return sum + Object.keys(json).length;
+        return sum + Object.entries(s.json || {}).filter(([k, v]) => k.startsWith('_') ? false : v?.type !== 'pagebreak').length;
     }, 0);
 
     if (loading) {
@@ -217,7 +216,7 @@ export default function Dashboard() {
                         </thead>
                         <tbody>
                             {schemas.map(s => {
-                                const fieldCount = Object.keys(s.json || {}).length;
+                                const fieldCount = Object.entries(s.json || {}).filter(([k, v]) => k.startsWith('_') ? false : v?.type !== 'pagebreak').length;
                                 const dataCount = dataCounts[s.id] || 0;
                                 const isSelected = selected.has(s.rootid);
                                 return (
@@ -245,16 +244,6 @@ export default function Dashboard() {
                                         <td className="dash-table-date">{formatModifyDate(s.modify_datetime)}</td>
                                         <td className="dash-table-actions">
                                             <button
-                                                className="dash-action-btn"
-                                                title="แก้ไขฟอร์ม"
-                                                onClick={(e) => {
-                                                    e.stopPropagation();
-                                                    navigate(PAGES.FORM_BUILDER, { state: { activeSchemaId: s.id, mode: 'builder' } });
-                                                }}
-                                            >
-                                                <Icon name="edit" size="sm" />
-                                            </button>
-                                            <button
                                                 className="dash-action-btn dash-action-share"
                                                 title="คัดลอก link แชร์"
                                                 onClick={(e) => {
@@ -265,7 +254,7 @@ export default function Dashboard() {
                                                     });
                                                 }}
                                             >
-                                                <Icon name="share" size="sm" />
+                                                <Icon name="share" size="lg" />
                                             </button>
                                             <button
                                                 className="dash-action-btn dash-action-delete"
@@ -275,7 +264,7 @@ export default function Dashboard() {
                                                     setDeleteConfirm(s.rootid);
                                                 }}
                                             >
-                                                <Icon name="trash" size="sm" />
+                                                <Icon name="trash" size="lg" />
                                             </button>
                                         </td>
                                     </tr>

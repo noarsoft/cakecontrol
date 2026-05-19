@@ -11,7 +11,7 @@ function ButtonControl({ control, rowData, rowIndex }) {
     };
 
     // Get button text from databind or value
-    const buttonText = control.databind ? rowData[control.databind] : control.value;
+    const buttonText = (control.databind && rowData[control.databind] != null) ? rowData[control.databind] : control.value;
 
     return (
         <a 

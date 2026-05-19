@@ -158,9 +158,9 @@ function ButtonGroupControl({ control = {}, rowData = {}, rowIndex = 0 }) {
 
             {/* Empty State */}
             {options.length === 0 && (
-                <div style={{ 
-                    padding: '10px', 
-                    color: '#9ca3af', 
+                <div style={{
+                    padding: '10px',
+                    color: 'var(--text-tertiary)',
                     fontSize: '14px',
                     fontStyle: 'italic'
                 }}>

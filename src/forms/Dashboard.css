@@ -266,7 +266,7 @@
 
 .dash-table thead th:last-child {
     text-align: right;
-    width: 80px;
+    width: 130px;
 }
 
 .dash-table-row {
@@ -299,42 +299,53 @@
 .dash-table-actions {
     text-align: right !important;
     white-space: nowrap;
+    display: flex;
+    gap: 4px;
+    justify-content: flex-end;
 }
 
 .dash-action-btn {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 30px;
-    height: 30px;
-    border: none;
+    width: 34px;
+    height: 34px;
+    border: 1px solid var(--border-hover);
     border-radius: var(--radius-md);
-    background: transparent;
-    color: var(--text-tertiary);
+    background: var(--bg-secondary);
+    color: var(--accent-primary);
     cursor: pointer;
     transition: all 0.2s;
-    opacity: 0.35;
 }
 
-.dash-table-row:hover .dash-action-btn {
-    opacity: 0.8;
+.dash-action-btn svg {
+    flex-shrink: 0;
 }
 
 .dash-action-btn:hover {
     background: var(--accent-primary-light);
     color: var(--accent-primary);
-    opacity: 1 !important;
-    transform: scale(1.1);
+    border-color: var(--accent-primary);
+}
+
+.dash-action-share {
+    color: var(--success);
 }
 
 .dash-action-share:hover {
     background: var(--success-light);
     color: var(--success);
+    border-color: var(--success);
+}
+
+.dash-action-delete {
+    color: var(--text-tertiary);
 }
 
 .dash-action-delete:hover {
     background: var(--error-light);
     color: var(--error);
+    border-color: var(--error);
 }
 
 /* Checkbox */

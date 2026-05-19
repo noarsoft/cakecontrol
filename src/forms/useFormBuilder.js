@@ -15,6 +15,9 @@ import { useToast } from '../contexts/ToastContext';
 import { useNavigate, useLocation } from 'react-router-dom';
 import * as XLSX from 'xlsx';
 
+const DEFAULT_VISIBLE_COUNT = 8;
+const ALWAYS_VISIBLE_KEY = '_submitted_at';
+
 export function useFormBuilder() {
     const navigate = useNavigate();
     const location = useLocation();
@@ -36,6 +39,7 @@ export function useFormBuilder() {
     const [showLogModal, setShowLogModal] = useState(false);
     const [migrating, setMigrating] = useState(false);
     const [dataCounts, setDataCounts] = useState({});
+    const [visibleColumns, setVisibleColumns] = useState(null);
 
     const createTriggered = useRef(false);
     const anyDirty = builderDirty || fillerDirty;
@@ -125,7 +129,8 @@ export function useFormBuilder() {
     );
 
     useEffect(() => {
-        if (!activeSchema) { setSchemaData(null); setOldSchemaInfo(null); return; }
+        if (!activeSchema) { setSchemaData(null); setOldSchemaInfo(null); setVisibleColumns(null); return; }
+        setVisibleColumns(null);
         let cancelled = false;
         (async () => {
             const [views, formcfgs, allData] = await Promise.all([
@@ -148,7 +153,7 @@ export function useFormBuilder() {
             setSchemaData({
                 view: views[0] || null,
                 formcfg: formcfgs[0] || null,
-                data: currentData.map(f => ({ _formId: f.rootid, ...(f.data || f.payload || {}) })),
+                data: currentData.map(f => ({ _formId: f.rootid, _submitted_at: f.created_at, ...(f.data || f.payload || {}) })),
                 rawData: currentData,
                 oldData,
             });
@@ -219,7 +224,7 @@ export function useFormBuilder() {
     const handleExportExcel = () => {
         if (!schemaData?.data?.length || !activeSchema) return;
         const fields = Object.entries(activeSchema.json)
-            .filter(([, def]) => def.type !== 'pagebreak')
+            .filter(([k, def]) => !k.startsWith('_') && def.type !== 'pagebreak')
             .map(([key, def]) => ({ key, label: def.label || key }));
         const rows = schemaData.data.map(row =>
             Object.fromEntries(fields.map(f => [f.label, row[f.key] ?? '']))
@@ -291,6 +296,30 @@ export function useFormBuilder() {
         };
     }, [activeSchema, schemaData, handleDataEdit, handleDataDelete]);
 
+    // All data columns (excluding _submitted_at which is always shown)
+    const allDataColumns = useMemo(() => {
+        if (!crudConfig) return [];
+        return crudConfig.columns.filter(col => col.key !== ALWAYS_VISIBLE_KEY);
+    }, [crudConfig]);
+
+    // Resolve effective visible column keys (default to first N when null)
+    const effectiveVisibleColumns = useMemo(() => {
+        if (visibleColumns !== null) return visibleColumns;
+        const defaultKeys = allDataColumns
+            .slice(0, DEFAULT_VISIBLE_COUNT)
+            .map(col => col.key);
+        return new Set(defaultKeys);
+    }, [visibleColumns, allDataColumns]);
+
+    // Filtered crud config with only visible columns
+    const filteredCrudConfig = useMemo(() => {
+        if (!crudConfig) return null;
+        const filteredColumns = crudConfig.columns.filter(
+            col => col.key === ALWAYS_VISIBLE_KEY || effectiveVisibleColumns.has(col.key)
+        );
+        return { ...crudConfig, columns: filteredColumns };
+    }, [crudConfig, effectiveVisibleColumns]);
+
     const handleSchemaJsonChange = async (newJson) => {
         if (!activeSchema) return false;
         try {
@@ -322,6 +351,7 @@ export function useFormBuilder() {
     };
 
     const handleSaveAndTest = async (newJson) => {
+        if (newJson === null) { setMode('fill'); return; }
         const ok = await handleSchemaJsonChange(newJson);
         if (ok) {
             setBuilderDirty(false);
@@ -371,7 +401,9 @@ export function useFormBuilder() {
         activeSchema, activeSchemaId, mode, schemaData,
         deleteConfirm, setDeleteConfirm,
         oldSchemaInfo, showLogModal, setShowLogModal, migrating,
-        anyDirty, pendingMode, setPendingMode, crudConfig,
+        anyDirty, pendingMode, setPendingMode,
+        crudConfig: filteredCrudConfig,
+        allDataColumns, visibleColumns: effectiveVisibleColumns, setVisibleColumns,
 
         handleModeChange, handleSchemaNameSave, handleExportExcel,
         handleMigrateData, handleDeleteSchema, handleSchemaJsonChange,
