@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import ModalControl from '../components/controls/ModalControl';
+import Button from '../components/ui/Button';
 import { useToast } from '../contexts/ToastContext';
 import { FIELD_TYPES } from '../lib/schema';
 import { CONTROL_TYPES, CONTROL_TO_FIELD_TYPE, FIELD_TO_CONTROL_TYPE } from '../lib/controlTypeMap';
@@ -251,8 +252,8 @@ function ControlDesignerModal({ isOpen, onClose, onSave, schemaName, schemaJson,
             className="cd-modal"
             footer={
                 <div className="cd-footer">
-                    <button className="fb-mode-btn" onClick={onClose}>ยกเลิก</button>
-                    <button className="fb-mode-btn active" onClick={handleSave}>บันทึก</button>
+                    <Button variant="secondary" onClick={onClose}>ยกเลิก</Button>
+                    <Button variant="primary" onClick={handleSave}>บันทึก</Button>
                 </div>
             }
         >

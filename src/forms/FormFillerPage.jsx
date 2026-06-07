@@ -2,6 +2,8 @@ import { useState, useMemo, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import FormControl from '../components/controls/FormControl';
 import ThemeSwitcher from '../ThemeSwitcher';
+import Button from '../components/ui/Button';
+import Icon from '../components/ui/Icon';
 import { schemaToFormConfig, getSchemaPages } from '../lib/schemaTransform';
 import {
     initService, getSchemaById, getFormcfgsBySchema, createFormData,
@@ -108,9 +110,9 @@ function FormFillerPage() {
                         <h2>ไม่พบฟอร์ม</h2>
                         <p>Schema ID: {schemaId} ไม่มีในระบบ</p>
                     </div>
-                    <button className="fb-mode-btn" onClick={() => navigate(PAGES.FORM_BUILDER)}>
+                    <Button variant="secondary" icon="arrow-left" onClick={() => navigate(PAGES.FORM_BUILDER)}>
                         กลับ Form Builder
-                    </button>
+                    </Button>
                 </div>
             </div>
         );
@@ -139,16 +141,16 @@ function FormFillerPage() {
                         <h2>{schema.name}</h2>
                     </div>
                     <div className="fb-filler-success">
-                        <span className="fb-filler-success-icon">✓</span>
+                        <span className="fb-filler-success-icon"><Icon name="check" size={30} /></span>
                         <h3>บันทึกสำเร็จ!</h3>
                         <p>ข้อมูลของคุณถูกบันทึกเรียบร้อยแล้ว</p>
                         <div style={{ display: 'flex', gap: 12, justifyContent: 'center' }}>
-                            <button className="fb-mode-btn" onClick={handleReset}>
+                            <Button variant="primary" onClick={handleReset}>
                                 กรอกอีกครั้ง
-                            </button>
-                            <button className="fb-mode-btn" onClick={() => navigate(PAGES.FORM_BUILDER)}>
+                            </Button>
+                            <Button variant="secondary" onClick={() => navigate(PAGES.FORM_BUILDER)}>
                                 กลับ Form Builder
-                            </button>
+                            </Button>
                         </div>
                     </div>
                 </div>
@@ -181,7 +183,7 @@ function FormFillerPage() {
                                         onClick={() => setCurrentPage(idx)}
                                         title={page.label || `หน้า ${idx + 1}`}
                                     >
-                                        {idx < currentPage ? '✓' : idx + 1}
+                                        {idx < currentPage ? <Icon name="check" size="sm" /> : idx + 1}
                                     </button>
                                     {idx < totalPages - 1 && (
                                         <div className={`fb-filler-step-line ${idx < currentPage ? 'done' : ''}`} />
@@ -203,21 +205,21 @@ function FormFillerPage() {
                 </div>
                 <div className="fb-filler-footer">
                     {hasPages && currentPage > 0 && (
-                        <button className="fb-mode-btn" onClick={handlePrev}>ย้อนกลับ</button>
+                        <Button variant="secondary" onClick={handlePrev}>ย้อนกลับ</Button>
                     )}
 
                     {!hasPages && (
-                        <button className="fb-mode-btn" onClick={handleReset}>ล้างข้อมูล</button>
+                        <Button variant="secondary" onClick={handleReset}>ล้างข้อมูล</Button>
                     )}
 
                     {hasPages && !isLastPage && (
-                        <button className="fb-mode-btn active" onClick={handleNext}>ถัดไป</button>
+                        <Button variant="primary" onClick={handleNext}>ถัดไป</Button>
                     )}
 
                     {isLastPage && (
-                        <button className="fb-mode-btn active" onClick={handleSubmit} disabled={!hasData}>
+                        <Button variant="primary" onClick={handleSubmit} disabled={!hasData}>
                             บันทึก
-                        </button>
+                        </Button>
                     )}
                 </div>
             </div>

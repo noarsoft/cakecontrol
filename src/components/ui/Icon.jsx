@@ -31,6 +31,12 @@ const STROKE_ICONS = {
     plus: (
         <><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></>
     ),
+    x: (
+        <><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></>
+    ),
+    check: (
+        <polyline points="20 6 9 17 4 12"/>
+    ),
     download: (
         <><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></>
     ),
@@ -48,6 +54,12 @@ const STROKE_ICONS = {
     ),
     columns: (
         <><rect x="3" y="3" width="7" height="18" rx="1"/><rect x="14" y="3" width="7" height="18" rx="1"/></>
+    ),
+    clock: (
+        <><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></>
+    ),
+    'rotate-ccw': (
+        <><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></>
     ),
 };
 

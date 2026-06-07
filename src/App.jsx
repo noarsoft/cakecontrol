@@ -2,6 +2,7 @@ import { BrowserRouter as Router, Routes, Route, useNavigate } from 'react-route
 import { lazy, Suspense } from 'react';
 import Dashboard from './forms/Dashboard';
 import BusinessSelector from './forms/BusinessSelector';
+import Button from './components/ui/Button';
 import { PAGES } from './lib/routes';
 import './App.css';
 
@@ -19,20 +20,9 @@ function NotFound() {
     <div style={{ padding: '4rem 2rem', textAlign: 'center', color: 'var(--text-secondary)' }}>
       <h1 style={{ fontSize: '3rem', marginBottom: '0.5rem', color: 'var(--text-primary)' }}>404</h1>
       <p style={{ marginBottom: '1.5rem' }}>ไม่พบหน้าที่คุณต้องการ</p>
-      <button
-        onClick={() => navigate(PAGES.HOME)}
-        style={{
-          padding: '0.5rem 1.5rem',
-          background: 'var(--accent-primary)',
-          color: 'var(--text-on-accent)',
-          border: 'none',
-          borderRadius: 'var(--radius-md)',
-          cursor: 'pointer',
-          fontSize: '0.9rem',
-        }}
-      >
+      <Button variant="primary" icon="arrow-left" onClick={() => navigate(PAGES.HOME)}>
         กลับหน้าแรก
-      </button>
+      </Button>
     </div>
   );
 }

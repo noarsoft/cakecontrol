@@ -3,6 +3,11 @@ import CRUDControl from '../components/controls/CRUDControl';
 import ConfirmModal from '../components/controls/ConfirmModal';
 import ModalControl from '../components/controls/ModalControl';
 import Icon from '../components/ui/Icon';
+import Button from '../components/ui/Button';
+import IconButton from '../components/ui/IconButton';
+import EmptyState from '../components/ui/EmptyState';
+import VersionHistoryModal from '../components/controls/VersionHistoryModal';
+import SchemaHistoryModal from '../components/controls/SchemaHistoryModal';
 import SchemaBuilder from './SchemaBuilder';
 import SchemaNameInput from './SchemaNameInput';
 import FormFiller from './FormFiller';
@@ -57,16 +62,16 @@ function ColumnToggle({ columns, visibleKeys, onChange }) {
 
     return (
         <div className="fb-col-toggle" ref={ref} onKeyDown={handleKeyDown}>
-            <button
+            <Button
+                variant="secondary"
+                size="sm"
+                icon="columns"
                 onClick={() => setOpen(prev => !prev)}
-                className="fb-col-toggle-btn"
-                type="button"
                 aria-expanded={open}
                 aria-haspopup="true"
             >
-                <Icon name="columns" size="sm" />
                 คอลัมน์ ({visibleKeys.size}/{columns.length})
-            </button>
+            </Button>
             {open && (
                 <div className="fb-col-toggle-dropdown" role="group" aria-label="เลือกคอลัมน์ที่จะแสดง">
                     <div className="fb-col-toggle-search">
@@ -108,6 +113,8 @@ function FormBuilder() {
     const {
         activeSchema, mode, schemaData, crudConfig,
         allDataColumns, visibleColumns, setVisibleColumns,
+        historyRootId, handleCloseHistory, handleRestoreVersion,
+        showSchemaHistory, setShowSchemaHistory, handleRestoreSchemaVersion,
         oldSchemaInfo, showLogModal, setShowLogModal, migrating,
         deleteConfirm, setDeleteConfirm,
         pendingMode, setPendingMode,
@@ -124,9 +131,7 @@ function FormBuilder() {
                 <>
                     <header className="fb-topbar">
                         <div className="fb-topbar-left">
-                            <button className="fb-mode-btn fb-icon-btn" onClick={() => handleModeChange('dashboard')} title="กลับหน้า Dashboard">
-                                <Icon name="arrow-left" />
-                            </button>
+                            <IconButton icon="arrow-left" label="กลับหน้า Dashboard" onClick={() => handleModeChange('dashboard')} />
                             <SchemaNameInput
                                 value={activeSchema.name}
                                 onSave={handleSchemaNameSave}
@@ -140,13 +145,12 @@ function FormBuilder() {
                             </div>
                         </div>
                         <div className="fb-topbar-right">
-                            <button className="fb-share-btn" onClick={handleShare} title="คัดลอก link สำหรับแชร์">
-                                <Icon name="share" />
-                            </button>
+                            <Button variant="secondary" size="sm" icon="clock" onClick={() => setShowSchemaHistory(true)}>
+                                ประวัติแก้ไขฟอร์ม
+                            </Button>
+                            <IconButton icon="share" label="คัดลอก link สำหรับแชร์" onClick={handleShare} />
                             <ThemeSwitcher />
-                            <button className="fb-delete-form-btn" onClick={() => setDeleteConfirm(activeSchema.rootid)} title="ลบฟอร์มนี้">
-                                <Icon name="trash" />
-                            </button>
+                            <IconButton icon="trash" variant="danger" label="ลบฟอร์มนี้" onClick={() => setDeleteConfirm(activeSchema.rootid)} />
                         </div>
                     </header>
                     <main className="fb-main">
@@ -161,10 +165,10 @@ function FormBuilder() {
                                                     <span>โครงสร้างเปลี่ยน — มีข้อมูล {oldSchemaInfo.oldDataCount} รายการ ที่ใช้โครงสร้างเก่า</span>
                                                 </div>
                                                 <div className="fb-schema-change-actions">
-                                                    <button className="fb-log-btn" onClick={() => setShowLogModal(true)}>log</button>
-                                                    <button className="fb-migrate-btn" onClick={handleMigrateData} disabled={migrating}>
+                                                    <Button variant="secondary" size="sm" onClick={() => setShowLogModal(true)}>log</Button>
+                                                    <Button variant="primary" size="sm" loading={migrating} onClick={handleMigrateData}>
                                                         {migrating ? 'กำลังอัพเดต...' : 'อัพเดตข้อมูล'}
-                                                    </button>
+                                                    </Button>
                                                 </div>
                                             </div>
                                             <div className="fb-schema-change-fields">
@@ -179,10 +183,9 @@ function FormBuilder() {
                                         </div>
                                     )}
                                     <div className="fb-data-toolbar">
-                                        <button className="fb-add-data-btn" onClick={() => handleModeChange('fill')}>
-                                            <Icon name="plus" />
+                                        <Button variant="primary" icon="plus" className="fb-toolbar-lead" onClick={() => handleModeChange('fill')}>
                                             เพิ่มข้อมูล
-                                        </button>
+                                        </Button>
                                         {allDataColumns.length > 0 && (
                                             <ColumnToggle
                                                 columns={allDataColumns}
@@ -190,10 +193,9 @@ function FormBuilder() {
                                                 onChange={setVisibleColumns}
                                             />
                                         )}
-                                        <button className="fb-export-btn" onClick={handleExportExcel} disabled={!schemaData?.data?.length} title="ส่งออกข้อมูลเป็น Excel">
-                                            <Icon name="download" />
+                                        <Button variant="secondary" icon="download" onClick={handleExportExcel} disabled={!schemaData?.data?.length} title="ส่งออกข้อมูลเป็น Excel">
                                             Export Excel
-                                        </button>
+                                        </Button>
                                     </div>
                                     <CRUDControl config={crudConfig} />
 
@@ -233,6 +235,14 @@ function FormBuilder() {
                                             </div>
                                         )}
                                     </ModalControl>
+
+                                    <VersionHistoryModal
+                                        isOpen={historyRootId !== null}
+                                        onClose={handleCloseHistory}
+                                        rootid={historyRootId}
+                                        schemaJson={activeSchema?.json}
+                                        onRestore={handleRestoreVersion}
+                                    />
                                 </>
                             )}
                             {mode === 'builder' && (
@@ -256,11 +266,20 @@ function FormBuilder() {
                 </>
             ) : (
                 <div className="fb-empty">
-                    <div className="fb-empty-icon">📝</div>
-                    <div>เลือกฟอร์มจาก sidebar หรือสร้างฟอร์มใหม่</div>
+                    <EmptyState
+                        icon="file-text"
+                        title="ยังไม่ได้เลือกฟอร์ม"
+                        subtitle="เลือกฟอร์มจาก Dashboard หรือสร้างฟอร์มใหม่เพื่อเริ่มต้น"
+                    />
                 </div>
             )}
 
+            <SchemaHistoryModal
+                isOpen={showSchemaHistory}
+                onClose={() => setShowSchemaHistory(false)}
+                schemaRootId={activeSchema?.rootid}
+                onRestore={handleRestoreSchemaVersion}
+            />
             <ConfirmModal
                 isOpen={deleteConfirm !== null}
                 title="ยืนยันการลบแม่แบบ"

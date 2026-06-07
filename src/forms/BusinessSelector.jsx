@@ -4,6 +4,8 @@ import { initService, getBusinesses, createBusiness, deleteBusiness } from '../l
 import { PAGES } from '../lib/routes';
 import ConfirmModal from '../components/controls/ConfirmModal';
 import ThemeSwitcher from '../ThemeSwitcher';
+import Button from '../components/ui/Button';
+import Icon from '../components/ui/Icon';
 import { useToast } from '../contexts/ToastContext';
 import './BusinessSelector.css';
 
@@ -105,9 +107,10 @@ export default function BusinessSelector() {
                                 e.stopPropagation();
                                 setDeleteConfirm(b);
                             }}
+                            aria-label={`ลบโครงการ ${b.name}`}
                             title="ลบโครงการ"
                         >
-                            <span style={{ fontSize: '16px', fontWeight: 700, lineHeight: 1 }}>✕</span>
+                            <Icon name="x" size="sm" />
                         </button>
                     </div>
                 ))}
@@ -115,7 +118,7 @@ export default function BusinessSelector() {
                 <div className="bs-card-wrapper add-new">
                     <button className="bs-card" onClick={() => { setShowAddModal(true); setNameTouched(false); }}>
                         <div className="bs-avatar">
-                            <div className="bs-add-btn">+</div>
+                            <Icon name="plus" size={52} className="bs-add-icon" />
                         </div>
                     </button>
                     <span className="bs-name">สร้างโครงการใหม่</span>
@@ -145,8 +148,8 @@ export default function BusinessSelector() {
                         {nameErrorMessage && <div style={{ color: 'var(--error)', fontSize: '12px', marginTop: '4px' }}>{nameErrorMessage}</div>}
                         
                         <div className="modal-actions">
-                            <button className="netflix-btn-secondary" onClick={() => { setShowAddModal(false); setNameTouched(false); }}>ยกเลิก</button>
-                            <button className="netflix-btn-primary" onClick={handleAddBusiness}>บันทึก</button>
+                            <Button variant="secondary" onClick={() => { setShowAddModal(false); setNameTouched(false); }}>ยกเลิก</Button>
+                            <Button variant="primary" onClick={handleAddBusiness}>บันทึก</Button>
                         </div>
                     </div>
                 </div>

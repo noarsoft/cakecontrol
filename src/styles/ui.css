@@ -43,55 +43,177 @@
     background: var(--success-light);
 }
 
-/* ═══ Primary Button ═══
-   Accent bg, white text. Used across Dashboard, FormBuilder, etc. */
-.ui-btn-primary {
+.ui-icon-btn:focus-visible {
+    outline: 2px solid var(--accent-primary);
+    outline-offset: 2px;
+}
+
+.ui-icon-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+    pointer-events: none;
+}
+
+/* small icon button (28×28) — toolbars, inline row actions */
+.ui-icon-btn-sm {
+    width: 28px;
+    height: 28px;
+}
+
+/* ═══ Button ═══
+   One base + modifier variants. Drive via the <Button> component.
+   variants: primary | secondary | ghost | danger | success · size: sm */
+.ui-btn {
     display: inline-flex;
     align-items: center;
+    justify-content: center;
     gap: 6px;
-    padding: 8px 20px;
-    background: var(--accent-primary);
-    color: var(--text-on-accent);
-    border: none;
+    padding: 8px 16px;
+    border: 1px solid transparent;
     border-radius: var(--radius-md);
+    font-family: inherit;
     font-size: 13px;
     font-weight: 600;
+    line-height: 1.2;
+    white-space: nowrap;
     cursor: pointer;
-    font-family: inherit;
-    transition: all 0.2s;
+    transition: background 0.15s, border-color 0.15s, color 0.15s,
+        box-shadow 0.15s, transform 0.15s;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.ui-btn:focus-visible {
+    outline: 2px solid var(--accent-primary);
+    outline-offset: 2px;
+}
+
+.ui-btn:disabled,
+.ui-btn.is-loading {
+    opacity: 0.55;
+    cursor: not-allowed;
+    pointer-events: none;
+    box-shadow: none;
+    transform: none;
+}
+
+/* size */
+.ui-btn-sm {
+    padding: 5px 12px;
+    font-size: 12px;
+    gap: 4px;
+}
+
+/* primary — accent solid */
+.ui-btn-primary {
+    background: var(--accent-primary);
+    color: var(--text-on-accent);
+    border-color: var(--accent-primary);
 }
 
 .ui-btn-primary:hover {
     background: var(--accent-primary-hover);
+    border-color: var(--accent-primary-hover);
     box-shadow: 0 4px 12px var(--accent-primary-light);
     transform: translateY(-1px);
 }
 
 .ui-btn-primary:active {
     transform: translateY(0);
+    box-shadow: none;
 }
 
-/* ═══ Secondary / Outline Button ═══ */
+/* secondary — outline */
 .ui-btn-secondary {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    padding: 8px 16px;
     background: var(--bg-primary);
     color: var(--text-primary);
-    border: 1px solid var(--border-primary);
-    border-radius: var(--radius-md);
-    font-size: 13px;
+    border-color: var(--border-primary);
     font-weight: 500;
-    cursor: pointer;
-    font-family: inherit;
-    transition: all 0.15s;
 }
 
 .ui-btn-secondary:hover {
     border-color: var(--accent-primary);
     color: var(--accent-primary);
     background: var(--accent-primary-light);
+}
+
+/* ghost — chromeless until hover */
+.ui-btn-ghost {
+    background: transparent;
+    color: var(--text-secondary);
+    border-color: transparent;
+    font-weight: 500;
+}
+
+.ui-btn-ghost:hover {
+    background: var(--bg-hover);
+    color: var(--text-primary);
+}
+
+/* danger — solid red, for destructive confirm actions */
+.ui-btn-danger {
+    background: var(--error);
+    color: #fff;
+    border-color: var(--error);
+}
+
+.ui-btn-danger:hover {
+    filter: brightness(0.94);
+    box-shadow: 0 4px 12px var(--error-light);
+    transform: translateY(-1px);
+}
+
+.ui-btn-danger:active {
+    transform: translateY(0);
+    box-shadow: none;
+}
+
+/* success — solid green, for save / safe confirm */
+.ui-btn-success {
+    background: var(--success);
+    color: #fff;
+    border-color: var(--success);
+}
+
+.ui-btn-success:hover {
+    filter: brightness(0.94);
+    box-shadow: 0 4px 12px var(--success-light);
+    transform: translateY(-1px);
+}
+
+.ui-btn-success:active {
+    transform: translateY(0);
+    box-shadow: none;
+}
+
+/* loading spinner (rendered by <Button loading>) */
+.ui-btn-spinner {
+    width: 14px;
+    height: 14px;
+    border: 2px solid currentColor;
+    border-right-color: transparent;
+    border-radius: 50%;
+    animation: ui-btn-spin 0.6s linear infinite;
+    flex-shrink: 0;
+}
+
+@keyframes ui-btn-spin {
+    to { transform: rotate(360deg); }
+}
+
+/* honor reduced-motion: keep state legible, drop the movement */
+@media (prefers-reduced-motion: reduce) {
+    .ui-btn,
+    .ui-icon-btn {
+        transition: background 0.15s, border-color 0.15s, color 0.15s;
+    }
+    .ui-btn:hover,
+    .ui-btn:active,
+    .ui-icon-btn:active {
+        transform: none;
+    }
+    .ui-btn-spinner {
+        animation-duration: 1.2s;
+    }
 }
 
 /* ═══ Status Badge (pill) ═══

@@ -159,17 +159,23 @@
     z-index: 10;
 }
 
-.bs-card-wrapper:hover .bs-delete-btn {
+.bs-card-wrapper:hover .bs-delete-btn,
+.bs-delete-btn:focus-visible {
     opacity: 1;
     transform: scale(1);
 }
 
+.bs-delete-btn:focus-visible {
+    outline: 2px solid var(--accent-primary);
+    outline-offset: 2px;
+}
+
 .bs-delete-btn:hover {
-    background: #e50914;
-    border-color: #e50914;
+    background: var(--error);
+    border-color: var(--error);
     color: #fff;
     transform: scale(1.15);
-    box-shadow: 0 2px 12px rgba(229, 9, 20, 0.5);
+    box-shadow: 0 2px 12px var(--error-light);
 }
 
 /* ─── Add Card ─── */
@@ -184,15 +190,12 @@
     box-shadow: none;
 }
 
-.bs-add-btn {
-    font-size: 3.5rem;
-    font-weight: 200;
+.bs-add-icon {
     color: var(--text-disabled);
     transition: color 0.2s;
-    line-height: 1;
 }
 
-.bs-card-wrapper.add-new:hover .bs-add-btn {
+.bs-card-wrapper.add-new:hover .bs-add-icon {
     color: var(--text-secondary);
 }
 
@@ -278,43 +281,6 @@
     border-color: #6366f1;
     box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
     background: var(--bg-hover);
-}
-
-.netflix-btn-primary {
-    background: #6366f1;
-    color: #fff;
-    border: none;
-    padding: 12px 28px;
-    font-weight: 600;
-    border-radius: 8px;
-    cursor: pointer;
-    transition: all 0.2s;
-    font-size: 0.95rem;
-}
-
-.netflix-btn-primary:hover {
-    background: #5558e6;
-    transform: translateY(-1px);
-    box-shadow: 0 4px 16px rgba(99, 102, 241, 0.35);
-}
-
-.netflix-btn-secondary {
-    background: transparent;
-    color: var(--text-secondary);
-    border: 1px solid var(--border-primary);
-    padding: 12px 28px;
-    font-weight: 600;
-    border-radius: 8px;
-    cursor: pointer;
-    margin-right: 0;
-    transition: all 0.2s;
-    font-size: 0.95rem;
-}
-
-.netflix-btn-secondary:hover {
-    background: var(--bg-hover);
-    color: var(--text-primary);
-    border-color: var(--border-hover);
 }
 
 /* ─── Responsive ─── */

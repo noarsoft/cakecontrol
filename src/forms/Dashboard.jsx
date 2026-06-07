@@ -5,6 +5,8 @@ import { PAGES } from '../lib/routes';
 import ConfirmModal from '../components/controls/ConfirmModal';
 import BulkEditToolbar from '../components/controls/BulkEditToolbar';
 import Icon from '../components/ui/Icon';
+import Button from '../components/ui/Button';
+import IconButton from '../components/ui/IconButton';
 import EmptyState from '../components/ui/EmptyState';
 import { useToast } from '../contexts/ToastContext';
 import ThemeSwitcher from '../ThemeSwitcher';
@@ -146,10 +148,9 @@ export default function Dashboard() {
         <div className="dash-container">
             <header className="dash-header">
                 <div className="dash-header-left">
-                    <button className="dash-back-btn" onClick={() => navigate(PAGES.HOME)} title="กลับหน้า Business">
-                        <span className="dash-back-arrow">←</span>
-                        <span>กลับ</span>
-                    </button>
+                    <Button variant="secondary" icon="arrow-left" onClick={() => navigate(PAGES.HOME)} title="กลับหน้า Business">
+                        กลับ
+                    </Button>
                     <div>
                         <h1 className="dash-title">{businessName}</h1>
                         <span className="dash-service-badge" data-mode={serviceMode}>
@@ -159,9 +160,9 @@ export default function Dashboard() {
                 </div>
                 <div className="dash-header-right">
                     <ThemeSwitcher />
-                    <button className="dash-new-form-btn" onClick={() => navigate(PAGES.FORM_BUILDER, { state: { createNew: true } })}>
-                        + สร้างฟอร์มใหม่
-                    </button>
+                    <Button variant="primary" icon="plus" onClick={() => navigate(PAGES.FORM_BUILDER, { state: { createNew: true } })}>
+                        สร้างฟอร์มใหม่
+                    </Button>
                 </div>
             </header>
 
@@ -243,9 +244,9 @@ export default function Dashboard() {
                                         <td>{dataCount}</td>
                                         <td className="dash-table-date">{formatModifyDate(s.modify_datetime)}</td>
                                         <td className="dash-table-actions">
-                                            <button
-                                                className="dash-action-btn dash-action-share"
-                                                title="คัดลอก link แชร์"
+                                            <IconButton
+                                                icon="share"
+                                                label="คัดลอก link แชร์"
                                                 onClick={(e) => {
                                                     e.stopPropagation();
                                                     const url = `${window.location.origin}/form/${s.rootid}`;
@@ -253,19 +254,16 @@ export default function Dashboard() {
                                                         showToast('คัดลอก link แล้ว', 'success');
                                                     });
                                                 }}
-                                            >
-                                                <Icon name="share" size="lg" />
-                                            </button>
-                                            <button
-                                                className="dash-action-btn dash-action-delete"
-                                                title="ลบฟอร์ม"
+                                            />
+                                            <IconButton
+                                                icon="trash"
+                                                variant="danger"
+                                                label="ลบฟอร์ม"
                                                 onClick={(e) => {
                                                     e.stopPropagation();
                                                     setDeleteConfirm(s.rootid);
                                                 }}
-                                            >
-                                                <Icon name="trash" size="lg" />
-                                            </button>
+                                            />
                                         </td>
                                     </tr>
                                 );

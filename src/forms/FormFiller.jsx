@@ -1,5 +1,7 @@
 import { useState, useMemo, useEffect, useCallback } from 'react';
 import FormControl from '../components/controls/FormControl';
+import Button from '../components/ui/Button';
+import Icon from '../components/ui/Icon';
 import { schemaToFormConfig, getSchemaPages, evaluateShowWhen } from '../lib/schemaTransform';
 import { createFormData } from '../lib/schemaService';
 
@@ -125,10 +127,10 @@ function FormFiller({ schema, formcfgJson, onSubmit, onDirtyChange }) {
             <div className="fb-filler">
                 <div className="fb-filler-header"><h2>{schema.name}</h2></div>
                 <div className="fb-filler-success">
-                    <span className="fb-filler-success-icon">✓</span>
+                    <span className="fb-filler-success-icon"><Icon name="check" size={30} /></span>
                     <h3>บันทึกสำเร็จ!</h3>
                     <p>ข้อมูลของคุณถูกบันทึกเรียบร้อยแล้ว</p>
-                    <button className="fb-mode-btn active" onClick={handleReset}>กรอกอีกครั้ง</button>
+                    <Button variant="primary" onClick={handleReset}>กรอกอีกครั้ง</Button>
                 </div>
             </div>
         );
@@ -155,7 +157,7 @@ function FormFiller({ schema, formcfgJson, onSubmit, onDirtyChange }) {
                                     onClick={() => setCurrentPage(idx)}
                                     title={page.label || `หน้า ${idx + 1}`}
                                 >
-                                    {idx < currentPage ? '✓' : idx + 1}
+                                    {idx < currentPage ? <Icon name="check" size="sm" /> : idx + 1}
                                 </button>
                                 {idx < totalPages - 1 && (
                                     <div className={`fb-filler-step-line ${idx < currentPage ? 'done' : ''}`} />
@@ -186,28 +188,29 @@ function FormFiller({ schema, formcfgJson, onSubmit, onDirtyChange }) {
             )}
 
             <div className="fb-filler-footer">
-                <button
-                    className="fb-mode-btn"
+                <Button
+                    variant="ghost"
+                    size="sm"
+                    className="fb-filler-debug-toggle"
                     onClick={() => setShowDebug(d => !d)}
-                    style={{ marginRight: 'auto', opacity: 0.6, fontSize: 12 }}
                 >
                     {showDebug ? 'ซ่อน JSON' : 'แสดง JSON'}
-                </button>
+                </Button>
 
                 {hasPages && currentPage > 0 && (
-                    <button className="fb-mode-btn" onClick={handlePrev}>ย้อนกลับ</button>
+                    <Button variant="secondary" onClick={handlePrev}>ย้อนกลับ</Button>
                 )}
 
                 {hasPages && !isLastPage && (
-                    <button className="fb-mode-btn active" onClick={handleNext}>ถัดไป</button>
+                    <Button variant="primary" onClick={handleNext}>ถัดไป</Button>
                 )}
 
                 {!hasPages && (
-                    <button className="fb-mode-btn" onClick={handleReset}>ล้างข้อมูล</button>
+                    <Button variant="secondary" onClick={handleReset}>ล้างข้อมูล</Button>
                 )}
 
                 {isLastPage && (
-                    <button className="fb-mode-btn active" onClick={handleSubmit}>บันทึก</button>
+                    <Button variant="primary" onClick={handleSubmit}>บันทึก</Button>
                 )}
             </div>
         </div>

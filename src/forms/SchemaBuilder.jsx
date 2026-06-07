@@ -3,6 +3,7 @@ import { ENABLED_FIELD_TYPES, addField, removeField, updateField, reorderField, 
 import { useToast } from '../contexts/ToastContext';
 import { KeyInput, FieldConfigPanel } from './SchemaBuilderPanels';
 import Icon from '../components/ui/Icon';
+import Button from '../components/ui/Button';
 
 const FIELDS_PER_PAGE = 20;
 
@@ -408,10 +409,10 @@ function SchemaBuilder({ schemaJson, onChange, onSaveAndTest, onDirtyChange }) {
                 )}
 
                 <div className="fb-builder-actions">
-                    <button className="fb-mode-btn active" onClick={handleSave} disabled={!isDirty || errors.length > 0}>บันทึก</button>
+                    <Button variant="primary" onClick={handleSave} disabled={!isDirty || errors.length > 0}>บันทึก</Button>
                     <div className="fb-builder-actions-spacer" />
-                    <button className="fb-mode-btn" onClick={handleCancel} disabled={!isDirty}>ยกเลิก</button>
-                    <button className="fb-mode-btn active fb-save-test-btn" onClick={handleSaveAndTest} disabled={isDirty && errors.length > 0}>บันทึกและทดสอบ</button>
+                    <Button variant="secondary" onClick={handleCancel} disabled={!isDirty}>ยกเลิก</Button>
+                    <Button variant="success" onClick={handleSaveAndTest} disabled={isDirty && errors.length > 0}>บันทึกและทดสอบ</Button>
                 </div>
             </div>
 

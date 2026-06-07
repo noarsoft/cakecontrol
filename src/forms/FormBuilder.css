@@ -51,17 +51,12 @@
     align-items: center;
 }
 
-.fb-mode-btn.fb-icon-btn {
-    display: inline-flex;
+/* Empty fallback (no schema selected) — center the shared EmptyState */
+.fb-empty {
+    flex: 1;
+    display: flex;
     align-items: center;
     justify-content: center;
-    width: 34px;
-    height: 34px;
-    padding: 0;
-    flex-shrink: 0;
-    background: var(--bg-secondary);
-    border-color: var(--border-primary);
-    color: var(--text-primary);
 }
 
 /* ─── Main Content ─── */
@@ -179,48 +174,6 @@
     font-weight: 700;
 }
 
-.fb-share-btn {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 34px;
-    height: 34px;
-    padding: 0;
-    border: 1px solid var(--border-primary);
-    border-radius: var(--radius-md);
-    background: transparent;
-    color: var(--text-secondary);
-    cursor: pointer;
-    transition: all 0.15s;
-}
-
-.fb-share-btn:hover {
-    border-color: var(--accent-primary);
-    color: var(--accent-primary);
-    background: var(--accent-primary-light);
-}
-
-.fb-delete-form-btn {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 34px;
-    height: 34px;
-    padding: 0;
-    border: 1px solid var(--border-primary);
-    border-radius: var(--radius-md);
-    background: transparent;
-    color: var(--text-secondary);
-    cursor: pointer;
-    transition: all 0.15s;
-}
-
-.fb-delete-form-btn:hover {
-    border-color: var(--error);
-    color: var(--error);
-    background: var(--error-light);
-}
-
 .fb-content {
     flex: 1;
     overflow-y: auto;
@@ -235,49 +188,6 @@
 }
 
 /* ─── Data Toolbar ─── */
-.fb-data-empty {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 12px;
-    padding: 80px 24px;
-    text-align: center;
-}
-
-.fb-data-empty-title {
-    margin: 8px 0 0;
-    font-size: 18px;
-    font-weight: 700;
-    color: var(--text-primary);
-}
-
-.fb-data-empty-sub {
-    margin: 0;
-    font-size: 14px;
-    color: var(--text-tertiary);
-}
-
-.fb-data-empty-cta {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    margin-top: 8px;
-    padding: 10px 24px;
-    background: var(--accent-primary);
-    color: var(--text-on-accent, #fff);
-    border: none;
-    border-radius: var(--radius-md);
-    font-size: 14px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: background 0.15s;
-}
-
-.fb-data-empty-cta:hover {
-    background: var(--accent-primary-hover);
-}
-
 .fb-data-toolbar {
     display: flex;
     justify-content: flex-end;
@@ -285,51 +195,9 @@
     margin-bottom: 12px;
 }
 
-.fb-add-data-btn {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    padding: 8px 16px;
-    background: var(--accent-primary);
-    color: var(--text-on-accent, #fff);
-    border: none;
-    border-radius: var(--radius-md);
-    font-size: 13px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.15s;
+/* push the lead action to the left, others to the right */
+.fb-toolbar-lead {
     margin-right: auto;
-}
-
-.fb-add-data-btn:hover {
-    background: var(--accent-primary-hover);
-    box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
-}
-
-.fb-export-btn {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    padding: 8px 16px;
-    background: var(--bg-primary);
-    color: var(--text-primary);
-    border: 1px solid var(--border-primary);
-    border-radius: var(--radius-md);
-    font-size: 13px;
-    font-weight: 500;
-    cursor: pointer;
-    transition: all 0.2s;
-}
-
-.fb-export-btn:hover:not(:disabled) {
-    border-color: var(--success);
-    color: var(--success);
-    background: var(--success-light);
-}
-
-.fb-export-btn:disabled {
-    opacity: 0.4;
-    cursor: not-allowed;
 }
 
 /* ─── Schema Builder ─── */
@@ -666,15 +534,6 @@
 
 .fb-builder-actions-spacer {
     flex: 1;
-}
-
-.fb-save-test-btn {
-    background: var(--success) !important;
-    border-color: var(--success) !important;
-}
-
-.fb-save-test-btn:hover:not(:disabled) {
-    opacity: 0.9;
 }
 
 /* ─── Config Panel ─── */
@@ -1124,22 +983,24 @@
     border-top: 1px solid var(--border-primary);
 }
 
-.fb-filler-footer .fb-mode-btn {
+.fb-filler-footer .ui-btn {
     min-width: 120px;
     padding: 10px 24px;
     font-size: 14px;
 }
 
-.fb-filler-footer .fb-mode-btn.active {
+/* the primary action (next / submit) reads as the dominant CTA */
+.fb-filler-footer .ui-btn-primary {
     padding: 12px 32px;
     font-size: 15px;
-    font-weight: 700;
-    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
 }
 
-.fb-filler-footer .fb-mode-btn:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
+/* JSON debug toggle stays compact and pinned left */
+.fb-filler-footer .fb-filler-debug-toggle {
+    margin-right: auto;
+    min-width: 0;
+    padding: 6px 10px;
+    font-size: 12px;
 }
 
 .fb-filler-success {
@@ -1204,45 +1065,6 @@
     align-items: center;
     gap: 8px;
     flex-shrink: 0;
-}
-
-.fb-log-btn {
-    padding: 5px 14px;
-    border: 1px solid var(--border-primary);
-    border-radius: var(--radius-sm);
-    background: var(--bg-secondary);
-    color: var(--text-secondary);
-    font-size: 12px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.15s;
-}
-
-.fb-log-btn:hover {
-    border-color: var(--accent-primary);
-    color: var(--accent-primary);
-}
-
-.fb-migrate-btn {
-    padding: 5px 14px;
-    border: none;
-    border-radius: var(--radius-sm);
-    background: var(--accent-primary);
-    color: var(--text-on-accent);
-    font-size: 12px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.15s;
-}
-
-.fb-migrate-btn:hover:not(:disabled) {
-    opacity: 0.9;
-    box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
-}
-
-.fb-migrate-btn:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
 }
 
 /* ─── Field Change Tags ─── */
@@ -1376,25 +1198,6 @@
 /* ─── Column Visibility Toggle ─── */
 .fb-col-toggle {
     position: relative;
-}
-
-.fb-col-toggle-btn {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    padding: 8px 14px;
-    background: var(--bg-primary);
-    border: 1px solid var(--border-primary);
-    border-radius: var(--radius-md);
-    font-size: 13px;
-    color: var(--text-secondary);
-    cursor: pointer;
-    transition: all 0.15s;
-}
-
-.fb-col-toggle-btn:hover {
-    border-color: var(--accent-primary);
-    color: var(--text-primary);
 }
 
 .fb-col-toggle-dropdown {
