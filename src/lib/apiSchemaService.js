@@ -213,6 +213,16 @@ export async function getSchemaVersionById(id) {
     return mapSchemaRow(row);
 }
 
+export async function getSchemaHistory(rootid) {
+    const rows = await request(API.SCHEMA_HISTORY(rootid));
+    return rows.map(mapSchemaRow).sort((a, b) => (b._doc_version || 0) - (a._doc_version || 0));
+}
+
+export async function restoreSchemaVersion(id) {
+    const row = await request(API.SCHEMA_RESTORE(id), { method: 'POST' });
+    return mapSchemaRow(row);
+}
+
 export async function createFormData(schemaId, data) {
     const row = await request(API.DATA, {
         method: 'POST',
@@ -231,6 +241,21 @@ export async function updateFormData(rootid, data) {
 
 export async function deleteFormData(rootid) {
     const row = await request(API.DATA_ROOT(rootid), { method: 'DELETE' });
+    return mapDataRow(row);
+}
+
+export async function getDataHistory(rootid) {
+    const rows = await request(API.DATA_HISTORY(rootid));
+    return rows.map(mapDataRow).sort((a, b) => (b._doc_version || 0) - (a._doc_version || 0));
+}
+
+export async function getDataById(id) {
+    const row = await request(API.DATA_BY_ID(id));
+    return mapDataRow(row);
+}
+
+export async function restoreDataVersion(id) {
+    const row = await request(API.DATA_RESTORE(id), { method: 'POST' });
     return mapDataRow(row);
 }
 

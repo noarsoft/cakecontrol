@@ -281,6 +281,79 @@ export function updateFormcfg(rootid, updates) {
     return newItem;
 }
 
+// ─── schema history ───
+
+export function getSchemaHistory(rootid) {
+    const allSchemas = getStore(STORAGE_KEYS.schemas);
+    let current = allSchemas.find(s => s.rootid === rootid);
+    if (!current) {
+        current = allSchemas.find(s => s.id === rootid);
+    }
+    if (!current) return [];
+
+    const collected = new Map();
+    collected.set(current.id, current);
+
+    let cursor = current;
+    while (cursor.prev_id !== null) {
+        const prev = allSchemas.find(s => s.id === cursor.prev_id);
+        if (!prev || collected.has(prev.id)) break;
+        collected.set(prev.id, prev);
+        cursor = prev;
+    }
+
+    let foundNew = true;
+    while (foundNew) {
+        foundNew = false;
+        for (const item of allSchemas) {
+            if (!collected.has(item.id) && item.prev_id !== null && collected.has(item.prev_id)) {
+                collected.set(item.id, item);
+                foundNew = true;
+            }
+        }
+    }
+
+    const chain = Array.from(collected.values());
+    chain.sort((a, b) => a.id - b.id);
+    return chain.map((item, idx) => ({
+        ...item,
+        _doc_version: idx + 1,
+    })).reverse();
+}
+
+export function restoreSchemaVersion(id) {
+    const allSchemas = getStore(STORAGE_KEYS.schemas);
+    const target = allSchemas.find(s => s.id === id);
+    if (!target) return null;
+
+    const activeIdx = allSchemas.findIndex(s =>
+        s.activate !== false &&
+        getSchemaHistory(s.rootid).some(v => v.id === id)
+    );
+
+    let prevId = target.id;
+    if (activeIdx >= 0) {
+        const active = allSchemas[activeIdx];
+        allSchemas[activeIdx] = { ...active, activate: false, modify_datetime: now() };
+        prevId = active.id;
+    }
+
+    const restored = {
+        rootid: genId(),
+        id: nextId(STORAGE_KEYS.schemas),
+        prev_id: prevId,
+        business_id: target.business_id,
+        name: target.name,
+        json: { ...target.json },
+        flag: 'active',
+        activate: true,
+        modify_datetime: now(),
+    };
+    allSchemas.push(restored);
+    setStore(STORAGE_KEYS.schemas, allSchemas);
+    return restored;
+}
+
 // ─── data (ข้อมูลจริง) ───
 
 export function getFormDataBySchema(schemaId) {
@@ -367,6 +440,79 @@ export function deleteFormData(rootid) {
     });
     setStore(STORAGE_KEYS.data, items);
     return true;
+}
+
+// ─── data history ───
+
+export function getDataHistory(rootid) {
+    const allData = getStore(STORAGE_KEYS.data);
+    let current = allData.find(d => d.rootid === rootid);
+    if (!current) return [];
+
+    const collected = new Map();
+    collected.set(current.id, current);
+
+    let cursor = current;
+    while (cursor.prev_id !== null) {
+        const prev = allData.find(d => d.id === cursor.prev_id);
+        if (!prev || collected.has(prev.id)) break;
+        collected.set(prev.id, prev);
+        cursor = prev;
+    }
+
+    let foundNew = true;
+    while (foundNew) {
+        foundNew = false;
+        for (const item of allData) {
+            if (!collected.has(item.id) && item.prev_id !== null && collected.has(item.prev_id)) {
+                collected.set(item.id, item);
+                foundNew = true;
+            }
+        }
+    }
+
+    const chain = Array.from(collected.values());
+    chain.sort((a, b) => a.id - b.id);
+    return chain.map((item, idx) => ({
+        ...item,
+        _doc_version: idx + 1,
+    })).reverse();
+}
+
+export function getDataById(id) {
+    return getStore(STORAGE_KEYS.data).find(d => d.id === id) || null;
+}
+
+export function restoreDataVersion(id) {
+    const allData = getStore(STORAGE_KEYS.data);
+    const target = allData.find(d => d.id === id);
+    if (!target) return null;
+
+    const activeIdx = allData.findIndex(d =>
+        d.activate !== false && d.data_schema_id === target.data_schema_id &&
+        getDataHistory(d.rootid).some(v => v.id === id)
+    );
+
+    let prevId = target.id;
+    if (activeIdx >= 0) {
+        const active = allData[activeIdx];
+        allData[activeIdx] = { ...active, activate: false, modify_datetime: now() };
+        prevId = active.id;
+    }
+
+    const restored = {
+        rootid: genId(),
+        id: nextId(STORAGE_KEYS.data),
+        prev_id: prevId,
+        data_schema_id: target.data_schema_id,
+        data: { ...target.data },
+        flag: 'active',
+        activate: true,
+        modify_datetime: now(),
+    };
+    allData.push(restored);
+    setStore(STORAGE_KEYS.data, allData);
+    return restored;
 }
 
 // ─── Seed: สร้าง demo data ───

@@ -9,6 +9,8 @@ import {
     getFormDataBySchema, getFormDataBySchemaFamily,
     updateFormData, deleteFormData,
     migrateFormData, getSchemaVersionById,
+    getDataHistory, restoreDataVersion,
+    getSchemaHistory, restoreSchemaVersion,
 } from '../lib/schemaService';
 import { PAGES } from '../lib/routes';
 import { useToast } from '../contexts/ToastContext';
@@ -40,6 +42,8 @@ export function useFormBuilder() {
     const [migrating, setMigrating] = useState(false);
     const [dataCounts, setDataCounts] = useState({});
     const [visibleColumns, setVisibleColumns] = useState(null);
+    const [historyRootId, setHistoryRootId] = useState(null);
+    const [showSchemaHistory, setShowSchemaHistory] = useState(false);
 
     const createTriggered = useRef(false);
     const anyDirty = builderDirty || fillerDirty;
@@ -263,6 +267,29 @@ export function useFormBuilder() {
         setMigrating(false);
     };
 
+    const handleDataHistory = useCallback((rowData) => {
+        if (!rowData?._formId) return;
+        setHistoryRootId(rowData._formId);
+    }, []);
+
+    const handleCloseHistory = useCallback(() => {
+        setHistoryRootId(null);
+    }, []);
+
+    const handleRestoreVersion = useCallback(() => {
+        setHistoryRootId(null);
+        setRefreshKey(k => k + 1);
+        showToast('กู้คืนข้อมูลสำเร็จ', 'success');
+    }, [showToast]);
+
+    const handleRestoreSchemaVersion = useCallback(async (restored) => {
+        setShowSchemaHistory(false);
+        await reloadSchemas();
+        if (restored?.id) setActiveSchemaId(restored.id);
+        setRefreshKey(k => k + 1);
+        showToast('กู้คืนฟอร์มสำเร็จ', 'success');
+    }, [showToast]);
+
     const handleDataEdit = useCallback(async (formData, oldData) => {
         if (!oldData?._formId) return;
         const clean = { ...formData };
@@ -292,9 +319,10 @@ export function useFormBuilder() {
             ...cfg,
             onEdit: handleDataEdit,
             onDelete: handleDataDelete,
+            onHistory: handleDataHistory,
             hideAdd: true,
         };
-    }, [activeSchema, schemaData, handleDataEdit, handleDataDelete]);
+    }, [activeSchema, schemaData, handleDataEdit, handleDataDelete, handleDataHistory]);
 
     // All data columns (excluding _submitted_at which is always shown)
     const allDataColumns = useMemo(() => {
@@ -404,6 +432,8 @@ export function useFormBuilder() {
         anyDirty, pendingMode, setPendingMode,
         crudConfig: filteredCrudConfig,
         allDataColumns, visibleColumns: effectiveVisibleColumns, setVisibleColumns,
+        historyRootId, handleCloseHistory, handleRestoreVersion,
+        showSchemaHistory, setShowSchemaHistory, handleRestoreSchemaVersion,
 
         handleModeChange, handleSchemaNameSave, handleExportExcel,
         handleMigrateData, handleDeleteSchema, handleSchemaJsonChange,

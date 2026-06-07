@@ -71,7 +71,14 @@ export const updateFormData = delegate('updateFormData');
 export const deleteFormData = delegate('deleteFormData');
 export const migrateFormData = delegate('migrateFormData');
 
+// ─── data history ───
+export const getDataHistory = delegate('getDataHistory');
+export const getDataById = delegate('getDataById');
+export const restoreDataVersion = delegate('restoreDataVersion');
+
 // ─── schema version ───
 export const getSchemaVersionById = delegate('getSchemaVersionById');
+export const getSchemaHistory = delegate('getSchemaHistory');
+export const restoreSchemaVersion = delegate('restoreSchemaVersion');
 
 export const seedDemoData = delegate('seedDemoData');

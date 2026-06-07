@@ -1,5 +1,6 @@
 // ModalControl.jsx
 import { useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import './ModalControl.css';
 
 function ModalControl({
@@ -39,7 +40,7 @@ function ModalControl({
         }
     };
 
-    return (
+    return createPortal(
         <div className="modal-control-backdrop" onClick={handleBackdropClick}>
             <div className={`modal-control modal-control-${size} ${className}`}>
                 {title != null && (
@@ -59,7 +60,8 @@ function ModalControl({
                     </div>
                 )}
             </div>
-        </div>
+        </div>,
+        document.body
     );
 }
 

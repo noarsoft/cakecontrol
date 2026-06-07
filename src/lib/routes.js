@@ -25,6 +25,8 @@ export const API = {
     SCHEMA_BY_BUSINESS: (bizId) => `${BASE}/schema?business_id=${bizId}`,
     SCHEMA_ROOT: (rootid) => `${BASE}/schema/root/${rootid}`,
     SCHEMA_LATEST: (rootid) => `${BASE}/schema/root/${rootid}/latest`,
+    SCHEMA_HISTORY: (rootid) => `${BASE}/schema/root/${rootid}/history`,
+    SCHEMA_RESTORE: (id) => `${BASE}/schema/${id}/restore`,
 
     // view
     VIEW: `${BASE}/view`,
@@ -42,4 +44,7 @@ export const API = {
     DATA_BY_SCHEMA_ROOT: (schemaRootId) => `${BASE}/data/schema-root/${schemaRootId}`,
     DATA_ROOT: (rootid) => `${BASE}/data/root/${rootid}`,
     DATA_MIGRATE: (dataRootId) => `${BASE}/data/root/${dataRootId}/migrate-latest-schema`,
+    DATA_HISTORY: (rootid) => `${BASE}/data/root/${rootid}/history`,
+    DATA_BY_ID: (id) => `${BASE}/data/${id}`,
+    DATA_RESTORE: (id) => `${BASE}/data/${id}/restore`,
 };

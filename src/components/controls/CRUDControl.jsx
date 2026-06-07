@@ -64,11 +64,14 @@ function CRUDControl({ config = {} }) {
         });
 
         headers.push(labels.actionsHeader);
-        colwidths.push('140');
+        colwidths.push(config.onHistory ? '200' : '140');
         controls.push({
             type: 'custom',
             render: (rowData, rowIndex) => (
                 <div className="crud-row-actions">
+                    {config.onHistory && (
+                        <ButtonControl control={{ value: labels.historyButton, className: 'btn-ghost btn-sm', onClick: () => config.onHistory(rowData, rowIndex) }} rowData={rowData} rowIndex={rowIndex} />
+                    )}
                     <ButtonControl control={{ value: labels.editButton, className: 'btn-primary btn-sm', onClick: () => openEditModal(rowData, rowIndex) }} rowData={rowData} rowIndex={rowIndex} />
                     <ButtonControl control={{ value: labels.deleteButton, className: 'btn-danger btn-sm', onClick: () => openDeleteConfirm(rowData, rowIndex) }} rowData={rowData} rowIndex={rowIndex} />
                 </div>

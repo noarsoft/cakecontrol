@@ -12,6 +12,7 @@ export const DEFAULT_LABELS = {
     confirmDeleteMessage: 'คุณต้องการลบข้อมูลนี้หรือไม่?',
     confirmBulkDeleteMessage: 'คุณต้องการลบข้อมูลที่เลือกหรือไม่?',
     emptyMessage: 'ไม่มีข้อมูล',
+    historyButton: 'ประวัติ',
     actionsHeader: '',
     selectedCount: 'รายการที่เลือก',
     selectAllHeader: '',

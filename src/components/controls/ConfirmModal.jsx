@@ -1,5 +1,6 @@
 // ConfirmModal.jsx
 import React from 'react';
+import { createPortal } from 'react-dom';
 import './ConfirmModal.css';
 
 function ConfirmModal({ 
@@ -46,9 +47,9 @@ function ConfirmModal({
         return isDangerous ? '⚠️' : '❓';
     };
 
-    return (
-        <div 
-            className={`confirm-modal-backdrop ${isDangerous ? 'confirm-modal-dangerous' : 'confirm-modal-normal'}`} 
+    return createPortal(
+        <div
+            className={`confirm-modal-backdrop ${isDangerous ? 'confirm-modal-dangerous' : 'confirm-modal-normal'}`}
             onClick={handleBackdropClick}
         >
             <div className="confirm-modal">
@@ -78,7 +79,7 @@ function ConfirmModal({
                 </div>
 
                 {closeOnEscapeKey && (
-                    <button 
+                    <button
                         className="confirm-modal-close"
                         onClick={onCancel}
                         aria-label="Close modal"
@@ -87,7 +88,8 @@ function ConfirmModal({
                     </button>
                 )}
             </div>
-        </div>
+        </div>,
+        document.body
     );
 }
 

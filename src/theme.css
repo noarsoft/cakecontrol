@@ -36,7 +36,10 @@
     --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
     --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
     --shadow-focus: 0 0 0 3px var(--accent-primary-light);
-    
+
+    --modal-backdrop: rgba(0, 0, 0, 0.35);
+    --modal-backdrop-blur: 8px;
+
     --radius-sm: 4px;
     --radius-md: 6px;
     --radius-lg: 8px;
@@ -103,6 +106,9 @@
     --shadow-focus: 0 0 0 3px var(--accent-primary-light);
     --text-on-accent: #ffffff;
 
+    --modal-backdrop: rgba(0, 0, 0, 0.75);
+    --modal-backdrop-blur: 20px;
+
     /* CAMT token compatibility (dark) */
     --camt-text-primary: var(--text-primary);
     --camt-text-secondary: var(--text-secondary);
@@ -154,6 +160,9 @@
         --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.3);
         --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.5);
         --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.7);
+
+        --modal-backdrop: rgba(0, 0, 0, 0.75);
+        --modal-backdrop-blur: 20px;
     }
 }
 
